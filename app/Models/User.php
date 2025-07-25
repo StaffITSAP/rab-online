@@ -63,4 +63,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Persetujuan::class, 'approver_id');
     }
+    public function status()
+    {
+        return $this->hasOne(UserStatus::class);
+    }
 }

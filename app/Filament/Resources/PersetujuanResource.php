@@ -21,7 +21,11 @@ class PersetujuanResource extends Resource
 {
     protected static ?string $model = Persetujuan::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-check';
+    protected static ?string $navigationLabel = 'Persetujuan';
+    protected static ?string $navigationGroup = 'Pengaturan';
+    protected static ?string $label = 'Persetujuan';
+    protected static ?string $slug = 'persetujuan';
 
     public static function form(Form $form): Form
     {
