@@ -25,6 +25,8 @@ class User extends Authenticatable
         'email',
         'username',
         'password',
+        'no_hp',
+        'company',
         'is_active',
     ];
 
@@ -63,7 +65,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Persetujuan::class, 'approver_id');
     }
-    public function status()
+    public function userStatus()
     {
         return $this->hasOne(UserStatus::class);
     }

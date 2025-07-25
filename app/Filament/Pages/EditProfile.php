@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
@@ -32,7 +33,9 @@ class EditProfile extends Page implements HasForms
         $this->form->fill([
             'username' => $user->username,
             'email' => $user->email,
-            'signature' => $user->status?->signature_path,
+            'no_hp' => $user->no_hp,
+            'company' => $user->company,
+            'signature' => $user->userStatus?->signature_path,
         ]);
     }
 
@@ -54,6 +57,13 @@ class EditProfile extends Page implements HasForms
                             ->password()
                             ->label('Password (biarkan kosong jika tidak diubah)')
                             ->maxLength(255),
+                        TextInput::make('no_hp')->label('No HP')->tel(),
+                        Select::make('company')->options([
+                            'sap' => 'CV Solusi Arya Prima',
+                            'dinatek' => 'CV Dinatek Jaya Lestari',
+                            'ssm' => 'PT Sinergi Subur Makmur',
+                        ])->label('Perusahaan'),
+
                     ])->columns(1),
 
                 Section::make('Tanda Tangan')
@@ -77,6 +87,8 @@ class EditProfile extends Page implements HasForms
 
         $user->username = $data['username'];
         $user->email = $data['email'];
+        $user->no_hp = $data['no_hp'];
+        $user->company = $data['company'];
 
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -85,7 +97,7 @@ class EditProfile extends Page implements HasForms
         $user->save();
 
         if (!empty($data['signature'])) {
-            $user->status()->updateOrCreate([], [
+            $user->userStatus()->updateOrCreate([], [
                 'signature_path' => $data['signature'],
             ]);
         }
