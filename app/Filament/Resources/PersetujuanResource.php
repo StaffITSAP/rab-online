@@ -52,6 +52,7 @@ class PersetujuanResource extends Resource
                                 ->searchable()
                                 ->required(),
                         ])
+                        ->addActionLabel('Tambah Approver')
                         ->minItems(1)
                         ->columns(1)
                         ->required(),

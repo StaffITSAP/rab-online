@@ -27,7 +27,8 @@ class CabangResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('kode')->required()->unique(),
+                Forms\Components\TextInput::make('kode')->required()->unique()->label('Nama Cabang'),
+                Forms\Components\TextInput::make('nama')->required()->label('Nama Kota'),
             ]);
     }
 
@@ -35,7 +36,7 @@ class CabangResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('kode')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('kode')->sortable()->searchable()->label('Nama Cabang'),
 
             ])
             ->filters([
