@@ -9,7 +9,7 @@ class Persetujuan extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'approver_id'];
+    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_manager'];
 
     public function user()
     {

@@ -16,8 +16,10 @@ use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use App\Models\User;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Toggle;
 
 class PersetujuanResource extends Resource
 {
@@ -40,21 +42,64 @@ class PersetujuanResource extends Resource
                         ->relationship('user', 'name')
                         ->searchable()
                         ->required(),
-
                     Repeater::make('approvers')
                         ->label('Daftar Approver')
                         ->relationship('approvers')
                         ->schema([
                             Select::make('approver_id')
-                                ->label('Yang Menyetujui')
-                                ->options(fn() => User::all()->pluck('name', 'id')) // Hindari eager-load langsung
+                                ->label('Pilih Approver')
+                                ->options(fn() => User::all()->pluck('name', 'id'))
                                 ->searchable()
                                 ->required(),
                         ])
                         ->minItems(1)
+                        ->columns(1)
                         ->required(),
+                    Grid::make(2)->schema([
+                        Toggle::make('menggunakan_teknisi')
+                            ->label('Menggunakan Teknisi')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $koordinator = User::role('koordinator teknisi')->first();
+                                if (!$koordinator) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
+                                        $approvers->push(['approver_id' => $koordinator->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
+
+                        Toggle::make('use_manager')
+                            ->label('Persetujuan Manager')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $manager = User::role('manager')->first();
+                                if (!$manager) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $manager->id)) {
+                                        $approvers->push(['approver_id' => $manager->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $manager->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
+                    ]),
+
+
                 ])
-                ->columns(1), // bisa ubah jadi 2 jika ingin 2 kolom horizontal
+                ->columns(1)
         ]);
     }
 
@@ -73,6 +118,17 @@ class PersetujuanResource extends Resource
                             ->filter()
                             ->join(', ');
                     }),
+                TextColumn::make('menggunakan_teknisi')
+                    ->label('Teknisi')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_manager')
+                    ->label('Manager')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+
             ])
             ->filters([
                 //

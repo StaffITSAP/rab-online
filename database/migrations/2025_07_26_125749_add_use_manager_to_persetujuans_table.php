@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('persetujuans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // User yang diajukan
-            $table->timestamps();
+        Schema::table('persetujuans', function (Blueprint $table) {
+            $table->boolean('use_manager')->default(false);
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('persetujuans');
+        Schema::table('persetujuans', function (Blueprint $table) {
+            //
+        });
     }
 };

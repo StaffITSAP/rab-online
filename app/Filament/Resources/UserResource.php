@@ -104,6 +104,7 @@ class UserResource extends Resource
                 TextColumn::make('userStatus.divisi.nama')->label('Divisi'),
                 TextColumn::make('roles.name')
                     ->label('Role')
+                    ->badge()
                     ->separator(', ')
                     ->color(fn($state) => match ($state) {
                         'superadmin' => 'danger',
@@ -111,10 +112,12 @@ class UserResource extends Resource
                         'user' => 'gray',
                         default => 'info',
                     }),
+
                 TextColumn::make('userStatus.is_active')
                     ->label('Status Akun')
+                    ->badge()
                     ->formatStateUsing(fn($state) => $state ? 'Aktif' : 'Nonaktif')
-                    ->color(fn($state) => $state ? 'success' : 'gray'),
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
             ])
             ->filters([
                 //
