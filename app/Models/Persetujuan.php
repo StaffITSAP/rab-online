@@ -20,4 +20,8 @@ class Persetujuan extends Model
     {
         return $this->belongsTo(User::class, 'approver_id');
     }
+    public function approvers()
+    {
+        return $this->hasMany(PersetujuanApprover::class);
+    }
 }
