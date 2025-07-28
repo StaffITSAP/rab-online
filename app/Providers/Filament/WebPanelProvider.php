@@ -61,6 +61,7 @@ class WebPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->renderHook('scripts.end', fn () => view('vendor.filament.components.scripts.currency-mask'));
     }
 }

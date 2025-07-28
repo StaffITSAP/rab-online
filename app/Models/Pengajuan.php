@@ -38,6 +38,12 @@ class Pengajuan extends Model
                 $pengajuan->saveQuietly();
             }
         });
+
+        static::saving(function ($pengajuan) {
+            if ($pengajuan->relationLoaded('pengajuan_assets')) {
+                $pengajuan->total_biaya = $pengajuan->pengajuan_assets->sum('subtotal');
+            }
+        });
     }
 
     public static function generateNoRAB(int $tipeRABId): string
@@ -69,5 +75,13 @@ class Pengajuan extends Model
     public function tipeRAB()
     {
         return $this->belongsTo(TipeRAB::class, 'tipe_rab_id');
+    }
+    public function assets()
+    {
+        return $this->hasMany(PengajuanAsset::class);
+    }
+    public function pengajuan_assets()
+    {
+        return $this->hasMany(PengajuanAsset::class);
     }
 }
