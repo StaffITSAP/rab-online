@@ -12,6 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
+use Filament\Notifications\Notification;
 
 class PengajuanResource extends Resource
 {
@@ -51,13 +52,101 @@ class PengajuanResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('Setujui')
+                        ->label('✔️ Setujui')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $user = auth()->user();
+
+                            // Cegah pengaju menyetujui pengajuan sendiri
+                            if ($record->user_id === $user->id) {
+                                Notification::make()
+                                    ->title('Anda tidak dapat menyetujui pengajuan Anda sendiri.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            $status = $record->statuses()->where('user_id', $user->id)->first();
+
+                            if ($status && is_null($status->is_approved)) {
+                                $status->update([
+                                    'is_approved' => true,
+                                    'approved_at' => now(),
+                                ]);
+
+                                // Cek jika semua sudah approve
+                                $total = $record->statuses()->count();
+                                $approved = $record->statuses()->where('is_approved', true)->count();
+
+                                if ($approved === $total) {
+                                    $record->update(['status' => 'selesai']);
+                                }
+
+                                Notification::make()
+                                    ->title('Pengajuan berhasil disetujui.')
+                                    ->success()
+                                    ->send();
+                            }
+                        })
+                        ->visible(
+                            fn($record) =>
+                            $record->statuses()
+                                ->where('user_id', auth()->id())
+                                ->whereNull('is_approved')
+                                ->exists()
+                                && $record->user_id !== auth()->id()
+                        ),
+
+                    Tables\Actions\Action::make('Tolak')
+                        ->label('❌ Tolak')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function ($record) {
+                            $user = auth()->user();
+
+                            // Cegah pengaju menolak sendiri
+                            if ($record->user_id === $user->id) {
+                                Notification::make()
+                                    ->title('Anda tidak dapat menolak pengajuan Anda sendiri.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            $status = $record->statuses()->where('user_id', $user->id)->first();
+
+                            if ($status && is_null($status->is_approved)) {
+                                $status->update([
+                                    'is_approved' => false,
+                                    'approved_at' => now(),
+                                ]);
+
+                                $record->update(['status' => 'ditolak']);
+
+                                Notification::make()
+                                    ->title('Pengajuan telah ditolak.')
+                                    ->danger()
+                                    ->send();
+                            }
+                        })
+                        ->visible(
+                            fn($record) =>
+                            $record->statuses()
+                                ->where('user_id', auth()->id())
+                                ->whereNull('is_approved')
+                                ->exists()
+                                && $record->user_id !== auth()->id()
+                        ),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
     }
 
     public static function getRelations(): array

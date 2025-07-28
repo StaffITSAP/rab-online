@@ -22,6 +22,6 @@ class Persetujuan extends Model
     }
     public function approvers()
     {
-        return $this->hasMany(PersetujuanApprover::class);
+        return $this->belongsToMany(User::class, 'persetujuan_approvers', 'persetujuan_id', 'approver_id');
     }
 }

@@ -69,4 +69,8 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserStatus::class);
     }
+    public function pengajuanStatuses()
+    {
+        return $this->hasMany(PengajuanStatus::class);
+    }
 }

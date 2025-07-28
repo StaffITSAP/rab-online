@@ -84,4 +84,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanAsset::class);
     }
+    public function statuses()
+    {
+        return $this->hasMany(PengajuanStatus::class);
+    }
 }
