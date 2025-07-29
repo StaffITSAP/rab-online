@@ -73,4 +73,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(PengajuanStatus::class);
     }
+    
 }

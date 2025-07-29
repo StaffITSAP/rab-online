@@ -16,19 +16,23 @@ class CreatePengajuan extends CreateRecord
     {
         $pengajuan = $this->record;
 
-        // Ambil semua persetujuan dan approvers-nya
-        $persetujuans = Persetujuan::with('approvers')->get();
+        // Ambil persetujuan yang sesuai user pengaju
+        $persetujuans = \App\Models\Persetujuan::with('pengajuanApprovers')
+            ->where('user_id', $pengajuan->user_id)
+            ->get();
 
         foreach ($persetujuans as $persetujuan) {
-            foreach ($persetujuan->approvers as $user) {
-                // Cegah pengaju menyetujui sendiri
-                if ($user->id !== $pengajuan->user_id) {
-                    PengajuanStatus::create([
-                        'pengajuan_id'    => $pengajuan->id,
-                        'persetujuan_id'  => $persetujuan->id,
-                        'user_id'         => $user->id,
-                    ]);
+            foreach ($persetujuan->pengajuanApprovers as $approver) {
+                // Lewati jika user menyetujui dirinya sendiri
+                if ($approver->id === $pengajuan->user_id) {
+                    continue;
                 }
+
+                \App\Models\PengajuanStatus::create([
+                    'pengajuan_id'   => $pengajuan->id,
+                    'persetujuan_id' => $persetujuan->id,
+                    'user_id'        => $approver->id,
+                ]);
             }
         }
     }

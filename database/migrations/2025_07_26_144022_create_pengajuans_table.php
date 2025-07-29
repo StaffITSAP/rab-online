@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('no_rab')->unique();
             $table->foreignId('tipe_rab_id')->constrained()->cascadeOnDelete();
-            $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'expired'])->default('menunggu');
+            $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'selesai','expired'])->default('menunggu');
             $table->bigInteger('total_biaya')->default(0);
             $table->date('tgl_realisasi')->nullable();
             $table->date('tgl_pulang')->nullable();

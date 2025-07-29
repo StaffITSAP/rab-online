@@ -56,7 +56,7 @@ class PersetujuanResource extends Resource
                         ->minItems(1)
                         ->columns(1)
                         ->required(),
-                    Grid::make(2)->schema([
+                    Grid::make(3)->schema([
                         Toggle::make('menggunakan_teknisi')
                             ->label('Menggunakan Teknisi')
                             ->default(false)
@@ -96,6 +96,26 @@ class PersetujuanResource extends Resource
 
                                 $set('approvers', $approvers->values()->all());
                             }),
+
+                        Toggle::make('use_direktur')
+                            ->label('Persetujuan Direktur')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $direktur = User::role('direktur')->first();
+                                if (!$direktur) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $direktur->id)) {
+                                        $approvers->push(['approver_id' => $direktur->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $direktur->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
                     ]),
 
 
@@ -119,6 +139,7 @@ class PersetujuanResource extends Resource
                             ->filter()
                             ->join(', ');
                     }),
+
                 TextColumn::make('menggunakan_teknisi')
                     ->label('Teknisi')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
@@ -126,6 +147,11 @@ class PersetujuanResource extends Resource
                     ->color(fn($state) => $state ? 'success' : 'danger'),
                 TextColumn::make('use_manager')
                     ->label('Manager')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_direktur')
+                    ->label('Direktur')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
@@ -170,6 +196,6 @@ class PersetujuanResource extends Resource
     }
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->with('approvers.approver');
+        return parent::getEloquentQuery()->with('approvers');
     }
 }

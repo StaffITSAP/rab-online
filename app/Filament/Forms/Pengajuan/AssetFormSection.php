@@ -3,6 +3,7 @@
 namespace App\Filament\Forms\Pengajuan;
 
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Number;
@@ -34,41 +35,49 @@ class AssetFormSection
                                 ->label('Tipe / Satuan')
                                 ->placeholder('Contoh: pcs, unit, set')
                                 ->required(),
-                            Forms\Components\TextInput::make('jumlah')
-                                ->label('Jumlah')
-                                ->placeholder('Contoh: 1, 2, 3')
-                                ->numeric()
-                                ->required()
-                                ->minValue(1)
-                                ->dehydrated()
-                                ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                    $set('subtotal', ($state ?? 0) * ($get('harga_unit') ?? 0));
-                                }),
-                            Forms\Components\TextInput::make('harga_unit')
+                           TextInput::make('jumlah')
+    ->label('Jumlah')
+    ->placeholder('Contoh: 1, 2, 3')
+    ->numeric()
+    ->required()
+    ->minValue(1)
+    ->dehydrated()
+    ->afterStateUpdated(function ($state, Get $get, Set $set) {
+        $jumlah = (int) $state;
+        $harga = (int) str_replace('.', '', $get('harga_unit'));
+        $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
+    }),
+
+TextInput::make('harga_unit')
     ->label('Harga Unit')
+    ->placeholder('Contoh: 1.000.000')
     ->required()
-    ->numeric()
-    ->dehydrated()
-    ->extraAttributes([
-        'class' => 'currency-input',
-        'inputmode' => 'numeric',
-    ])
-    ->formatStateUsing(fn ($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
-    ->dehydrateStateUsing(fn ($state) => $state ? (int) str_replace('.', '', $state) : 0),
-                            Forms\Components\TextInput::make('subtotal')
+    ->dehydrated() // supaya disimpan
+    ->prefix('Rp ')
+    ->extraAttributes(['class' => 'currency-input'])
+    ->afterStateHydrated(function (TextInput $component, $state) {
+        // Format angka saat edit (jika ada)
+        $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+    })
+    ->afterStateUpdated(function ($state, Get $get, Set $set) {
+        $jumlah = (int) $get('jumlah');
+        $harga = (int) str_replace('.', '', $state);
+        $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
+    }),
+
+TextInput::make('subtotal')
     ->label('Subtotal')
-    ->placeholder('Auto-hitung dari Jumlah x Harga Unit')
-    ->disabled()
+    ->disabled() // Tidak bisa diedit manual
     ->required()
-    ->numeric()
     ->dehydrated()
+    ->prefix('Rp ')
     ->formatStateUsing(function ($state) {
         return $state ? number_format((int) $state, 0, ',', '.') : null;
     })
     ->dehydrateStateUsing(function (Get $get) {
-        $jumlah = (int) str_replace('.', '', $get('jumlah'));
+        $jumlah = (int) $get('jumlah');
         $harga = (int) str_replace('.', '', $get('harga_unit'));
-        return $jumlah * $harga;
+        return $jumlah && $harga ? $jumlah * $harga : null;
     })
     ->columnSpanFull(),
                         ])

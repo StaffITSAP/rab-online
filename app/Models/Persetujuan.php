@@ -9,7 +9,7 @@ class Persetujuan extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_manager'];
+    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_manager', 'use_direktur'];
 
     public function user()
     {
@@ -20,8 +20,12 @@ class Persetujuan extends Model
     {
         return $this->belongsTo(User::class, 'approver_id');
     }
-    public function approvers()
+    public function pengajuanApprovers()
     {
         return $this->belongsToMany(User::class, 'persetujuan_approvers', 'persetujuan_id', 'approver_id');
+    }
+      public function approvers()
+    {
+        return $this->hasMany(PersetujuanApprover::class);
     }
 }

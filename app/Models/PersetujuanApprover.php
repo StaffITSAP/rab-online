@@ -16,8 +16,21 @@ class PersetujuanApprover extends Model
         return $this->belongsTo(User::class, 'approver_id');
     }
 
+    // public function persetujuan()
+    // {
+    //     return $this->belongsTo(Persetujuan::class);
+    // }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'approver_id');
+    }
+
     public function persetujuan()
     {
-        return $this->belongsTo(Persetujuan::class);
+        return $this->belongsTo(Persetujuan::class, 'persetujuan_id');
+    }
+      public function approvers()
+    {
+        return $this->hasMany(PersetujuanApprover::class);
     }
 }

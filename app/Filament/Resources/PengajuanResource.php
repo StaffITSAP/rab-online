@@ -39,7 +39,7 @@ class PengajuanResource extends Resource
                     ->label('Tanggal Pengajuan')
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->translatedFormat('d F Y H:i')),
                 Tables\Columns\TextColumn::make('status')->badge()->color(fn($state) => match ($state) {
-                    'disetujui' => 'success',
+                    'selesai' => 'success',
                     'ditolak' => 'danger',
                     'expired' => 'gray',
                     'menunggu' => 'warning',
@@ -54,8 +54,9 @@ class PengajuanResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('Setujui')
-                        ->label('✔️ Setujui')
+                        ->label('Setujui')
                         ->color('success')
+                        ->icon('heroicon-o-check-circle')
                         ->requiresConfirmation()
                         ->action(function ($record) {
                             $user = auth()->user();
@@ -101,8 +102,9 @@ class PengajuanResource extends Resource
                         ),
 
                     Tables\Actions\Action::make('Tolak')
-                        ->label('❌ Tolak')
+                        ->label('Tolak')
                         ->color('danger')
+                        ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
                         ->action(function ($record) {
                             $user = auth()->user();

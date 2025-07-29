@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('persetujuans', function (Blueprint $table) {
             $table->boolean('use_manager')->default(false);
+            $table->boolean('use_direktur')->default(false);
         });
     }
 
