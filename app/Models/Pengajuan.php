@@ -88,4 +88,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanStatus::class);
     }
+    public function barangs()
+    {
+        return $this->hasMany(PengajuanAsset::class); // ganti sesuai modelmu
+    }
 }

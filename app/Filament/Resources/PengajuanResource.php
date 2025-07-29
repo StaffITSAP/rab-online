@@ -142,6 +142,21 @@ class PengajuanResource extends Resource
                                 ->exists()
                                 && $record->user_id !== auth()->id()
                         ),
+                    Tables\Actions\Action::make('preview_pdf')
+                        ->label('Preview PDF')
+                        ->icon('heroicon-o-eye')
+                        ->color('gray')
+                        ->modalHeading('Preview RAB PDF')
+                        ->modalContent(fn($record) => view('filament.components.pdf-preview', [
+                            'url' => route('pengajuan.pdf.preview', $record),
+                        ])),
+
+                    Tables\Actions\Action::make('download_pdf')
+                        ->label('Download PDF')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->url(fn($record) => route('pengajuan.pdf.download', $record), shouldOpenInNewTab: false),
+
                 ]),
             ])
             ->bulkActions([

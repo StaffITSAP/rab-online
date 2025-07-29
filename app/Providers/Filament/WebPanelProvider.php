@@ -8,6 +8,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages;
 use Filament\Panel;
@@ -62,6 +63,12 @@ class WebPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->renderHook('scripts.end', fn () => view('vendor.filament.components.scripts.currency-mask'));
+            ->renderHook('scripts.end', fn() => view('vendor.filament.components.scripts.currency-mask'))
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Detail Pengajuan RAB'),
+                NavigationGroup::make()
+                    ->label('Pengaturan'),
+            ]);
     }
 }

@@ -17,7 +17,7 @@ class PengajuanAssetResource extends Resource
 {
     protected static ?string $model = PengajuanAsset::class;
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
-    protected static ?string $navigationGroup = 'Pengajuan Detail';
+    protected static ?string $navigationGroup = 'Detail Pengajuan RAB';
     protected static ?string $label = 'Pengajuan Asset/Inventaris';
     protected static ?string $pluralLabel = 'Pengajuan Asset/Inventaris';
 

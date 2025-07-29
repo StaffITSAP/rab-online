@@ -25,14 +25,12 @@ class UserStatus extends Model
 
     public function cabang()
     {
-        return $this->belongsTo(Cabang::class);
+        return $this->belongsTo(Cabang::class, 'cabang_id');
     }
-
     public function divisi()
     {
-        return $this->belongsTo(Divisi::class);
+        return $this->belongsTo(Divisi::class, 'divisi_id');
     }
-
     public function atasan()
     {
         return $this->belongsTo(User::class, 'atasan_id');
