@@ -92,4 +92,12 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanAsset::class); // ganti sesuai modelmu
     }
+    public function dinas()
+    {
+        return $this->hasMany(PengajuanDinas::class);
+    }
+    public function pengajuan_dinas()
+    {
+        return $this->hasMany(PengajuanDinas::class);
+    }
 }

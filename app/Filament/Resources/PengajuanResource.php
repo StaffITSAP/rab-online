@@ -12,6 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
+use App\Filament\Forms\Pengajuan\DinasFormSection;
 use Filament\Notifications\Notification;
 
 class PengajuanResource extends Resource
@@ -26,6 +27,8 @@ class PengajuanResource extends Resource
         return $form->schema([
             ...BasePengajuanForm::schema(),
             ...AssetFormSection::schema(),
+            ...DinasFormSection::schema(),
+
         ]);
     }
 

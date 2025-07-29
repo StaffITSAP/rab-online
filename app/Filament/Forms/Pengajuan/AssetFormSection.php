@@ -35,51 +35,51 @@ class AssetFormSection
                                 ->label('Tipe / Satuan')
                                 ->placeholder('Contoh: pcs, unit, set')
                                 ->required(),
-                           TextInput::make('jumlah')
-    ->label('Jumlah')
-    ->placeholder('Contoh: 1, 2, 3')
-    ->numeric()
-    ->required()
-    ->minValue(1)
-    ->dehydrated()
-    ->afterStateUpdated(function ($state, Get $get, Set $set) {
-        $jumlah = (int) $state;
-        $harga = (int) str_replace('.', '', $get('harga_unit'));
-        $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
-    }),
+                            TextInput::make('jumlah')
+                                ->label('Jumlah')
+                                ->placeholder('Contoh: 1, 2, 3')
+                                ->numeric()
+                                ->required()
+                                ->minValue(1)
+                                ->dehydrated()
+                                ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                    $jumlah = (int) $state;
+                                    $harga = (int) str_replace('.', '', $get('harga_unit'));
+                                    $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
+                                }),
 
-TextInput::make('harga_unit')
-    ->label('Harga Unit')
-    ->placeholder('Contoh: 1.000.000')
-    ->required()
-    ->dehydrated() // supaya disimpan
-    ->prefix('Rp ')
-    ->extraAttributes(['class' => 'currency-input'])
-    ->afterStateHydrated(function (TextInput $component, $state) {
-        // Format angka saat edit (jika ada)
-        $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
-    })
-    ->afterStateUpdated(function ($state, Get $get, Set $set) {
-        $jumlah = (int) $get('jumlah');
-        $harga = (int) str_replace('.', '', $state);
-        $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
-    }),
+                            TextInput::make('harga_unit')
+                                ->label('Harga Unit')
+                                ->placeholder('Contoh: 1.000.000')
+                                ->required()
+                                ->dehydrated() // supaya disimpan
+                                ->prefix('Rp ')
+                                ->extraAttributes(['class' => 'currency-input'])
+                                ->afterStateHydrated(function (TextInput $component, $state) {
+                                    // Format angka saat edit (jika ada)
+                                    $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                                })
+                                ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                    $jumlah = (int) $get('jumlah');
+                                    $harga = (int) str_replace('.', '', $state);
+                                    $set('subtotal', $jumlah && $harga ? $jumlah * $harga : null);
+                                }),
 
-TextInput::make('subtotal')
-    ->label('Subtotal')
-    ->disabled() // Tidak bisa diedit manual
-    ->required()
-    ->dehydrated()
-    ->prefix('Rp ')
-    ->formatStateUsing(function ($state) {
-        return $state ? number_format((int) $state, 0, ',', '.') : null;
-    })
-    ->dehydrateStateUsing(function (Get $get) {
-        $jumlah = (int) $get('jumlah');
-        $harga = (int) str_replace('.', '', $get('harga_unit'));
-        return $jumlah && $harga ? $jumlah * $harga : null;
-    })
-    ->columnSpanFull(),
+                            TextInput::make('subtotal')
+                                ->label('Subtotal')
+                                ->disabled() // Tidak bisa diedit manual
+                                ->required()
+                                ->dehydrated()
+                                ->prefix('Rp ')
+                                ->formatStateUsing(function ($state) {
+                                    return $state ? number_format((int) $state, 0, ',', '.') : null;
+                                })
+                                ->dehydrateStateUsing(function (Get $get) {
+                                    $jumlah = (int) $get('jumlah');
+                                    $harga = (int) str_replace('.', '', $get('harga_unit'));
+                                    return $jumlah && $harga ? $jumlah * $harga : null;
+                                })
+                                ->columnSpanFull(),
                         ])
                         ->afterStateUpdated(function ($state, callable $set) {
                             // Hitung ulang total_biaya dari semua item
