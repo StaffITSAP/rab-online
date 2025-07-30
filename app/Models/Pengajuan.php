@@ -102,4 +102,12 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanDinas::class);
     }
+    public function dinasActivities()
+    {
+        return $this->hasMany(PengajuanDinasActivity::class);
+    }
+    public function dinasPersonils()
+    {
+        return $this->hasMany(PengajuanDinasPersonil::class);
+    }
 }
