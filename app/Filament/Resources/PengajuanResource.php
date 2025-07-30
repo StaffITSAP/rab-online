@@ -13,7 +13,10 @@ use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\TrashedFilter;
+use Illuminate\Database\Eloquent\Model;
 
 class PengajuanResource extends Resource
 {
@@ -29,14 +32,16 @@ class PengajuanResource extends Resource
             ...AssetFormSection::schema(),
             ...DinasFormSection::schema(),
 
-        ]);
+        ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('no_rab')->label('No RAB')->searchable(),
+
+                Tables\Columns\TextColumn::make('no_rab')
+                    ->disabled(fn($record) => $record && $record->status === 'selesai')->searchable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Pemohon'),
                 Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
                 TextColumn::make('created_at')
@@ -77,7 +82,7 @@ class PengajuanResource extends Resource
             ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
-                //
+                TrashedFilter::make(),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -197,7 +202,20 @@ class PengajuanResource extends Resource
 
                             // Jika belum selesai, owner atau superadmin boleh hapus
                             return $isOwner || $isSuperadmin;
+                        })
+                        ->requiresConfirmation()
+                        ->form(form: [
+                            Textarea::make('deletion_reason')
+                                ->label('Alasan Penghapusan')
+                                ->required()
+                        ])
+                        ->action(function (Model $record, array $data): void {
+                            $record->deletion_reason = $data['deletion_reason'];
+                            $record->save();
+                            $record->delete();
                         }),
+                    Tables\Actions\RestoreAction::make()
+                        ->visible(fn($record) => $record->trashed()),
 
                 ]),
             ])
@@ -209,6 +227,7 @@ class PengajuanResource extends Resource
                             // Bulk hanya diaktifkan untuk superadmin (opsional, demi safety)
                             return $user && $user->hasRole('superadmin');
                         }),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
     }

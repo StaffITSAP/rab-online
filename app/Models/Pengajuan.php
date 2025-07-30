@@ -46,6 +46,33 @@ class Pengajuan extends Model
                 $pengajuan->total_biaya = $pengajuan->pengajuan_dinas->sum('subtotal');
             }
         });
+
+        static::deleting(function ($pengajuan) {
+            // Cek soft delete
+            if (method_exists($pengajuan, 'isForceDeleting') && !$pengajuan->isForceDeleting()) {
+                // Softdelete semua relasi
+                $pengajuan->pengajuan_assets()->each(function ($asset) {
+                    $asset->delete();
+                });
+                $pengajuan->pengajuan_dinas()->each(function ($dinas) {
+                    $dinas->delete();
+                });
+                $pengajuan->dinasActivities()->each(function ($status) {
+                    $status->delete();
+                });
+                $pengajuan->dinasPersonils()->each(function ($status) {
+                    $status->delete();
+                });
+            }
+        });
+
+        // Untuk restore otomatis jika ingin (opsional):
+        static::restoring(function ($pengajuan) {
+            $pengajuan->pengajuan_assets()->withTrashed()->get()->each->restore();
+            $pengajuan->pengajuan_dinas()->withTrashed()->get()->each->restore();
+            $pengajuan->dinasActivities()->withTrashed()->get()->each->restore();
+            $pengajuan->dinasPersonils()->withTrashed()->get()->each->restore();
+        });
     }
 
     public static function generateNoRAB(int $tipeRABId): string

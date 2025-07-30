@@ -86,4 +86,23 @@ class PengajuanDinasResource extends Resource
             'edit' => Pages\EditPengajuanDinas::route('/{record}/edit'),
         ];
     }
+    public static function canViewAny(): bool
+    {
+        return true; // Semua user bisa lihat list
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 }

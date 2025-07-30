@@ -83,4 +83,28 @@ class PengajuanAssetResource extends Resource
             'edit' => Pages\EditPengajuanAsset::route('/{record}/edit'),
         ];
     }
+   public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Default saja, TIDAK pakai withTrashed()
+        return parent::getEloquentQuery();
+    }
+    public static function canViewAny(): bool
+    {
+        return true; // Semua user bisa lihat list
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
 }

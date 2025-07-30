@@ -10,10 +10,40 @@ class EditPengajuan extends EditRecord
 {
     protected static string $resource = PengajuanResource::class;
 
+    public bool $isReadOnly = false;
+
+    // GANTI: harus public
+    public function mount($record): void
+    {
+        parent::mount($record);
+
+        $user = auth()->user();
+        $record = $this->getRecord();
+
+        // Superadmin bisa edit semua
+        if ($user && $user->hasRole('superadmin')) {
+            $this->isReadOnly = false;
+            return;
+        }
+
+        // Kalau bukan owner atau status selesai, readonly
+        if ($record->user_id !== $user->id || $record->status === 'selesai') {
+            $this->isReadOnly = true;
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            
         ];
+    }
+
+    protected function getFormActions(): array
+    {
+        if ($this->isReadOnly) {
+            return [];
+        }
+        return parent::getFormActions();
     }
 }
