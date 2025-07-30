@@ -108,6 +108,6 @@ class Pengajuan extends Model
     }
     public function dinasPersonils()
     {
-        return $this->hasMany(PengajuanDinasPersonil::class);
+        return $this->hasMany(PengajuanDinasPersonil::class, 'pengajuan_id');
     }
 }

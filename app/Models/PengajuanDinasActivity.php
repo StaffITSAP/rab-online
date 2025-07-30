@@ -11,6 +11,9 @@ class PengajuanDinasActivity extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'pengajuan_dinas_activities';
+
+
     protected $fillable = [
         'pengajuan_id',
         'no_activity',

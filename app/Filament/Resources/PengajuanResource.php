@@ -36,8 +36,9 @@ class PengajuanResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('no_rab')->label('No RAB'),
+                Tables\Columns\TextColumn::make('no_rab')->label('No RAB')->searchable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Pemohon'),
+                Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
                 TextColumn::make('created_at')
                     ->label('Tanggal Pengajuan')
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->translatedFormat('d F Y H:i')),
@@ -47,7 +48,32 @@ class PengajuanResource extends Resource
                     'expired' => 'gray',
                     'menunggu' => 'warning',
                 }),
-                Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
+TextColumn::make('approved_by')
+    ->label('Disetujui Oleh')
+    ->getStateUsing(function ($record) {
+        $latestApproved = $record->statuses()
+            ->where('is_approved', true)
+            ->latest('approved_at')
+            ->with('user')
+            ->first();
+
+        return $latestApproved?->user?->name ?? '-';
+    }),
+
+TextColumn::make('approved_at')
+    ->label('Tanggal Disetujui')
+    ->getStateUsing(function ($record) {
+        $latestApproved = $record->statuses()
+            ->where('is_approved', true)
+            ->latest('approved_at')
+            ->first();
+
+        return $latestApproved?->approved_at
+    ? \Carbon\Carbon::parse($latestApproved->approved_at)->format('d/m/Y H:i')
+    : '-';
+
+    }),
+
                 Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
             ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini

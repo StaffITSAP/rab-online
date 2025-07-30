@@ -50,7 +50,7 @@ class PengajuanDinasResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB'),
+                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->searchable(),
                 Tables\Columns\TextColumn::make('deskripsi'),
                 Tables\Columns\TextColumn::make('keterangan')->limit(30),
                 Tables\Columns\TextColumn::make('pic'),

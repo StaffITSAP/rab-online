@@ -10,6 +10,9 @@ class PengajuanDinasPersonil extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'pengajuan_dinas_personils';
+
+
     protected $fillable = [
         'pengajuan_id',
         'nama_personil',
