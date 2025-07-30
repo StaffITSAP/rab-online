@@ -98,20 +98,20 @@
         </tr>
         <tr>
             <td>
-                 <span style="float:left;">
-        Tanggal Berangkat/Realisasi :
-        {{ $pengajuan->tgl_realisasi ? \Carbon\Carbon::parse($pengajuan->tgl_realisasi)->translatedFormat('d F Y') : '-' }}
-    </span>
-    <span style="float:right;">
-        Jam Berangkat : {{ $pengajuan->jam ?? '-' }}
-    </span>
-    <div style="clear:both;"></div>
+                <span style="float:left;">
+                    Tanggal Berangkat/Realisasi :
+                    {{ $pengajuan->tgl_realisasi ? \Carbon\Carbon::parse($pengajuan->tgl_realisasi)->translatedFormat('d F Y') : '-' }}
+                </span>
+                <span style="float:right;">
+                    Jam Berangkat : {{ $pengajuan->jam ?? '-' }}
+                </span>
+                <div style="clear:both;"></div>
 
-    <span style="float:left;">
-        Tanggal Pulang:
-        {{ $pengajuan->tgl_pulang ? \Carbon\Carbon::parse($pengajuan->tgl_pulang)->translatedFormat('d F Y') : '-' }}
-    </span>
-    <div style="clear:both;"></div>
+                <span style="float:left;">
+                    Tanggal Pulang:
+                    {{ $pengajuan->tgl_pulang ? \Carbon\Carbon::parse($pengajuan->tgl_pulang)->translatedFormat('d F Y') : '-' }}
+                </span>
+                <div style="clear:both;"></div>
             </td>
             <td>
                 Jumlah Personil : {{ $pengajuan->jml_personil ?? 0 }}
@@ -140,16 +140,27 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (($pengajuan->dinas ?? []) as $item)
+            @php
+            $grouped = $pengajuan->dinas->groupBy('deskripsi');
+            $no = 1;
+            $grandTotal = 0;
+            @endphp
+            @foreach ($grouped as $deskripsi => $details)
+            @php $rowspan = $details->count(); @endphp
+            @foreach ($details as $index => $detail)
             <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td><strong>{{ strtoupper($item->deskripsi) ?? '' }}</strong></td>
-                <td>{{ $item->keterangan }}</td>
-                <td style="text-align: center">{{ $item->pic }}</td>
-                <td style="text-align: center">{{ $item->jml_hari }}</td>
-                <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
-                <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                @if ($index === 0)
+                <td rowspan="{{ $rowspan }}">{{ $no++ }}</td>
+                <td rowspan="{{ $rowspan }}"><strong>{{ strtoupper($deskripsi) }}</strong></td>
+                @endif
+                <td>{{ $detail->keterangan }}</td>
+                <td style="text-align: center">{{ $detail->pic }}</td>
+                <td style="text-align: center">{{ $detail->jml_hari }}</td>
+                <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
+                <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
             </tr>
+            @php $grandTotal += $detail->subtotal; @endphp
+            @endforeach
             @endforeach
         </tbody>
         <tfoot>

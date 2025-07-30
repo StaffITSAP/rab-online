@@ -48,31 +48,30 @@ class PengajuanResource extends Resource
                     'expired' => 'gray',
                     'menunggu' => 'warning',
                 }),
-TextColumn::make('approved_by')
-    ->label('Disetujui Oleh')
-    ->getStateUsing(function ($record) {
-        $latestApproved = $record->statuses()
-            ->where('is_approved', true)
-            ->latest('approved_at')
-            ->with('user')
-            ->first();
+                TextColumn::make('approved_by')
+                    ->label('Disetujui Oleh')
+                    ->getStateUsing(function ($record) {
+                        $latestApproved = $record->statuses()
+                            ->where('is_approved', true)
+                            ->latest('approved_at')
+                            ->with('user')
+                            ->first();
 
-        return $latestApproved?->user?->name ?? '-';
-    }),
+                        return $latestApproved?->user?->name ?? '-';
+                    }),
 
-TextColumn::make('approved_at')
-    ->label('Tanggal Disetujui')
-    ->getStateUsing(function ($record) {
-        $latestApproved = $record->statuses()
-            ->where('is_approved', true)
-            ->latest('approved_at')
-            ->first();
+                TextColumn::make('approved_at')
+                    ->label('Tanggal Disetujui')
+                    ->getStateUsing(function ($record) {
+                        $latestApproved = $record->statuses()
+                            ->where('is_approved', true)
+                            ->latest('approved_at')
+                            ->first();
 
-        return $latestApproved?->approved_at
-    ? \Carbon\Carbon::parse($latestApproved->approved_at)->format('d/m/Y H:i')
-    : '-';
-
-    }),
+                        return $latestApproved?->approved_at
+                            ? \Carbon\Carbon::parse($latestApproved->approved_at)->format('d/m/Y H:i')
+                            : '-';
+                    }),
 
                 Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
             ])
@@ -185,12 +184,31 @@ TextColumn::make('approved_at')
                         ->icon('heroicon-o-arrow-down-tray')
                         ->color('success')
                         ->url(fn($record) => route('pengajuan.pdf.download', $record), shouldOpenInNewTab: false),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(function ($record) {
+                            $user = auth()->user();
+                            $isSuperadmin = $user && $user->hasRole('superadmin');
+                            $isOwner = $user && $record->user_id === $user->id;
+
+                            // Jika status 'selesai', hanya superadmin yang bisa hapus
+                            if ($record->status === 'selesai') {
+                                return $isSuperadmin;
+                            }
+
+                            // Jika belum selesai, owner atau superadmin boleh hapus
+                            return $isOwner || $isSuperadmin;
+                        }),
 
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(function () {
+                            $user = auth()->user();
+                            // Bulk hanya diaktifkan untuk superadmin (opsional, demi safety)
+                            return $user && $user->hasRole('superadmin');
+                        }),
                 ]),
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
     }
