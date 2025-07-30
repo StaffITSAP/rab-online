@@ -40,8 +40,10 @@ class Pengajuan extends Model
         });
 
         static::saving(function ($pengajuan) {
-            if ($pengajuan->relationLoaded('pengajuan_assets')) {
+            if ($pengajuan->tipe_rab_id == 1 && $pengajuan->relationLoaded('pengajuan_assets')) {
                 $pengajuan->total_biaya = $pengajuan->pengajuan_assets->sum('subtotal');
+            } elseif ($pengajuan->tipe_rab_id == 2 && $pengajuan->relationLoaded('pengajuan_dinas')) {
+                $pengajuan->total_biaya = $pengajuan->pengajuan_dinas->sum('subtotal');
             }
         });
     }

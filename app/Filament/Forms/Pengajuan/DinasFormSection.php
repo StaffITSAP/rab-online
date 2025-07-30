@@ -4,6 +4,7 @@ namespace App\Filament\Forms\Pengajuan;
 
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
@@ -21,38 +22,40 @@ class DinasFormSection
         return [
             Section::make('Pengajuan RAB Perjalanan Dinas')
                 ->schema([
+                    Grid::make(3)->schema([
+                        DatePicker::make('tgl_realisasi')
+                            ->label('Tanggal Berangkat/ Realisasi')
+                            ->dehydrated()
+                            ->displayFormat('d F Y')
+                            ->locale('id'),
+                        DatePicker::make('tgl_pulang')
+                            ->label('Tanggal Pulang')
+                            ->dehydrated()
+                            ->displayFormat('d F Y')
+                            ->locale('id'),
+                        TextInput::make('jam')
+                            ->label('Jam')
+                            ->placeholder('Masukkan Jam (contoh: 13:30)')
+                            ->required()
+                            ->extraAttributes(['id' => 'jamPicker']),
+                        TextInput::make('jml_personil')
+                            ->label('Jumlah Personil')
+                            ->placeholder('Silahkan isi personil'),
+                        Toggle::make('menggunakan_teknisi')
+                            ->label('Menggunakan Teknisi')
+                            ->inline(false)
+                            ->default(false)
+                            ->reactive(),
+                        Toggle::make('lampiran')
+                            ->label('Lampirkan File/Gambar')
+                            ->inline(false)
+                            ->default(false)
+                            ->reactive(),
+                    ]),
                     Repeater::make('pengajuan_dinas')
                         ->label('Form RAB Perjalanan Dinas')
                         ->relationship('pengajuan_dinas')
                         ->schema([
-                            DatePicker::make('tgl_realisasi')
-                                ->label('Tanggal Berangkat/ Realisasi')
-                                ->dehydrated()
-                                ->displayFormat('d F Y')
-                                ->locale('id'),
-                            DatePicker::make('tgl_pulang')
-                                ->label('Tanggal Pulang')
-                                ->dehydrated()
-                                ->displayFormat('d F Y')
-                                ->locale('id'),
-                            TextInput::make('jam')
-                                ->label('Jam')
-                                ->placeholder('Masukkan Jam (contoh: 13:30)')
-                                ->required()
-                                ->extraAttributes(['id' => 'jamPicker']),
-                            TextInput::make('jml_personil')
-                                ->label('Jumlah Personil')
-                                ->placeholder('Silahkan isi personil'),
-                            Toggle::make('menggunakan_teknisi')
-                                ->label('Menggunakan Teknisi')
-                                ->inline(false)
-                                ->default(false)
-                                ->reactive(),
-                            Toggle::make('lampiran')
-                                ->label('Lampirkan File/Gambar')
-                                ->inline(false)
-                                ->default(false)
-                                ->reactive(),
                             Select::make('deskripsi')
                                 ->label('Deskripsi')
                                 ->options([
@@ -80,9 +83,10 @@ class DinasFormSection
                                 ->minValue(1)
                                 ->nullable()
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                    $pic = (int) $get('pic');
                                     $jmlHari = (int) $state;
                                     $harga = (int) str_replace('.', '', $get('harga_satuan'));
-                                    $set('subtotal', $jmlHari && $harga ? $jmlHari * $harga : null);
+                                    $set('subtotal', $jmlHari && $harga ? ($pic * $jmlHari) * $harga : null);
                                 }),
 
                             TextInput::make('harga_satuan')
@@ -96,9 +100,10 @@ class DinasFormSection
                                     $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
                                 })
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                                    $pic = (int) $get('pic');
                                     $jmlHari = (int) $get('jml_hari');
                                     $harga = (int) str_replace('.', '', $state);
-                                    $set('subtotal', $jmlHari && $harga ? $jmlHari * $harga : null);
+                                    $set('subtotal', $pic && $jmlHari && $harga ? ($pic * $jmlHari) * $harga : null);
                                 }),
 
                             TextInput::make('subtotal')
@@ -109,13 +114,15 @@ class DinasFormSection
                                 ->prefix('Rp ')
                                 ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
                                 ->dehydrateStateUsing(function (Get $get) {
+                                    $pic = (int) $get('pic');
                                     $jmlHari = (int) $get('jml_hari');
                                     $harga = (int) str_replace('.', '', $get('harga_satuan'));
-                                    return $jmlHari && $harga ? $jmlHari * $harga : null;
+                                    return $pic && $jmlHari && $harga ? ($pic * $jmlHari) * $harga : null;
                                 })
                                 ->columnSpanFull(),
                         ])
                         ->afterStateUpdated(function ($state, callable $set) {
+                            // Hitung ulang total_biaya dari semua item
                             $total = collect($state)->sum(fn($item) => (int) ($item['subtotal'] ?? 0));
                             $set('total_biaya', $total);
                         })
@@ -125,8 +132,13 @@ class DinasFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Perjalanan Dinas'),
 
-                    Hidden::make('total_biaya')
+                    Forms\Components\TextInput::make('total_biaya')
+                        ->label('Total Biaya')
+                        ->disabled()
                         ->dehydrated()
+                        ->prefix('Rp ')
+                        ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
+                        ->columnSpanFull()
                         ->default(0),
                 ])
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 2),

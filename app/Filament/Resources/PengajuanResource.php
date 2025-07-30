@@ -188,8 +188,14 @@ class PengajuanResource extends Resource
     public static function afterSave(Form $form): void
     {
         $record = $form->getRecord();
-        $record->update([
-            'total_biaya' => $record->pengajuan_assets()->sum('subtotal'),
-        ]);
+        $total = 0;
+
+        if ($record->tipe_rab_id == 1) {
+            $total = $record->pengajuan_assets()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 2) {
+            $total = $record->pengajuan_dinas()->sum('subtotal');
+        } // tambahkan elseif lagi jika ada tipe lain
+
+        $record->update(['total_biaya' => $total]);
     }
 }

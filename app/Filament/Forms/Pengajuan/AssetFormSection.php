@@ -91,8 +91,11 @@ class AssetFormSection
                         ->columnSpanFull()
                         ->defaultItems(1)
                         ->itemLabel('Detail Asset/Inventaris'),
-                    Forms\Components\Hidden::make('total_biaya')
+                    Forms\Components\TextInput::make('total_biaya')
+                        ->label('Total Biaya')
+                        ->disabled()
                         ->dehydrated()
+                        ->prefix('Rp ')
                         ->default(0),
                 ])
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 1),
