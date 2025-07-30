@@ -51,7 +51,6 @@ class PengajuanDinasActivityResource extends Resource
                 TextColumn::make('no_activity'),
                 TextColumn::make('nama_dinas'),
                 TextColumn::make('keterangan')->limit(30),
-                TextColumn::make('created_at')->dateTime(),
             ])
             ->filters([
                 //

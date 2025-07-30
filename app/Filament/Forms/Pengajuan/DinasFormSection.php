@@ -131,6 +131,43 @@ class DinasFormSection
                         ->columnSpanFull()
                         ->defaultItems(1)
                         ->itemLabel('Detail Perjalanan Dinas'),
+                    Repeater::make('dinasActivities')
+                        ->label('Form Activity Perjalanan Dinas')
+                        ->relationship('dinasActivities')
+                        ->schema([
+                            TextArea::make('no_activity')
+                                ->label('No Activity')
+                                ->placeholder('2505-000001 / Jika tidak tahu di isi - ')
+                                ->required(),
+                            TextArea::make('nama_dinas')
+                                ->label('Nama Dinas')
+                                ->placeholder('Nama Dinas')
+                                ->required(),
+                            TextArea::make('keterangan')
+                                ->label('Keterangan')
+                                ->placeholder('Vist/Follow Up/Dll')
+                                ->required(),
+                        ])
+                        ->columns(3)
+                        ->addActionLabel('Tambah Activity')
+                        ->columnSpanFull()
+                        ->defaultItems(1)
+                        ->itemLabel('Detail Activity Perjalanan Dinas'),
+
+                    Repeater::make('dinasPersonils')
+                        ->label('Form Personil Perjalanan Dinas')
+                        ->relationship('dinasPersonils')
+                        ->schema([
+                            TextInput::make('nama_personil')
+                                ->label('Nama Personil')
+                                ->placeholder('Masukkan Nama Personil')
+                                ->required()
+                                ->maxLength(250),
+                        ])
+                        ->addActionLabel('Tambah Personil')
+                        ->columnSpanFull()
+                        ->defaultItems(1)
+                        ->itemLabel('Detail Personil Perjalanan Dinas'),
 
                     Forms\Components\TextInput::make('total_biaya')
                         ->label('Total Biaya')
