@@ -46,6 +46,7 @@ class PengajuanDinasPersonilResource extends Resource
                 TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
                 TextColumn::make('nama_personil'),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 //
             ])

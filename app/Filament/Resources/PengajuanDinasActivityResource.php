@@ -52,6 +52,7 @@ class PengajuanDinasActivityResource extends Resource
                 TextColumn::make('nama_dinas'),
                 TextColumn::make('keterangan')->limit(30),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 //
             ])

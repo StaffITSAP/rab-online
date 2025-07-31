@@ -77,6 +77,14 @@ class PengajuanResource extends Resource
                             ? \Carbon\Carbon::parse($latestApproved->approved_at)->format('d/m/Y H:i')
                             : '-';
                     }),
+                Tables\Columns\TextColumn::make('menggunakan_teknisi')
+                    ->label('Teknisi')
+                    ->badge()
+                    ->color(fn($state) => match ($state) {
+                        true => 'success',
+                        false => 'danger',
+                    })
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
 
                 Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
             ])

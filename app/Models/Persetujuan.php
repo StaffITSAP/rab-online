@@ -10,6 +10,9 @@ class Persetujuan extends Model
     use HasFactory;
 
     protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_manager', 'use_direktur'];
+    protected $casts = [
+        'menggunakan_teknisi' => 'boolean',
+    ];
 
     public function user()
     {
@@ -22,9 +25,9 @@ class Persetujuan extends Model
     }
     public function pengajuanApprovers()
     {
-        return $this->belongsToMany(User::class, 'persetujuan_approvers', 'persetujuan_id', 'approver_id');
+        return $this->hasMany(PersetujuanApprover::class);
     }
-      public function approvers()
+    public function approvers()
     {
         return $this->hasMany(PersetujuanApprover::class);
     }

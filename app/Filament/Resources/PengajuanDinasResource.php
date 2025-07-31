@@ -58,6 +58,7 @@ class PengajuanDinasResource extends Resource
                 Tables\Columns\TextColumn::make('harga_satuan')->money('IDR'),
                 Tables\Columns\TextColumn::make('subtotal')->money('IDR'),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 //
             ])

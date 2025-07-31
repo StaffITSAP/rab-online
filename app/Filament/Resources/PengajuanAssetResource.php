@@ -55,6 +55,7 @@ class PengajuanAssetResource extends Resource
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i'),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 //
             ])

@@ -21,8 +21,14 @@ class Pengajuan extends Model
         'tgl_pulang',
         'jam',
         'deletion_reason',
-        'jml_personil'
+        'jml_personil',
+        'menggunakan_teknisi'
     ];
+
+    protected $casts = [
+        'menggunakan_teknisi' => 'boolean',
+    ];
+
 
     protected $dates = ['tgl_realisasi', 'tgl_pulang'];
 

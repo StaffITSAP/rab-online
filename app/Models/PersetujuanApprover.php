@@ -11,26 +11,15 @@ class PersetujuanApprover extends Model
 
     protected $fillable = ['persetujuan_id', 'approver_id'];
 
+    // Relasi ke user yang menjadi approver
     public function approver()
     {
         return $this->belongsTo(User::class, 'approver_id');
     }
 
-    // public function persetujuan()
-    // {
-    //     return $this->belongsTo(Persetujuan::class);
-    // }
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'approver_id');
-    }
-
+    // Relasi ke tabel persetujuan
     public function persetujuan()
     {
         return $this->belongsTo(Persetujuan::class, 'persetujuan_id');
-    }
-      public function approvers()
-    {
-        return $this->hasMany(PersetujuanApprover::class);
     }
 }
