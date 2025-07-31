@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\TipeRAB;
+use App\Models\TipeRab;
 use Illuminate\Database\Seeder;
 
 class TipeRABSeeder extends Seeder
@@ -18,7 +18,7 @@ class TipeRABSeeder extends Seeder
         ];
 
         foreach ($data as $tipe) {
-            TipeRAB::create($tipe);
+            TipeRab::create($tipe);
         }
     }
 }

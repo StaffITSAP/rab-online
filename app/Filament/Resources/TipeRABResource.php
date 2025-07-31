@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TipeRABResource\Pages;
-use App\Models\TipeRAB;
+use App\Models\TipeRab;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,7 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 
 class TipeRABResource extends Resource
 {
-    protected static ?string $model = TipeRAB::class;
+    protected static ?string $model = TipeRab::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
     protected static ?string $navigationGroup = 'Pengaturan';

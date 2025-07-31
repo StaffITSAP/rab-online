@@ -90,7 +90,7 @@ class Pengajuan extends Model
         $year = $today->year;
 
         // Ambil kode dari tabel tipe_rabs
-        $tipeRAB = \App\Models\TipeRAB::find($tipeRABId);
+        $tipeRAB = \App\Models\TipeRab::find($tipeRABId);
         $kodeTipe = $tipeRAB?->kode ?? 'XX'; // fallback 'XX' jika tidak ditemukan
 
         // Hitung jumlah pengajuan dengan tipe sama dan tahun yang sama
@@ -111,7 +111,7 @@ class Pengajuan extends Model
 
     public function tipeRAB()
     {
-        return $this->belongsTo(TipeRAB::class, 'tipe_rab_id');
+        return $this->belongsTo(TipeRab::class, 'tipe_rab_id');
     }
     public function assets()
     {
