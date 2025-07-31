@@ -4,7 +4,7 @@ namespace App\Filament\Forms\Pengajuan;
 
 use Filament\Forms;
 use Illuminate\Support\Facades\Auth;
-use App\Models\TipeRab;
+use App\Models\TipeRAB;
 
 class BasePengajuanForm
 {
@@ -22,7 +22,7 @@ class BasePengajuanForm
                 ->required()
                 ->reactive()
                 ->afterStateUpdated(function ($set, $state) {
-                    $kode = TipeRab::find($state)?->kode ?? 'XXX';
+                    $kode = TipeRAB::find($state)?->kode ?? 'XXX';
                     $set('no_rab', \App\Models\Pengajuan::generateNoRAB($state));
                 }),
 

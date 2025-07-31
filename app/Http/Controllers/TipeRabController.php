@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TipeRab;
+use App\Models\TipeRAB;
 use Illuminate\Http\Request;
 
 class TipeRabController extends Controller
@@ -34,7 +34,7 @@ class TipeRabController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TipeRab $tipeRab)
+    public function show(TipeRAB $tipeRab)
     {
         //
     }
@@ -42,7 +42,7 @@ class TipeRabController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(TipeRab $tipeRab)
+    public function edit(TipeRAB $tipeRab)
     {
         //
     }
@@ -50,7 +50,7 @@ class TipeRabController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, TipeRab $tipeRab)
+    public function update(Request $request, TipeRAB $tipeRab)
     {
         //
     }
@@ -58,7 +58,7 @@ class TipeRabController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TipeRab $tipeRab)
+    public function destroy(TipeRAB $tipeRab)
     {
         //
     }
