@@ -13,10 +13,13 @@ use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
+use App\Models\PengajuanStatus;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Database\Eloquent\Builder;
 
 class PengajuanResource extends Resource
 {
@@ -183,15 +186,17 @@ class PengajuanResource extends Resource
                                 ->exists()
                                 && $record->user_id !== auth()->id()
                         ),
-                    Tables\Actions\Action::make('preview_pdf')
+                    Tables\Actions\ViewAction::make('preview_pdf')
                         ->label('Preview PDF')
                         ->icon('heroicon-o-eye')
                         ->color('gray')
+                        ->slideOver() // lebih cocok untuk full lebar di HP
                         ->modalHeading('Preview RAB PDF')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'url' => route('pengajuan.pdf.preview', $record),
+                            'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
                         ])),
-
                     Tables\Actions\Action::make('download_pdf')
                         ->label('Download PDF')
                         ->icon('heroicon-o-arrow-down-tray')
@@ -268,5 +273,29 @@ class PengajuanResource extends Resource
         } // tambahkan elseif lagi jika ada tipe lain
 
         $record->update(['total_biaya' => $total]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $user = auth()->user();
+
+        // Superadmin boleh lihat semua
+        if ($user->hasRole('superadmin')) {
+            return parent::getEloquentQuery();
+        }
+
+        // Ambil ID pengajuan yang user ini adalah approver
+        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+            ->pluck('pengajuan_id')
+            ->toArray();
+
+        return parent::getEloquentQuery()
+            ->where(function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
+                $query
+                    // sebagai pemilik pengajuan
+                    ->where('user_id', $user->id)
+                    // atau sebagai approver di pengajuan lain
+                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
+            });
     }
 }

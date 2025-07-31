@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\PengajuanStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -105,5 +106,26 @@ class PengajuanDinasResource extends Resource
     public static function canDelete($record): bool
     {
         return false;
+    }
+    public static function getEloquentQuery(): Builder
+    {
+        $user = auth()->user();
+
+        // Superadmin lihat semua
+        if ($user->hasRole('superadmin')) {
+            return parent::getEloquentQuery();
+        }
+
+        // Cari ID pengajuan di mana user adalah approver
+        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+            ->pluck('pengajuan_id')
+            ->toArray();
+
+        return parent::getEloquentQuery()
+            ->whereHas('pengajuan', function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
+                $query
+                    ->where('user_id', $user->id)
+                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
+            });
     }
 }

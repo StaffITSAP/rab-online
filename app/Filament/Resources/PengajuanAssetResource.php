@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\PengajuanStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -84,10 +85,26 @@ class PengajuanAssetResource extends Resource
             'edit' => Pages\EditPengajuanAsset::route('/{record}/edit'),
         ];
     }
-   public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
-        // Default saja, TIDAK pakai withTrashed()
-        return parent::getEloquentQuery();
+        $user = auth()->user();
+
+        // Superadmin boleh melihat semua
+        if ($user->hasRole('superadmin')) {
+            return parent::getEloquentQuery();
+        }
+
+        // Ambil ID pengajuan yang user ini adalah approver-nya
+        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+            ->pluck('pengajuan_id')
+            ->toArray();
+
+        return parent::getEloquentQuery()
+            ->whereHas('pengajuan', function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
+                $query
+                    ->where('user_id', $user->id)
+                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
+            });
     }
     public static function canViewAny(): bool
     {
