@@ -165,7 +165,7 @@ class PersetujuanResource extends Resource
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
                 TextColumn::make('use_pengiriman')
-                    ->label('Teknisi')
+                    ->label('Gudang/Pengiriman')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),

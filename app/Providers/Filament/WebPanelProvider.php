@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Login;
 use App\Models\User;
 use Filament\Forms\Components\TextInput;
 use Filament\Http\Middleware\Authenticate;
@@ -31,7 +32,7 @@ class WebPanelProvider extends PanelProvider
             ->default()
             ->id('web')
             ->path('web')
-            ->login()
+            ->login(Login::class)
             ->authGuard('web')
             ->colors([
                 'primary' => Color::Amber,
