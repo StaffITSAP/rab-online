@@ -19,7 +19,7 @@ class AssetFormSection
                         ->label('Form RAB Asset/Inventaris')
                         ->relationship('pengajuan_assets')
                         ->schema([
-                            Forms\Components\TextArea::make('nama_barang')
+                            Forms\Components\Textarea::make('nama_barang')
                                 ->label('Nama Barang')
                                 ->placeholder('Contoh: Laptop, Proyektor, Meja, Kursi')
                                 ->required(),

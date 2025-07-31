@@ -42,7 +42,7 @@ class DinasFormSection
                             ->label('Jumlah Personil')
                             ->placeholder('Silahkan isi personil'),
                         Toggle::make('menggunakan_teknisi')
-                            ->label('Menggunakan Teknisi')
+                            ->label('Menggunakan Teknisi/Survey')
                             ->inline(false)
                             ->default(false)
                             ->reactive(),
