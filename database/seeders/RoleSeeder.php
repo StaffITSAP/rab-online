@@ -15,6 +15,7 @@ class RoleSeeder extends Seeder
             'manager',
             'hrd',
             'koordinator teknisi',
+            'koordinator gudang',
             'marcomm',
             'rt',
             'teknisi',

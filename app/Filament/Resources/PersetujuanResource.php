@@ -56,7 +56,7 @@ class PersetujuanResource extends Resource
                         ->minItems(1)
                         ->columns(1)
                         ->required(),
-                    Grid::make(3)->schema([
+                    Grid::make(4)->schema([
                         Toggle::make('menggunakan_teknisi')
                             ->label('Menggunakan Teknisi')
                             ->default(false)
@@ -64,6 +64,25 @@ class PersetujuanResource extends Resource
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 $approvers = collect($get('approvers'));
                                 $koordinator = User::role('koordinator teknisi')->first();
+                                if (!$koordinator) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
+                                        $approvers->push(['approver_id' => $koordinator->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
+                        Toggle::make('use_pengiriman')
+                            ->label('Pengiriman Barang/Gudang')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $koordinator = User::role('koordinator gudang')->first();
                                 if (!$koordinator) return;
 
                                 if ($state) {
@@ -141,6 +160,11 @@ class PersetujuanResource extends Resource
                     }),
 
                 TextColumn::make('menggunakan_teknisi')
+                    ->label('Teknisi')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_pengiriman')
                     ->label('Teknisi')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()

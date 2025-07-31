@@ -22,11 +22,13 @@ class Pengajuan extends Model
         'jam',
         'deletion_reason',
         'jml_personil',
-        'menggunakan_teknisi'
+        'menggunakan_teknisi',
+        'use_pengiriman'
     ];
 
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
+        'use_pengiriman' => 'boolean',
     ];
 
 

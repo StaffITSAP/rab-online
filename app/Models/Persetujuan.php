@@ -9,9 +9,10 @@ class Persetujuan extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_manager', 'use_direktur'];
+    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_pengiriman', 'use_manager', 'use_direktur'];
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
+        'use_pengiriman' => 'boolean',
     ];
 
     public function user()

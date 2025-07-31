@@ -11,7 +11,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = ['superadmin', 'direktur', 'manager', 'hrd', 'koordinator teknisi', 'marcomm', 'rt', 'teknisi', 'spv', 'koordinator', 'user'];
+        $roles = ['superadmin', 'direktur', 'manager', 'hrd', 'koordinator teknisi', 'koordinator gudang', 'marcomm', 'rt', 'teknisi', 'spv', 'koordinator', 'user'];
 
         foreach ($roles as $roleName) {
             // Buat role jika belum ada

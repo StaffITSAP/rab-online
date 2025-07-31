@@ -46,8 +46,8 @@ class DinasFormSection
                             ->inline(false)
                             ->default(false)
                             ->reactive(),
-                        Toggle::make('lampiran')
-                            ->label('Lampirkan File/Gambar')
+                        Toggle::make('use_pengiriman')
+                            ->label('Pengiriman Barang/Gudang')
                             ->inline(false)
                             ->default(false)
                             ->reactive(),

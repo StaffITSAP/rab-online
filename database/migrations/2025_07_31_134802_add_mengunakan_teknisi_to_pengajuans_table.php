@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('pengajuans', function (Blueprint $table) {
             $table->boolean('menggunakan_teknisi')->default(false)->after('tipe_rab_id');
+            $table->boolean('use_pengiriman')->default(false)->after('menggunakan_teknisi');
         });
     }
 

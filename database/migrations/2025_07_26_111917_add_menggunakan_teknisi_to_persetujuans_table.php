@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('persetujuans', function (Blueprint $table) {
             $table->boolean('menggunakan_teknisi')->default(false);
+            $table->boolean('use_pengiriman')->default(false);
         });
     }
 
