@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePengajuanDinasPersonil extends CreateRecord
 {
     protected static string $resource = PengajuanDinasPersonilResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

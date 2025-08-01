@@ -145,4 +145,12 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanDinasPersonil::class, 'pengajuan_id');
     }
+    public function lampiran()
+    {
+        return $this->hasOne(\App\Models\Lampiran::class);
+    }
+    public function lampiranAssets()
+    {
+        return $this->hasMany(\App\Models\LampiranAsset::class);
+    }
 }

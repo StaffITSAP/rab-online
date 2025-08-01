@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PengajuanResource\Pages;
 
 use App\Filament\Resources\PengajuanResource;
+use App\Models\Lampiran;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\PengajuanStatus;
@@ -17,6 +18,12 @@ class CreatePengajuan extends CreateRecord
     protected function afterCreate(): void
     {
         $pengajuan = $this->record;
+        $formData = $this->data;
+
+        Lampiran::updateOrCreate(
+            ['pengajuan_id' => $pengajuan->id],
+            ['lampiran_asset' => $formData['lampiran_asset'] ?? false]
+        );
 
         Log::info('Running afterCreate for pengajuan ID: ' . $pengajuan->id);
 
@@ -85,5 +92,9 @@ class CreatePengajuan extends CreateRecord
                 Log::info("✅ Disimpan: user_id {$user->id}" . ($autoApprove ? " (auto approve {$autoApproveBy})" : ''));
             }
         }
+    }
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
     }
 }

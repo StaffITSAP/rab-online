@@ -34,9 +34,7 @@ class EditPengajuan extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            
-        ];
+        return [];
     }
 
     protected function getFormActions(): array
@@ -45,5 +43,15 @@ class EditPengajuan extends EditRecord
             return [];
         }
         return parent::getFormActions();
+    }
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $pengajuan = $this->record;
+
+        $lampiran = $pengajuan->lampiran;
+
+        $data['lampiran_asset'] = $lampiran?->lampiran_asset ?? false;
+
+        return $data;
     }
 }

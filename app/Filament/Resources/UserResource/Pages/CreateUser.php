@@ -32,4 +32,8 @@ class CreateUser extends CreateRecord
     {
         $this->record->userStatus()->create($this->userStatusData);
     }
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

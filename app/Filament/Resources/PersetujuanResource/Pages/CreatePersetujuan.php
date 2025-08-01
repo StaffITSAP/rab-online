@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePersetujuan extends CreateRecord
 {
     protected static string $resource = PersetujuanResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

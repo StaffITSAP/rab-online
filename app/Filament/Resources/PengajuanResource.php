@@ -195,6 +195,7 @@ class PengajuanResource extends Resource
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
+                            'record' => $record->load(['lampiran', 'lampiranAssets']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
                         ])),
                     Tables\Actions\Action::make('download_pdf')

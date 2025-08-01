@@ -2,8 +2,12 @@
 
 namespace App\Filament\Forms\Pengajuan;
 
+use Closure;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Number;
@@ -21,23 +25,22 @@ class AssetFormSection
                         ->schema([
                             Forms\Components\Textarea::make('nama_barang')
                                 ->label('Nama Barang')
-                                ->placeholder('Contoh: Laptop, Proyektor, Meja, Kursi')
                                 ->required(),
+
                             Forms\Components\Textarea::make('keperluan')
                                 ->label('Keperluan')
-                                ->placeholder('Contoh: Untuk kegiatan seminar, pelatihan, atau keperluan kantor')
                                 ->required(),
+
                             Forms\Components\Textarea::make('keterangan')
                                 ->label('Keterangan')
-                                ->placeholder('Contoh: Barang baru, bekas, atau kondisi khusus lainnya')
                                 ->required(),
-                            Forms\Components\TextInput::make('tipe_barang')
+
+                            TextInput::make('tipe_barang')
                                 ->label('Tipe / Satuan')
-                                ->placeholder('Contoh: pcs, unit, set')
                                 ->required(),
+
                             TextInput::make('jumlah')
                                 ->label('Jumlah')
-                                ->placeholder('Contoh: 1, 2, 3')
                                 ->numeric()
                                 ->required()
                                 ->minValue(1)
@@ -50,13 +53,11 @@ class AssetFormSection
 
                             TextInput::make('harga_unit')
                                 ->label('Harga Unit')
-                                ->placeholder('Contoh: 1.000.000')
                                 ->required()
-                                ->dehydrated() // supaya disimpan
+                                ->dehydrated()
                                 ->prefix('Rp ')
                                 ->extraAttributes(['class' => 'currency-input'])
                                 ->afterStateHydrated(function (TextInput $component, $state) {
-                                    // Format angka saat edit (jika ada)
                                     $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
                                 })
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
@@ -67,13 +68,11 @@ class AssetFormSection
 
                             TextInput::make('subtotal')
                                 ->label('Subtotal')
-                                ->disabled() // Tidak bisa diedit manual
+                                ->disabled()
                                 ->required()
                                 ->dehydrated()
                                 ->prefix('Rp ')
-                                ->formatStateUsing(function ($state) {
-                                    return $state ? number_format((int) $state, 0, ',', '.') : null;
-                                })
+                                ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
                                 ->dehydrateStateUsing(function (Get $get) {
                                     $jumlah = (int) $get('jumlah');
                                     $harga = (int) str_replace('.', '', $get('harga_unit'));
@@ -82,7 +81,6 @@ class AssetFormSection
                                 ->columnSpanFull(),
                         ])
                         ->afterStateUpdated(function ($state, callable $set) {
-                            // Hitung ulang total_biaya dari semua item
                             $total = collect($state)->sum(fn($item) => (int) ($item['subtotal'] ?? 0));
                             $set('total_biaya', $total);
                         })
@@ -91,12 +89,52 @@ class AssetFormSection
                         ->columnSpanFull()
                         ->defaultItems(1)
                         ->itemLabel('Detail Asset/Inventaris'),
-                    Forms\Components\TextInput::make('total_biaya')
+
+                    TextInput::make('total_biaya')
                         ->label('Total Biaya')
                         ->disabled()
                         ->dehydrated()
                         ->prefix('Rp ')
                         ->default(0),
+
+                    Toggle::make('lampiran_asset')
+                        ->label('Tambahkan Lampiran Asset/Inventaris')
+                        ->default(false)
+                        ->reactive()
+                        ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
+
+                    Repeater::make('lampiranAssets')
+
+                        ->label('Lampiran RAB Asset/Inventaris')
+                        ->relationship('lampiranAssets')
+                        ->schema([
+                            FileUpload::make('file_path')
+                                ->label('File Lampiran (PDF/Gambar)')
+                                ->disk('public')
+                                ->directory('lampiran-assets')
+                                ->preserveFilenames()
+                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                ->maxSize(10240)
+                                ->required()
+                                ->reactive()
+                                ->afterStateUpdated(function (Set $set, $state) {
+                                    if (is_array($state) && count($state) > 0) {
+                                        $file = array_key_first($state);
+                                        if ($file) {
+                                            $filename = pathinfo($file, PATHINFO_BASENAME);
+                                            $set('original_name', $filename);
+                                        }
+                                    }
+                                }),
+
+                            TextInput::make('original_name')
+                                ->label('Nama Lampiran')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->defaultItems(1)
+                        ->visible(fn($get) => $get('lampiran_asset') === true),
+
                 ])
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 1),
         ];

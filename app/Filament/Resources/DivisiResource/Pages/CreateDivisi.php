@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateDivisi extends CreateRecord
 {
     protected static string $resource = DivisiResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

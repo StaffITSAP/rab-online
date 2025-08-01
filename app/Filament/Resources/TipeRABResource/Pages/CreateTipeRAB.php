@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateTipeRAB extends CreateRecord
 {
     protected static string $resource = TipeRABResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

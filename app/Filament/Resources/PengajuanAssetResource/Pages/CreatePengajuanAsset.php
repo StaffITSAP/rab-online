@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePengajuanAsset extends CreateRecord
 {
     protected static string $resource = PengajuanAssetResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

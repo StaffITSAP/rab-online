@@ -35,7 +35,7 @@ class WebPanelProvider extends PanelProvider
             ->login(Login::class)
             ->authGuard('web')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Rose,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -68,6 +68,10 @@ class WebPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()
                     ->label('Detail Pengajuan RAB'),
+                NavigationGroup::make()
+                    ->label('Detail Perjalanan Dinas'),
+                NavigationGroup::make()
+                    ->label('Detail Lampiran'),
                 NavigationGroup::make()
                     ->label('Pengaturan'),
             ]);

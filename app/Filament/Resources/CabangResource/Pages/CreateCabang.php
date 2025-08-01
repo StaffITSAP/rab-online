@@ -9,4 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateCabang extends CreateRecord
 {
     protected static string $resource = CabangResource::class;
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

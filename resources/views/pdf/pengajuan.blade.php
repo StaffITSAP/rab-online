@@ -131,7 +131,7 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
                 <td>{{ $item->nama_barang ?? '' }}</td>
-                 <td>{{ $item->keperluan ?? '' }}</td>
+                <td>{{ $item->keperluan ?? '' }}</td>
                 <td align="center">{{ $item->jumlah ?? '' }}</td>
                 <td align="center">{{ $item->tipe_barang ?? '' }}</td>
                 <td align="right">Rp {{ number_format($item->harga_unit ?? 0, 0, ',', '.') }}</td>
@@ -167,9 +167,9 @@
             <td class="ttd">
                 Yang Mengajukan <br><br>
                 @if ($showSignature && optional(optional($pengajuan->user)->userStatus)->signature_path)
-                    <img src="{{ public_path('storage/' . optional(optional($pengajuan->user)->userStatus)->signature_path) }}" height="60"><br><br>
+                <img src="{{ public_path('storage/' . optional(optional($pengajuan->user)->userStatus)->signature_path) }}" height="60"><br><br>
                 @else
-                    <br><br><br><br><br>
+                <br><br><br><br><br>
                 @endif
                 {{ optional($pengajuan->user)->name ?? '' }}<br>
                 <strong>{{ optional(optional($pengajuan->user)->userStatus)->divisi->nama ?? '' }}</strong><br>
@@ -177,19 +177,19 @@
             </td>
 
             @foreach (($pengajuan->statuses ?? []) as $status)
-                @if ($status->is_approved ?? false)
-                    <td class="ttd">
-                        Menyetujui<br><br>
-                        @if ($showSignature && optional(optional($status->user)->userStatus)->signature_path)
-                            <img src="{{ public_path('storage/' . optional(optional($status->user)->userStatus)->signature_path) }}" height="60"><br><br>
-                        @else
-                            <br><br><br><br><br>
-                        @endif
-                        {{ optional($status->user)->name ?? '' }}<br>
-                        <strong>{{ optional(optional($status->user)->userStatus)->divisi->nama ?? '' }}</strong><br>
-                        {{ $status->approved_at ? \Carbon\Carbon::parse($status->approved_at)->translatedFormat('d F Y H:i') : '' }}
-                    </td>
+            @if ($status->is_approved ?? false)
+            <td class="ttd">
+                Menyetujui<br><br>
+                @if ($showSignature && optional(optional($status->user)->userStatus)->signature_path)
+                <img src="{{ public_path('storage/' . optional(optional($status->user)->userStatus)->signature_path) }}" height="60"><br><br>
+                @else
+                <br><br><br><br><br>
                 @endif
+                {{ optional($status->user)->name ?? '' }}<br>
+                <strong>{{ optional(optional($status->user)->userStatus)->divisi->nama ?? '' }}</strong><br>
+                {{ $status->approved_at ? \Carbon\Carbon::parse($status->approved_at)->translatedFormat('d F Y H:i') : '' }}
+            </td>
+            @endif
             @endforeach
         </tr>
     </table>
@@ -198,4 +198,5 @@
         Nb: harga sudah include pajak tapi belum include pajak proteksi, ready info Kadipiro, indent 3-5 hari dari PO dan transaksi
     </p>
 </body>
+
 </html>
