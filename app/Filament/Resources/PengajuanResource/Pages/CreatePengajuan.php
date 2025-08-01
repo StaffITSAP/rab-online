@@ -27,43 +27,52 @@ class CreatePengajuan extends CreateRecord
         Log::info('Jumlah persetujuan ditemukan: ' . $persetujuans->count());
 
         foreach ($persetujuans as $persetujuan) {
-            $skipTeknisi     = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
-            $skipPengiriman  = !($pengajuan->use_pengiriman && $persetujuan->use_pengiriman); // 👈 mirip teknisi
+            $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
+            $skipPengiriman = !($pengajuan->use_pengiriman && $persetujuan->use_pengiriman);
+            $skipManager    = !($persetujuan->use_manager && $pengajuan->total_biaya >= 1000000);
 
             foreach ($persetujuan->pengajuanApprovers as $approver) {
                 $user = $approver->approver;
-
-                if (!$user || $user->id === $pengajuan->user_id) {
-                    continue;
-                }
+                if (!$user) continue;
 
                 $roleNames = $user->getRoleNames();
 
                 $isKoordinatorTeknisi = $roleNames->contains('koordinator teknisi');
-                $isKoordinatorGudang  = $roleNames->contains('koordinator gudang'); // FIXED
-                $isManager             = $roleNames->contains('manager');
-                $isDirektur            = $roleNames->contains('direktur');
+                $isKoordinatorGudang  = $roleNames->contains('koordinator gudang');
+                $isManager            = $roleNames->contains('manager');
+                $isDirektur           = $roleNames->contains('direktur');
+                $isOwner              = $roleNames->contains('owner');
 
-                // ❌ Skip Koordinator Teknisi jika tidak perlu
+                // ❌ Skip jika kondisi tidak memenuhi
                 if ($isKoordinatorTeknisi && $skipTeknisi) {
                     Log::info("❌ Skip Koordinator Teknisi: user_id {$user->id}");
                     continue;
                 }
 
-                // ❌ Skip Koordinator Gudang jika tidak perlu
                 if ($isKoordinatorGudang && $skipPengiriman) {
                     Log::info("❌ Skip Koordinator Gudang (Pengiriman): user_id {$user->id}");
                     continue;
                 }
 
-                // ❌ Skip Manager jika tidak perlu
-                if ($isManager && !($persetujuan->use_manager && $pengajuan->total_biaya >= 1000000)) {
+                if ($isManager && $skipManager) {
                     Log::info("❌ Skip Manager: user_id {$user->id}");
                     continue;
                 }
 
-                // ✅ Auto approve jika direktur
-                $autoApprove = $isDirektur && $persetujuan->use_direktur;
+                $autoApprove    = false;
+                $autoApproveBy  = null;
+
+                // ✅ Auto approve direktur (jika aktif)
+                if ($isDirektur && $persetujuan->use_direktur) {
+                    $autoApprove   = true;
+                    $autoApproveBy = 'direktur';
+                }
+
+                // ✅ Auto approve owner (jika aktif)
+                if ($isOwner && $persetujuan->use_owner) {
+                    $autoApprove   = true;
+                    $autoApproveBy = 'owner';
+                }
 
                 \App\Models\PengajuanStatus::create([
                     'pengajuan_id'   => $pengajuan->id,
@@ -73,7 +82,7 @@ class CreatePengajuan extends CreateRecord
                     'approved_at'    => $autoApprove ? now() : null,
                 ]);
 
-                Log::info("✅ Disimpan: user_id {$user->id}" . ($autoApprove ? ' (auto approve direktur)' : ''));
+                Log::info("✅ Disimpan: user_id {$user->id}" . ($autoApprove ? " (auto approve {$autoApproveBy})" : ''));
             }
         }
     }

@@ -135,6 +135,26 @@ class PersetujuanResource extends Resource
 
                                 $set('approvers', $approvers->values()->all());
                             }),
+
+                        Toggle::make('use_owner')
+                            ->label('Persetujuan Owner')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $owner = User::role('owner')->first();
+                                if (!$owner) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $owner->id)) {
+                                        $approvers->push(['approver_id' => $owner->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $owner->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
                     ]),
 
 
@@ -165,7 +185,7 @@ class PersetujuanResource extends Resource
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
                 TextColumn::make('use_pengiriman')
-                    ->label('Gudang/Pengiriman')
+                    ->label('Gudang')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
@@ -176,6 +196,11 @@ class PersetujuanResource extends Resource
                     ->color(fn($state) => $state ? 'success' : 'danger'),
                 TextColumn::make('use_direktur')
                     ->label('Direktur')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_owner')
+                    ->label('Owner')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
