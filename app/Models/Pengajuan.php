@@ -153,4 +153,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(\App\Models\LampiranAsset::class);
     }
+    public function lampiranDinas()
+    {
+        return $this->hasMany(LampiranDinas::class);
+    }
 }

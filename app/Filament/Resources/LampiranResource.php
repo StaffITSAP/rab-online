@@ -38,16 +38,17 @@ class LampiranResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table->columns([
-            Tables\Columns\TextColumn::make('pengajuan.id')->label('Pengajuan'),
-            Tables\Columns\IconColumn::make('lampiran_asset')->boolean(),
-            Tables\Columns\IconColumn::make('lampiran_dinas')->boolean(),
-            Tables\Columns\IconColumn::make('lampiran_marcomm_kegiatan')->boolean(),
-            Tables\Columns\IconColumn::make('lampiran_marcomm_kebutuhan')->boolean(),
-            Tables\Columns\IconColumn::make('lampiran_marcomm_promosi')->boolean(),
-            Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
-        ])->filters([
-            Tables\Filters\TrashedFilter::make(), // if soft deletes shown
-        ]);
+            Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
+            Tables\Columns\IconColumn::make('lampiran_asset')->boolean()->label('Asset'),
+            Tables\Columns\IconColumn::make('lampiran_dinas')->boolean()->label('Dinas'),
+            Tables\Columns\IconColumn::make('lampiran_marcomm_kegiatan')->boolean()->label('Marcomm Kegiatan'),
+            Tables\Columns\IconColumn::make('lampiran_marcomm_kebutuhan')->boolean()->label('Marcomm Kebutuhan'),
+            Tables\Columns\IconColumn::make('lampiran_marcomm_promosi')->boolean()->label('Marcomm Promosi'),
+        ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
+            ->filters([
+                Tables\Filters\TrashedFilter::make(), // if soft deletes shown
+            ]);
     }
 
     public static function getPages(): array

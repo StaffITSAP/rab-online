@@ -4,6 +4,7 @@ namespace App\Filament\Forms\Pengajuan;
 
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -177,6 +178,43 @@ class DinasFormSection
                         ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
                         ->columnSpanFull()
                         ->default(0),
+                    Toggle::make('lampiran_dinas')
+                        ->label('Tambahkan Lampiran Perjalanan Dinas')
+                        ->default(false)
+                        ->reactive()
+                        ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
+
+                    Repeater::make('lampiranDinas')
+
+                        ->label('Lampiran RAB Perjalanan Dinas')
+                        ->relationship('lampiranDinas')
+                        ->schema([
+                            FileUpload::make('file_path')
+                                ->label('File Lampiran (PDF/Gambar)')
+                                ->disk('public')
+                                ->directory('lampiran-dinas')
+                                ->preserveFilenames()
+                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                ->maxSize(10240)
+                                ->required()
+                                ->reactive()
+                                ->afterStateUpdated(function (Set $set, $state) {
+                                    if (is_array($state) && count($state) > 0) {
+                                        $file = array_key_first($state);
+                                        if ($file) {
+                                            $filename = pathinfo($file, PATHINFO_BASENAME);
+                                            $set('original_name', $filename);
+                                        }
+                                    }
+                                }),
+
+                            TextInput::make('original_name')
+                                ->label('Nama Lampiran')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->defaultItems(1)
+                        ->visible(fn($get) => $get('lampiran_dinas') === true),
                 ])
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 2),
         ];

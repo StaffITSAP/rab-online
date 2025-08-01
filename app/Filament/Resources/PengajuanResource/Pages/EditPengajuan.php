@@ -51,6 +51,7 @@ class EditPengajuan extends EditRecord
         $lampiran = $pengajuan->lampiran;
 
         $data['lampiran_asset'] = $lampiran?->lampiran_asset ?? false;
+        $data['lampiran_dinas'] = $lampiran?->lampiran_asset ?? false;
 
         return $data;
     }

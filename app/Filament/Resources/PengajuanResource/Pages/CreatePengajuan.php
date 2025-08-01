@@ -22,7 +22,10 @@ class CreatePengajuan extends CreateRecord
 
         Lampiran::updateOrCreate(
             ['pengajuan_id' => $pengajuan->id],
-            ['lampiran_asset' => $formData['lampiran_asset'] ?? false]
+            [
+                'lampiran_asset' => $formData['lampiran_asset'] ?? false,
+                'lampiran_dinas' => $formData['lampiran_dinas'] ?? false,
+            ]
         );
 
         Log::info('Running afterCreate for pengajuan ID: ' . $pengajuan->id);

@@ -8,6 +8,7 @@ use App\Models\PengajuanStatus;
 use Filament\Resources\Resource;
 use Filament\Forms;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 
 
@@ -18,7 +19,7 @@ class LampiranAssetResource extends Resource
     protected static ?string $navigationGroup = 'Detail Lampiran';
     protected static ?string $label = 'Lampiran Asset';
     protected static ?string $pluralLabel = 'Lampiran Asset';
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = 98;
 
 
     public static function form(Forms\Form $form): Forms\Form
@@ -45,17 +46,19 @@ class LampiranAssetResource extends Resource
 
     public static function table(Tables\Table $table): Tables\Table
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('pengajuan.id')->label('Pengajuan'),
-            Tables\Columns\ImageColumn::make('file_path')
-                ->label('Preview')
-                ->disk('public')
-                ->height(50)
-                ->circular(false),
-            Tables\Columns\TextColumn::make('original_name')->limit(40),
-        ])->filters([
-            Tables\Filters\TrashedFilter::make(),
-        ]);
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
+                Tables\Columns\ViewColumn::make('preview')
+                    ->label('Preview Lampiran')
+                    ->view('filament.tables.columns.lampiran-preview')
+                    ->viewData(fn($record) => ['record' => $record]), // ⬅️ ini agar bisa pakai $record
+                Tables\Columns\TextColumn::make('original_name')->label('Nama Lampiran')->limit(40),
+            ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
+            ->filters([
+                Tables\Filters\TrashedFilter::make(),
+            ]);
     }
 
     public static function getPages(): array
