@@ -157,4 +157,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(LampiranDinas::class);
     }
+    public function persetujuanApprovers()
+    {
+        return $this->hasMany(\App\Models\PersetujuanApprover::class, 'pengajuan_id');
+    }
 }

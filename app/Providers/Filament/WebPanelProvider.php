@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Login;
+use App\Filament\Resources\PengajuanResource\Widgets\PengajuanStats;
 use App\Models\User;
 use Filament\Forms\Components\TextInput;
 use Filament\Http\Middleware\Authenticate;
@@ -45,7 +46,7 @@ class WebPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class,
+                PengajuanStats::class,
             ])
             ->middleware([
                 EncryptCookies::class,
