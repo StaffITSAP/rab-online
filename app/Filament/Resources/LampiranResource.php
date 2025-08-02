@@ -47,7 +47,7 @@ class LampiranResource extends Resource
         ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
-                Tables\Filters\TrashedFilter::make(), // if soft deletes shown
+                //
             ]);
     }
 
