@@ -20,6 +20,8 @@ use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+
 
 class PengajuanResource extends Resource
 {
@@ -136,7 +138,8 @@ class PengajuanResource extends Resource
             ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->visible(fn() => Auth::user()->hasRole('SuperAdmin')), // gunakan ini jika pakai Spatie
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -264,19 +267,23 @@ class PengajuanResource extends Resource
                             $record->delete();
                         }),
                     Tables\Actions\RestoreAction::make()
-                        ->visible(fn($record) => $record->trashed()),
+                        ->visible(
+                            fn($record) =>
+                            auth()->user()->hasRole('SuperAdmin') && $record->trashed()
+                        ),
 
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(function () {
-                            $user = auth()->user();
-                            // Bulk hanya diaktifkan untuk superadmin (opsional, demi safety)
-                            return $user && $user->hasRole('superadmin');
-                        }),
-                    Tables\Actions\RestoreBulkAction::make(),
+                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
+
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
+
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()?->hasRole('superadmin')), // jika ingin sekalian
                 ]),
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
     }
