@@ -57,7 +57,7 @@ class LampiranAssetResource extends Resource
             ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                //
             ]);
     }
 
