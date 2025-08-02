@@ -86,23 +86,33 @@ class Pengajuan extends Model
     public static function generateNoRAB(int $tipeRABId): string
     {
         $today = now();
-        $dateStr = $today->format('ymd'); // contoh: 250726
+        $dateStr = $today->format('ymd'); // misal: 250802
         $year = $today->year;
 
         // Ambil kode dari tabel tipe_rabs
         $tipeRAB = \App\Models\TipeRab::find($tipeRABId);
-        $kodeTipe = $tipeRAB?->kode ?? 'XX'; // fallback 'XX' jika tidak ditemukan
+        $kodeTipe = $tipeRAB?->kode ?? 'XX';
 
-        // Hitung jumlah pengajuan dengan tipe sama dan tahun yang sama
-        $count = self::where('tipe_rab_id', $tipeRABId)
+        // Pattern prefix (tanpa urut)
+        $prefix = "RAB/{$kodeTipe}/{$dateStr}/";
+
+        // Cari nomor urut terbesar hari ini & tipe ini (termasuk soft deleted)
+        $last = self::withTrashed()
+            ->where('tipe_rab_id', $tipeRABId)
             ->whereYear('created_at', $year)
-            ->count();
+            ->whereDate('created_at', $today->toDateString())
+            ->where('no_rab', 'like', "{$prefix}%")
+            ->orderByDesc('no_rab')
+            ->first();
 
-        $urut = str_pad(($count + 1), 5, '0', STR_PAD_LEFT);
+        if ($last && preg_match('/\/(\d{5})$/', $last->no_rab, $m)) {
+            $urut = str_pad(((int)$m[1]) + 1, 5, '0', STR_PAD_LEFT);
+        } else {
+            $urut = '00001';
+        }
 
-        return "RAB/{$kodeTipe}/{$dateStr}/{$urut}";
+        return "{$prefix}{$urut}";
     }
-
 
     public function user()
     {
