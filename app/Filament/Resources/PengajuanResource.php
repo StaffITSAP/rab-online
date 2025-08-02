@@ -50,36 +50,79 @@ class PengajuanResource extends Resource
                 TextColumn::make('created_at')
                     ->label('Tanggal Pengajuan')
                     ->formatStateUsing(fn($state) => Carbon::parse($state)->translatedFormat('d F Y H:i')),
-                Tables\Columns\TextColumn::make('status')->badge()->color(fn($state) => match ($state) {
-                    'selesai' => 'success',
-                    'ditolak' => 'danger',
-                    'expired' => 'gray',
-                    'menunggu' => 'warning',
-                }),
-                TextColumn::make('approved_by')
-                    ->label('Disetujui Oleh')
+                TextColumn::make('realisasi')
+                    ->label('Tanggal Realisasi')
                     ->getStateUsing(function ($record) {
-                        $latestApproved = $record->statuses()
-                            ->where('is_approved', true)
-                            ->latest('approved_at')
-                            ->with('user')
-                            ->first();
-
-                        return $latestApproved?->user?->name ?? '-';
-                    }),
-
-                TextColumn::make('approved_at')
-                    ->label('Tanggal Disetujui')
-                    ->getStateUsing(function ($record) {
-                        $latestApproved = $record->statuses()
-                            ->where('is_approved', true)
-                            ->latest('approved_at')
-                            ->first();
-
-                        return $latestApproved?->approved_at
-                            ? \Carbon\Carbon::parse($latestApproved->approved_at)->format('d/m/Y H:i')
+                        // Ambil tanggal dari tgl_realisasi
+                        $tanggal = $record->tgl_realisasi
+                            ? Carbon::parse($record->tgl_realisasi)->translatedFormat('d F Y')
                             : '-';
+                        // Ambil jam dari kolom jam
+                        $jam = $record->jam ?? ' ';
+                        // Gabungkan
+                        return "{$tanggal} {$jam}";
                     }),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn($state) => match ($state) {
+                        'selesai' => 'success',
+                        'ditolak' => 'danger',
+                        'expired' => 'gray',
+                        'menunggu' => 'warning',
+                    })
+                    ->description(function ($record) {
+                        if ($record->status === 'ditolak') {
+                            $status = $record->statuses()
+                                ->where('is_approved', false)
+                                ->latest('approved_at')
+                                ->first();
+                            return $status?->alasan_ditolak ? 'Alasan : ' . $status->alasan_ditolak : null;
+                        }
+                        return null;
+                    }),
+
+                TextColumn::make('approved_by')
+                    ->label('Disetujui / Ditolak Oleh')
+                    ->getStateUsing(function ($record) {
+                        if ($record->status === 'ditolak') {
+                            $penolak = $record->statuses()
+                                ->where('is_approved', false)
+                                ->latest('approved_at')
+                                ->with('user')
+                                ->first();
+                            return $penolak?->user?->name ?? '-';
+                        } else {
+                            $latestApproved = $record->statuses()
+                                ->where('is_approved', true)
+                                ->latest('approved_at')
+                                ->with('user')
+                                ->first();
+                            return $latestApproved?->user?->name ?? '-';
+                        }
+                    }),
+                TextColumn::make('approved_at')
+                    ->label('Tanggal Disetujui / Ditolak')
+                    ->getStateUsing(function ($record) {
+                        if ($record->status === 'ditolak') {
+                            $penolak = $record->statuses()
+                                ->where('is_approved', false)
+                                ->latest('approved_at')
+                                ->first();
+                            return $penolak?->approved_at
+                                ? \Carbon\Carbon::parse($penolak->approved_at)->translatedFormat('d/m/Y H:i')
+                                : '-';
+                        } else {
+                            $latestApproved = $record->statuses()
+                                ->where('is_approved', true)
+                                ->latest('approved_at')
+                                ->first();
+                            return $latestApproved?->approved_at
+                                ? \Carbon\Carbon::parse($latestApproved->approved_at)->translatedFormat('d/m/Y H:i')
+                                : '-';
+                        }
+                    }),
+
                 Tables\Columns\TextColumn::make('menggunakan_teknisi')
                     ->label('Teknisi')
                     ->badge()
@@ -150,32 +193,24 @@ class PengajuanResource extends Resource
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->requiresConfirmation()
-                        ->action(function ($record) {
+                        ->form([
+                            Textarea::make('alasan_ditolak')->label('Alasan Penolakan')->required(),
+                        ])
+                        ->action(function ($record, array $data) {
                             $user = auth()->user();
-
-                            // Cegah pengaju menolak sendiri
                             if ($record->user_id === $user->id) {
-                                Notification::make()
-                                    ->title('Anda tidak dapat menolak pengajuan Anda sendiri.')
-                                    ->danger()
-                                    ->send();
+                                Notification::make()->title('Anda tidak dapat menolak pengajuan Anda sendiri.')->danger()->send();
                                 return;
                             }
-
                             $status = $record->statuses()->where('user_id', $user->id)->first();
-
                             if ($status && is_null($status->is_approved)) {
                                 $status->update([
                                     'is_approved' => false,
                                     'approved_at' => now(),
+                                    'alasan_ditolak' => $data['alasan_ditolak'],
                                 ]);
-
                                 $record->update(['status' => 'ditolak']);
-
-                                Notification::make()
-                                    ->title('Pengajuan telah ditolak.')
-                                    ->danger()
-                                    ->send();
+                                Notification::make()->title('Pengajuan telah ditolak.')->danger()->send();
                             }
                         })
                         ->visible(
