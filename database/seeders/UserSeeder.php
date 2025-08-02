@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             ], [
                 'name' => 'Nama ' . ($roleName),
                 'username' => $roleName,
-                'password' => Hash::make('password'),
+                'password' => Hash::make('R@bonlin3'),
                 'is_active' => true,
             ]);
 
