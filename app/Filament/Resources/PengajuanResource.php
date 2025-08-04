@@ -74,12 +74,21 @@ class PengajuanResource extends Resource
                         'menunggu' => 'warning',
                     })
                     ->description(function ($record) {
+                        // Jika status ditolak, tampilkan alasan
                         if ($record->status === 'ditolak') {
                             $status = $record->statuses()
                                 ->where('is_approved', false)
                                 ->latest('approved_at')
                                 ->first();
-                            return $status?->alasan_ditolak ? 'Alasan : ' . $status->alasan_ditolak : null;
+                            return $status?->alasan_ditolak ? 'Alasan: ' . $status->alasan_ditolak : null;
+                        }
+                        // Jika status selesai/disetujui, tampilkan catatan approve terakhir (jika ada)
+                        if ($record->status === 'selesai' || $record->status === 'menunggu') {
+                            $status = $record->statuses()
+                                ->where('is_approved', true)
+                                ->latest('approved_at')
+                                ->first();
+                            return $status?->alasan_ditolak ? 'Catatan: ' . $status->alasan_ditolak : null;
                         }
                         return null;
                     }),
@@ -148,7 +157,10 @@ class PengajuanResource extends Resource
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->requiresConfirmation()
-                        ->action(function ($record) {
+                        ->form([
+                            Textarea::make('alasan_ditolak')->label('Catatan (opsional)')->rows(2),
+                        ])
+                        ->action(function ($record, array $data) {
                             $user = auth()->user();
 
                             // Cegah pengaju menyetujui pengajuan sendiri
@@ -166,6 +178,7 @@ class PengajuanResource extends Resource
                                 $status->update([
                                     'is_approved' => true,
                                     'approved_at' => now(),
+                                    'alasan_ditolak' => $data['alasan_ditolak'] ?? null,
                                 ]);
 
                                 // Cek jika semua sudah approve
@@ -190,6 +203,7 @@ class PengajuanResource extends Resource
                                 ->exists()
                                 && $record->user_id !== auth()->id()
                         ),
+
 
                     Tables\Actions\Action::make('Tolak')
                         ->label('Tolak')
