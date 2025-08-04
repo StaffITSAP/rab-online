@@ -35,6 +35,8 @@ class WebPanelProvider extends PanelProvider
             ->path('web')
             ->login(Login::class)
             ->authGuard('web')
+            ->sidebarCollapsibleOnDesktop()
+            ->topNavigation()
             ->colors([
                 'primary' => Color::Rose,
             ])
