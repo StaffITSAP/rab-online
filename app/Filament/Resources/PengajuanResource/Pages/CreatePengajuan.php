@@ -39,7 +39,6 @@ class CreatePengajuan extends CreateRecord
         foreach ($persetujuans as $persetujuan) {
             $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
             $skipPengiriman = !($pengajuan->use_pengiriman && $persetujuan->use_pengiriman);
-            $skipManager    = !($persetujuan->use_manager && $pengajuan->total_biaya >= 1000000);
 
             foreach ($persetujuan->pengajuanApprovers as $approver) {
                 $user = $approver->approver;
@@ -64,10 +63,21 @@ class CreatePengajuan extends CreateRecord
                     continue;
                 }
 
-                if ($isManager && $skipManager) {
-                    Log::info("❌ Skip Manager: user_id {$user->id}");
-                    continue;
+                // -------------------
+                // LOGIKA MANAGER FIX
+                if ($isManager) {
+                    if ($persetujuan->use_manager) {
+                        if ($pengajuan->total_biaya < 1000000) {
+                            Log::info("❌ Skip Manager: user_id {$user->id} (use_manager = true, nominal < 1jt)");
+                            continue; // kalau use_manager true tapi nominal < 1jt, skip
+                        }
+                        // kalau nominal >= 1jt, proses seperti biasa (continue tidak dijalankan)
+                    }
+                    // Kalau use_manager false, walau nominal berapapun tetap PROSES
+                    // jadi tidak ada continue di sini
                 }
+
+                // -------------------
 
                 $autoApprove    = false;
                 $autoApproveBy  = null;
@@ -96,6 +106,7 @@ class CreatePengajuan extends CreateRecord
             }
         }
     }
+
     protected function getRedirectUrl(): string
     {
         return static::getResource()::getUrl('index');
