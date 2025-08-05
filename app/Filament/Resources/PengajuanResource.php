@@ -70,7 +70,7 @@ class PengajuanResource extends Resource
                     ->color(fn($state) => match ($state) {
                         'selesai' => 'success',
                         'ditolak' => 'danger',
-                        'expired' => 'gray',
+                        'expired' => 'danger',
                         'menunggu' => 'warning',
                     })
                     ->description(function ($record) {
@@ -164,6 +164,15 @@ class PengajuanResource extends Resource
                         ->action(function ($record, array $data) {
                             $user = auth()->user();
 
+                            // Tidak bisa setujui jika expired
+                            if ($record->status === 'expired') {
+                                Notification::make()
+                                    ->title('Pengajuan sudah expired dan tidak dapat disetujui.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
                             // Cegah pengaju menyetujui pengajuan sendiri
                             if ($record->user_id === $user->id) {
                                 Notification::make()
@@ -198,13 +207,13 @@ class PengajuanResource extends Resource
                         })
                         ->visible(
                             fn($record) =>
-                            $record->statuses()
+                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                                $record->statuses()
                                 ->where('user_id', auth()->id())
                                 ->whereNull('is_approved')
                                 ->exists()
                                 && $record->user_id !== auth()->id()
                         ),
-
 
                     Tables\Actions\Action::make('Tolak')
                         ->label('Tolak')
@@ -216,6 +225,16 @@ class PengajuanResource extends Resource
                         ])
                         ->action(function ($record, array $data) {
                             $user = auth()->user();
+
+                            // Tidak bisa tolak jika expired
+                            if ($record->status === 'expired') {
+                                Notification::make()
+                                    ->title('Pengajuan sudah expired dan tidak dapat ditolak.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
                             if ($record->user_id === $user->id) {
                                 Notification::make()->title('Anda tidak dapat menolak pengajuan Anda sendiri.')->danger()->send();
                                 return;
@@ -233,12 +252,32 @@ class PengajuanResource extends Resource
                         })
                         ->visible(
                             fn($record) =>
-                            $record->statuses()
+                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                                $record->statuses()
                                 ->where('user_id', auth()->id())
                                 ->whereNull('is_approved')
                                 ->exists()
                                 && $record->user_id !== auth()->id()
                         ),
+                    Tables\Actions\Action::make('open_expired')
+                        ->label('Buka Expired')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(
+                            fn($record) =>
+                            $record->status === 'expired'
+                                && auth()->user()?->hasRole('superadmin')
+                        )
+                        ->action(function ($record) {
+                            $record->update(['status' => 'menunggu']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Status berhasil diubah menjadi menunggu!')
+                                ->success()
+                                ->send();
+                        }),
+
                     Tables\Actions\ViewAction::make('preview_pdf')
                         ->label('Preview PDF')
                         ->icon('heroicon-o-eye')
@@ -336,6 +375,8 @@ class PengajuanResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+        // Update expired pengajuan terlebih dahulu sebelum menampilkan data
+        static::updateExpiredPengajuan();
 
         // Superadmin boleh lihat semua
         if ($user->hasRole('superadmin')) {
@@ -355,5 +396,13 @@ class PengajuanResource extends Resource
                     // atau sebagai approver di pengajuan lain
                     ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
             });
+    }
+    private static function updateExpiredPengajuan(): void
+    {
+        $today = Carbon::now()->startOfDay();
+        Pengajuan::where('status', 'menunggu')
+            ->whereNotNull('tgl_realisasi')
+            ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(2))
+            ->update(['status' => 'expired']);
     }
 }
