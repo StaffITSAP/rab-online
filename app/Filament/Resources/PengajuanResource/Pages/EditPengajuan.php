@@ -55,4 +55,85 @@ class EditPengajuan extends EditRecord
 
         return $data;
     }
+    protected function afterSave(): void
+    {
+        $pengajuan = $this->record;
+        $formData = $this->data;
+
+        // OPTIONAL: Update Lampiran (seperti afterCreate)
+        $pengajuan->lampiran()->updateOrCreate(
+            ['pengajuan_id' => $pengajuan->id],
+            [
+                'lampiran_asset' => $formData['lampiran_asset'] ?? false,
+                'lampiran_dinas' => $formData['lampiran_dinas'] ?? false,
+            ]
+        );
+
+        // Hapus status existing dulu (hati-hati jika pengen preserve approval sebelumnya)
+        \App\Models\PengajuanStatus::where('pengajuan_id', $pengajuan->id)->delete();
+
+        // Kopi logic dari afterCreate untuk generate ulang PengajuanStatus
+        $persetujuans = \App\Models\Persetujuan::with(['pengajuanApprovers.approver.roles'])
+            ->where('user_id', $pengajuan->user_id)
+            ->get();
+
+        foreach ($persetujuans as $persetujuan) {
+            $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
+            $skipPengiriman = !($pengajuan->use_pengiriman && $persetujuan->use_pengiriman);
+
+            foreach ($persetujuan->pengajuanApprovers as $approver) {
+                $user = $approver->approver;
+                if (!$user) continue;
+
+                $roleNames = $user->getRoleNames();
+
+                $isKoordinatorTeknisi = $roleNames->contains('koordinator teknisi');
+                $isKoordinatorGudang  = $roleNames->contains('koordinator gudang');
+                $isManager            = $roleNames->contains('manager');
+                $isDirektur           = $roleNames->contains('direktur');
+                $isOwner              = $roleNames->contains('owner');
+
+                // ❌ Skip jika kondisi tidak memenuhi
+                if ($isKoordinatorTeknisi && $skipTeknisi) {
+                    continue;
+                }
+
+                if ($isKoordinatorGudang && $skipPengiriman) {
+                    continue;
+                }
+
+                if ($isManager) {
+                    if ($persetujuan->use_manager) {
+                        if ($pengajuan->total_biaya < 1000000) {
+                            continue;
+                        }
+                    }
+                }
+
+                $autoApprove    = false;
+                $autoApproveBy  = null;
+
+                if ($isDirektur && $persetujuan->use_direktur) {
+                    $autoApprove   = true;
+                    $autoApproveBy = 'direktur';
+                }
+                if ($isOwner && $persetujuan->use_owner) {
+                    $autoApprove   = true;
+                    $autoApproveBy = 'owner';
+                }
+
+                \App\Models\PengajuanStatus::create([
+                    'pengajuan_id'   => $pengajuan->id,
+                    'persetujuan_id' => $persetujuan->id,
+                    'user_id'        => $user->id,
+                    'is_approved'    => $autoApprove ? true : null,
+                    'approved_at'    => $autoApprove ? now() : null,
+                ]);
+            }
+        }
+    }
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

@@ -39,9 +39,9 @@ class UpdateExpiredPengajuan extends Command
 
         foreach ($pengajuans as $pengajuan) {
             $tglRealisasi = Carbon::parse($pengajuan->tgl_realisasi)->startOfDay();
-            $batasWaktu = $tglRealisasi->copy()->addDays(2); // 2 hari setelah tanggal realisasi
+            $batasWaktu = $tglRealisasi->copy()->addDays(1); // 1 hari setelah tanggal realisasi
 
-            // Jika hari ini sudah melewati batas waktu (lebih dari 2 hari)
+            // Jika hari ini sudah melewati batas waktu (lebih dari 1 hari)
             if ($today->gt($batasWaktu)) {
                 $pengajuan->update(['status' => 'expired']);
                 $expiredCount++;

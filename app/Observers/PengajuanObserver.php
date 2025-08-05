@@ -38,9 +38,9 @@ class PengajuanObserver
     {
         $tglRealisasi = Carbon::parse($pengajuan->tgl_realisasi)->startOfDay();
         $today = Carbon::now()->startOfDay();
-        $batasWaktu = $tglRealisasi->copy()->addDays(2);
+        $batasWaktu = $tglRealisasi->copy()->addDays(1);
 
-        // Jika sudah melewati batas waktu (lebih dari 2 hari)
+        // Jika sudah melewati batas waktu (lebih dari 1 hari)
         if ($today->gt($batasWaktu)) {
             // Gunakan updateQuietly agar tidak trigger observer lagi
             $pengajuan->updateQuietly(['status' => 'expired']);

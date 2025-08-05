@@ -264,19 +264,34 @@ class PengajuanResource extends Resource
                         ->icon('heroicon-o-arrow-path')
                         ->color('warning')
                         ->requiresConfirmation()
-                        ->visible(
-                            fn($record) =>
-                            $record->status === 'expired'
-                                && auth()->user()?->hasRole('superadmin')
-                        )
+                        ->visible(function ($record) {
+                            $user = auth()->user();
+                            // Bisa jika:
+                            // 1. Superadmin
+                            if ($user && $user->hasRole('superadmin')) {
+                                return $record->status === 'expired';
+                            }
+                            // 2. Atau Koordinator yang jadi approver pengajuan ini
+                            if (
+                                $user
+                                && $user->hasRole('koordinator')
+                                && $record->statuses()
+                                ->where('user_id', $user->id)
+                                ->exists()
+                            ) {
+                                return $record->status === 'expired';
+                            }
+                            // selain itu, tidak boleh
+                            return false;
+                        })
                         ->action(function ($record) {
                             $record->update(['status' => 'menunggu']);
-
                             \Filament\Notifications\Notification::make()
                                 ->title('Status berhasil diubah menjadi menunggu!')
                                 ->success()
                                 ->send();
                         }),
+
 
                     Tables\Actions\ViewAction::make('preview_pdf')
                         ->label('Preview PDF')
@@ -402,7 +417,7 @@ class PengajuanResource extends Resource
         $today = Carbon::now()->startOfDay();
         Pengajuan::where('status', 'menunggu')
             ->whereNotNull('tgl_realisasi')
-            ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(2))
+            ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(1))
             ->update(['status' => 'expired']);
     }
 }

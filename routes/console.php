@@ -28,7 +28,7 @@ Schedule::call(function () {
 
     foreach ($pengajuans as $pengajuan) {
         $tglRealisasi = \Carbon\Carbon::parse($pengajuan->tgl_realisasi)->startOfDay();
-        $batasWaktu = $tglRealisasi->copy()->addDays(2);
+        $batasWaktu = $tglRealisasi->copy()->addDays(1);
 
         if ($today->gt($batasWaktu)) {
             $pengajuan->update(['status' => 'expired']);
