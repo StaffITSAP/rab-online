@@ -88,50 +88,51 @@ class PengajuanResource extends Resource
                                 ->where('is_approved', true)
                                 ->latest('approved_at')
                                 ->first();
-                            return $status?->alasan_ditolak ? 'Catatan: ' . $status->alasan_ditolak : null;
+                            return $status?->catatan_approve ? 'Catatan: ' . $status->catatan_approve : null;
                         }
                         return null;
                     }),
 
-                TextColumn::make('approved_by')
-                    ->label('Disetujui / Ditolak Oleh')
+                TextColumn::make('pending_approvers')
+                    ->label('Belum Disetujui Oleh')
+                    ->html()
                     ->getStateUsing(function ($record) {
-                        if ($record->status === 'ditolak') {
-                            $penolak = $record->statuses()
-                                ->where('is_approved', false)
-                                ->latest('approved_at')
-                                ->with('user')
-                                ->first();
-                            return $penolak?->user?->name ?? '-';
-                        } else {
-                            $latestApproved = $record->statuses()
-                                ->where('is_approved', true)
-                                ->latest('approved_at')
-                                ->with('user')
-                                ->first();
-                            return $latestApproved?->user?->name ?? '-';
-                        }
+                        $pending = $record->statuses()
+                            ->whereNull('is_approved')
+                            ->with('user')
+                            ->get();
+
+                        $names = $pending->pluck('user.name')->filter()->toArray();
+
+                        // Gabungkan pakai <br> agar nama tampil ke bawah
+                        return count($names) ? implode('<br>', $names) : '-';
                     }),
-                TextColumn::make('approved_at')
-                    ->label('Tanggal Disetujui / Ditolak')
+
+
+                TextColumn::make('approved_info')
+                    ->label('Disetujui / Ditolak Oleh (Tanggal)')
+                    ->html()
                     ->getStateUsing(function ($record) {
-                        if ($record->status === 'ditolak') {
-                            $penolak = $record->statuses()
-                                ->where('is_approved', false)
-                                ->latest('approved_at')
-                                ->first();
-                            return $penolak?->approved_at
-                                ? \Carbon\Carbon::parse($penolak->approved_at)->translatedFormat('d/m/Y H:i')
-                                : '-';
-                        } else {
-                            $latestApproved = $record->statuses()
-                                ->where('is_approved', true)
-                                ->latest('approved_at')
-                                ->first();
-                            return $latestApproved?->approved_at
-                                ? \Carbon\Carbon::parse($latestApproved->approved_at)->translatedFormat('d/m/Y H:i')
-                                : '-';
+                        $approvedStatuses = $record->statuses()
+                            ->whereNotNull('is_approved')
+                            ->with('user')
+                            ->orderBy('approved_at')
+                            ->get();
+
+                        if ($approvedStatuses->isEmpty()) {
+                            return '-';
                         }
+
+                        $list = $approvedStatuses->map(function ($status) {
+                            $name = e($status->user?->name ?? '-');
+                            $approvedText = $status->is_approved ? 'Disetujui' : 'Ditolak';
+                            $date = $status->approved_at
+                                ? \Carbon\Carbon::parse($status->approved_at)->translatedFormat('d F Y H:i')
+                                : '-';
+                            return "<div>{$name} ({$approvedText})<br><span style=\"font-size:13px;color:#aaa;\">{$date}</span></div>";
+                        })->implode('');
+
+                        return $list;
                     }),
 
                 Tables\Columns\TextColumn::make('menggunakan_teknisi')
@@ -158,7 +159,7 @@ class PengajuanResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->requiresConfirmation()
                         ->form([
-                            Textarea::make('alasan_ditolak')->label('Catatan (opsional)')->rows(2),
+                            Textarea::make('catatan_approve')->label('Catatan (opsional)')->rows(2),
                         ])
                         ->action(function ($record, array $data) {
                             $user = auth()->user();
@@ -178,7 +179,7 @@ class PengajuanResource extends Resource
                                 $status->update([
                                     'is_approved' => true,
                                     'approved_at' => now(),
-                                    'alasan_ditolak' => $data['alasan_ditolak'] ?? null,
+                                    'catatan_approve' => $data['catatan_approve'] ?? null,
                                 ]);
 
                                 // Cek jika semua sudah approve

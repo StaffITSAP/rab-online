@@ -35,6 +35,7 @@ class CabangResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('kode')
             ->columns([
                 Tables\Columns\TextColumn::make('kode')->sortable()->searchable()->label('Nama Cabang'),
 

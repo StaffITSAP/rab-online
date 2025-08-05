@@ -166,6 +166,7 @@ class PersetujuanResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('user_id')
             ->columns([
                 TextColumn::make('user.name')
                     ->label('User'),

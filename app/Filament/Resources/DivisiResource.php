@@ -34,6 +34,7 @@ class DivisiResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('nama')
             ->columns([
                 TextColumn::make('nama')->searchable()->sortable(),
             ])

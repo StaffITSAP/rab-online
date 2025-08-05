@@ -38,6 +38,7 @@ class TipeRABResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('nama')
             ->columns([
                 TextColumn::make('kode')->searchable()->sortable(),
                 TextColumn::make('nama')->searchable()->sortable(),
