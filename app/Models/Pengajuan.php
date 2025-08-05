@@ -86,7 +86,7 @@ class Pengajuan extends Model
     public static function generateNoRAB(int $tipeRABId): string
     {
         $today = now();
-        $dateStr = $today->format('ymd'); // misal: 250802
+        $dateStr = $today->format('ymd'); // contoh: 250802
         $year = $today->year;
 
         // Ambil kode dari tabel tipe_rabs
@@ -96,12 +96,10 @@ class Pengajuan extends Model
         // Pattern prefix (tanpa urut)
         $prefix = "RAB/{$kodeTipe}/{$dateStr}/";
 
-        // Cari nomor urut terbesar hari ini & tipe ini (termasuk soft deleted)
+        // Cari nomor urut terbesar untuk tipe RAB ini saja (semua tahun, semua tanggal, termasuk soft delete)
         $last = self::withTrashed()
             ->where('tipe_rab_id', $tipeRABId)
-            ->whereYear('created_at', $year)
-            ->whereDate('created_at', $today->toDateString())
-            ->where('no_rab', 'like', "{$prefix}%")
+            ->where('no_rab', 'like', "RAB/{$kodeTipe}/%") // cari semua dengan kode tipe ini, semua tanggal
             ->orderByDesc('no_rab')
             ->first();
 
