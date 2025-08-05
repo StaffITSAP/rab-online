@@ -95,7 +95,7 @@
     <table style="font-size: 9px;">
         <tr>
             <td rowspan="5" class="logo-cell">
-                <img src="{{ $logoPath }}" alt="Logo" style="height: 60px; width: 100px; margin-bottom:10px;">
+                <img src="{{ $logoPath }}" alt="Logo" style="height: 60px; width: 80px; margin-bottom:10px;">
             </td>
             <td colspan="2">
                 Kantor Pusat : Jl. S. Parman 47 Semarang 50232<br>
