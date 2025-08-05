@@ -67,12 +67,27 @@
 
 <body>
     @php $showSignature = $showSignature ?? true; @endphp
-
+    @php
+    $companyKey = strtolower($pengajuan->user->company ?? '');
+    $companyName = match ($companyKey) {
+    'sap' => 'CV Solusi Arya Prima',
+    'dinatek' => 'CV Dinatek Jaya Lestari',
+    'ssm' => 'PT Sinergi Subur Makmur',
+    default => '-',
+    };
+    // Mapping nama file logo (pastikan file ada di public_path)
+    $logoMap = [
+    'sap' => public_path('logo-sap.png'),
+    'dinatek' => public_path('logo-dinatek.png'),
+    'ssm' => public_path('logo-ssm.png'),
+    ];
+    $logoPath = $logoMap[$companyKey] ?? public_path('logo-default.png'); // Default logo jika tidak ketemu
+    @endphp
     <h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN BARANG INTERN</h2>
     <h3 align="center" style="margin: 5px 0;">
         No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}
     </h3>
-    <h2 align="center" style="margin: 5px 0;">CV Solusi Arya Prima</h2>
+    <h2 align="center" style="margin: 5px 0;">{{ $companyName }}</h2>
     <h3 align="center" style="margin: 5px 0;">
         CABANG {{ strtoupper(optional($pengajuan->user?->userStatus?->cabang)->kode ?? '-') }}
     </h3>
@@ -80,7 +95,7 @@
     <table style="font-size: 9px;">
         <tr>
             <td rowspan="5" class="logo-cell">
-                <img src="{{ public_path('logo-sap.png') }}" alt="Logo">
+                <img src="{{ $logoPath }}" alt="Logo" style="height: 60px; width: 100px; margin-bottom:10px;">
             </td>
             <td colspan="2">
                 Kantor Pusat : Jl. S. Parman 47 Semarang 50232<br>
