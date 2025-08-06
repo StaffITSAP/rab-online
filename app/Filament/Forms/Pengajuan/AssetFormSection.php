@@ -5,6 +5,7 @@ namespace App\Filament\Forms\Pengajuan;
 use Closure;
 use Filament\Forms;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -96,12 +97,18 @@ class AssetFormSection
                         ->dehydrated()
                         ->prefix('Rp ')
                         ->default(0),
-
-                    Toggle::make('lampiran_asset')
-                        ->label('Tambahkan Lampiran Asset/Inventaris')
-                        ->default(false)
-                        ->reactive()
-                        ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
+                    Grid::make(2)->schema([
+                        Toggle::make('menggunakan_teknisi')
+                            ->label('Keperluan Teknisi')
+                            ->inline(false)
+                            ->default(false)
+                            ->reactive(),
+                        Toggle::make('lampiran_asset')
+                            ->label('Tambahkan Lampiran Asset/Inventaris')
+                            ->default(false)
+                            ->reactive()
+                            ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
+                    ]),
 
                     Repeater::make('lampiranAssets')
 
