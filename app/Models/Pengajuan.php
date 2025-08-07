@@ -60,30 +60,48 @@ class Pengajuan extends Model
         });
 
         static::deleting(function ($pengajuan) {
-            // Cek soft delete
+            // Soft delete check
             if (method_exists($pengajuan, 'isForceDeleting') && !$pengajuan->isForceDeleting()) {
-                // Softdelete semua relasi
-                $pengajuan->pengajuan_assets()->each(function ($asset) {
+                // Soft delete relasi-relasi terkait
+                $pengajuan->pengajuan_assets()->get()->each(function ($asset) {
                     $asset->delete();
                 });
-                $pengajuan->pengajuan_dinas()->each(function ($dinas) {
+
+                $pengajuan->pengajuan_dinas()->get()->each(function ($dinas) {
                     $dinas->delete();
                 });
-                $pengajuan->dinasActivities()->each(function ($status) {
-                    $status->delete();
+
+                $pengajuan->dinasActivities()->get()->each(function ($activity) {
+                    $activity->delete();
                 });
-                $pengajuan->dinasPersonils()->each(function ($status) {
-                    $status->delete();
+
+                $pengajuan->dinasPersonils()->get()->each(function ($personil) {
+                    $personil->delete();
+                });
+
+                $pengajuan->lampiran()->get()->each(function ($lampiran) {
+                    $lampiran->delete();
+                });
+
+                $pengajuan->lampiranAssets()->get()->each(function ($lampiranAsset) {
+                    $lampiranAsset->delete();
+                });
+
+                $pengajuan->lampiranDinas()->get()->each(function ($lampiranDinas) {
+                    $lampiranDinas->delete();
                 });
             }
         });
 
-        // Untuk restore otomatis jika ingin (opsional):
+        // Untuk restore otomatis jika ingin (opsional)
         static::restoring(function ($pengajuan) {
             $pengajuan->pengajuan_assets()->withTrashed()->get()->each->restore();
             $pengajuan->pengajuan_dinas()->withTrashed()->get()->each->restore();
             $pengajuan->dinasActivities()->withTrashed()->get()->each->restore();
             $pengajuan->dinasPersonils()->withTrashed()->get()->each->restore();
+            $pengajuan->lampiran()->withTrashed()->get()->each->restore();
+            $pengajuan->lampiranAssets()->withTrashed()->get()->each->restore();
+            $pengajuan->lampiranDinas()->withTrashed()->get()->each->restore();
         });
     }
 
