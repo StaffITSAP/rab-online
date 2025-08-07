@@ -12,7 +12,6 @@ class EditPengajuan extends EditRecord
 
     public bool $isReadOnly = false;
 
-    // GANTI: harus public
     public function mount($record): void
     {
         parent::mount($record);
@@ -44,23 +43,24 @@ class EditPengajuan extends EditRecord
         }
         return parent::getFormActions();
     }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $pengajuan = $this->record;
-
         $lampiran = $pengajuan->lampiran;
 
         $data['lampiran_asset'] = $lampiran?->lampiran_asset ?? false;
-        $data['lampiran_dinas'] = $lampiran?->lampiran_asset ?? false;
+        $data['lampiran_dinas'] = $lampiran?->lampiran_dinas ?? false;
 
         return $data;
     }
+
     protected function afterSave(): void
     {
         $pengajuan = $this->record;
         $formData = $this->data;
 
-        // OPTIONAL: Update Lampiran (seperti afterCreate)
+        // Update Lampiran (seperti afterCreate)
         $pengajuan->lampiran()->updateOrCreate(
             ['pengajuan_id' => $pengajuan->id],
             [
@@ -72,14 +72,19 @@ class EditPengajuan extends EditRecord
         // Hapus status existing dulu (hati-hati jika pengen preserve approval sebelumnya)
         \App\Models\PengajuanStatus::where('pengajuan_id', $pengajuan->id)->delete();
 
-        // Kopi logic dari afterCreate untuk generate ulang PengajuanStatus
+        // Logic generate ulang PengajuanStatus
         $persetujuans = \App\Models\Persetujuan::with(['pengajuanApprovers.approver.roles'])
             ->where('user_id', $pengajuan->user_id)
             ->get();
 
         foreach ($persetujuans as $persetujuan) {
-            $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
-            $skipPengiriman = !(($pengajuan->use_pengiriman || $pengajuan->use_car) && $persetujuan->use_pengiriman || $persetujuan->use_car);
+            $skipTeknisi        = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
+            $skipAssetTeknisi   = !($pengajuan->asset_teknisi && $persetujuan->asset_teknisi);
+
+            // --- Perbaiki logika pengiriman ---
+            $adaPengajuanPengiriman    = $pengajuan->use_pengiriman || $pengajuan->use_car;
+            $adaPersetujuanPengiriman  = $persetujuan->use_pengiriman || $persetujuan->use_car;
+            $skipPengiriman = !($adaPengajuanPengiriman && $adaPersetujuanPengiriman);
 
             foreach ($persetujuan->pengajuanApprovers as $approver) {
                 $user = $approver->approver;
@@ -87,24 +92,27 @@ class EditPengajuan extends EditRecord
 
                 $roleNames = $user->getRoleNames();
 
-                $isKoordinatorTeknisi = $roleNames->contains(function ($value) {
-                    return $value === 'koordinator teknisi' || $value === 'rt';
-                });
-
+                $isKoordinatorTeknisi = $roleNames->contains('koordinator teknisi');
+                $isRt                 = $roleNames->contains('rt');
                 $isKoordinatorGudang  = $roleNames->contains('koordinator gudang');
                 $isManager            = $roleNames->contains('manager');
                 $isDirektur           = $roleNames->contains('direktur');
                 $isOwner              = $roleNames->contains('owner');
 
-                // ❌ Skip jika kondisi tidak memenuhi
+                // ❌ Skip koordinator teknisi jika tidak butuh teknisi
                 if ($isKoordinatorTeknisi && $skipTeknisi) {
                     continue;
                 }
-
+                // ❌ Skip RT jika tidak butuh asset teknisi
+                if ($isRt && $skipAssetTeknisi) {
+                    continue;
+                }
+                // ❌ Skip koordinator gudang jika tidak butuh pengiriman
                 if ($isKoordinatorGudang && $skipPengiriman) {
                     continue;
                 }
 
+                // Manager logic
                 if ($isManager) {
                     if ($persetujuan->use_manager) {
                         if ($pengajuan->total_biaya < 1000000) {
@@ -135,6 +143,7 @@ class EditPengajuan extends EditRecord
             }
         }
     }
+
     protected function getRedirectUrl(): string
     {
         return static::getResource()::getUrl('index');

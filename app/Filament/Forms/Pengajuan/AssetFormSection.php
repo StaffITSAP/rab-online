@@ -98,7 +98,7 @@ class AssetFormSection
                         ->prefix('Rp ')
                         ->default(0),
                     Grid::make(2)->schema([
-                        Toggle::make('menggunakan_teknisi')
+                        Toggle::make('asset_teknisi')
                             ->label('Keperluan Teknisi')
                             ->inline(false)
                             ->default(false)

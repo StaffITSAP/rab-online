@@ -24,13 +24,15 @@ class Pengajuan extends Model
         'jml_personil',
         'menggunakan_teknisi',
         'use_pengiriman',
-        'use_car'
+        'use_car',
+        'asset_teknisi',
     ];
 
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
         'use_pengiriman' => 'boolean',
         'use_car' => 'boolean',
+        'asset_teknisi' => 'boolean',
     ];
 
 

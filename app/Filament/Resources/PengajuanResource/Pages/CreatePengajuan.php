@@ -11,10 +11,10 @@ use App\Models\Persetujuan;
 use App\Models\PersetujuanApprover;
 use Illuminate\Support\Facades\Log;
 
-
 class CreatePengajuan extends CreateRecord
 {
     protected static string $resource = PengajuanResource::class;
+
     protected function afterCreate(): void
     {
         $pengajuan = $this->record;
@@ -37,8 +37,13 @@ class CreatePengajuan extends CreateRecord
         Log::info('Jumlah persetujuan ditemukan: ' . $persetujuans->count());
 
         foreach ($persetujuans as $persetujuan) {
-            $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
-            $skipPengiriman = !(($pengajuan->use_pengiriman || $pengajuan->use_car) && $persetujuan->use_pengiriman || $persetujuan->use_car);
+            $skipTeknisi        = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
+            $skipAssetTeknisi   = !($pengajuan->asset_teknisi && $persetujuan->asset_teknisi);
+
+            // --- Perbaiki logika pengiriman ---
+            $adaPengajuanPengiriman    = $pengajuan->use_pengiriman || $pengajuan->use_car;
+            $adaPersetujuanPengiriman  = $persetujuan->use_pengiriman || $persetujuan->use_car;
+            $skipPengiriman = !($adaPengajuanPengiriman && $adaPersetujuanPengiriman);
 
             foreach ($persetujuan->pengajuanApprovers as $approver) {
                 $user = $approver->approver;
@@ -46,18 +51,21 @@ class CreatePengajuan extends CreateRecord
 
                 $roleNames = $user->getRoleNames();
 
-                $isKoordinatorTeknisi = $roleNames->contains(function ($value) {
-                    return $value === 'koordinator teknisi' || $value === 'rt';
-                });
-
+                $isKoordinatorTeknisi = $roleNames->contains('koordinator teknisi');
                 $isKoordinatorGudang  = $roleNames->contains('koordinator gudang');
                 $isManager            = $roleNames->contains('manager');
                 $isDirektur           = $roleNames->contains('direktur');
                 $isOwner              = $roleNames->contains('owner');
+                $isRt                 = $roleNames->contains('rt');
 
                 // ❌ Skip jika kondisi tidak memenuhi
                 if ($isKoordinatorTeknisi && $skipTeknisi) {
                     Log::info("❌ Skip Koordinator Teknisi: user_id {$user->id}");
+                    continue;
+                }
+
+                if ($isRt && $skipAssetTeknisi) {
+                    Log::info("❌ Skip RT (Asset Teknisi): user_id {$user->id}");
                     continue;
                 }
 
@@ -72,15 +80,10 @@ class CreatePengajuan extends CreateRecord
                     if ($persetujuan->use_manager) {
                         if ($pengajuan->total_biaya < 1000000) {
                             Log::info("❌ Skip Manager: user_id {$user->id} (use_manager = true, nominal < 1jt)");
-                            continue; // kalau use_manager true tapi nominal < 1jt, skip
+                            continue;
                         }
-                        // kalau nominal >= 1jt, proses seperti biasa (continue tidak dijalankan)
                     }
-                    // Kalau use_manager false, walau nominal berapapun tetap PROSES
-                    // jadi tidak ada continue di sini
                 }
-
-                // -------------------
 
                 $autoApprove    = false;
                 $autoApproveBy  = null;

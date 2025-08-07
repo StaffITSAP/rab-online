@@ -63,21 +63,34 @@ class PersetujuanResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 $approvers = collect($get('approvers'));
-
-                                // Ambil semua user dengan role 'koordinator teknisi' atau 'rt'
-                                $koordinator = \App\Models\User::role(['koordinator teknisi', 'rt'])->get();
+                                $koordinator = User::role('koordinator teknisi')->first();
+                                if (!$koordinator) return;
 
                                 if ($state) {
-                                    // Tambah semua approver yang belum ada
-                                    foreach ($koordinator as $user) {
-                                        if (!$approvers->contains('approver_id', $user->id)) {
-                                            $approvers->push(['approver_id' => $user->id]);
-                                        }
+                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
+                                        $approvers->push(['approver_id' => $koordinator->id]);
                                     }
                                 } else {
-                                    // Hapus semua approver id yg rolenya 'koordinator teknisi' atau 'rt'
-                                    $ids = $koordinator->pluck('id')->all();
-                                    $approvers = $approvers->reject(fn($item) => in_array($item['approver_id'], $ids));
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
+                        Toggle::make('asset_teknisi')
+                            ->label('Asset Teknisi')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $koordinator = User::role('rt')->first();
+                                if (!$koordinator) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
+                                        $approvers->push(['approver_id' => $koordinator->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
                                 }
 
                                 $set('approvers', $approvers->values()->all());
@@ -208,6 +221,11 @@ class PersetujuanResource extends Resource
 
                 TextColumn::make('menggunakan_teknisi')
                     ->label('Teknisi')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('asset_teknisi')
+                    ->label('RT')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
