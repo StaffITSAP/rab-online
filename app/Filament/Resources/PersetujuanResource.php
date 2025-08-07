@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PersetujuanResource\Pages;
-use App\Filament\Resources\PersetujuanResource\RelationManagers;
 use App\Models\Persetujuan;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,15 +10,14 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use App\Models\User;
-use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
+use Filament\Tables\Columns\TextColumn;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class PersetujuanResource extends Resource
 {
@@ -41,14 +39,17 @@ class PersetujuanResource extends Resource
                         ->label('User yang Diajukan')
                         ->relationship('user', 'name')
                         ->searchable()
-                        ->required(),
+                        ->required()
+                        ->default(Auth::id())
+                        ->disabled(fn () => !Auth::user()->hasRole('superadmin')),
+
                     Repeater::make('approvers')
                         ->label('Daftar Approver')
                         ->relationship('approvers')
                         ->schema([
                             Select::make('approver_id')
                                 ->label('Pilih Approver')
-                                ->options(fn() => User::all()->pluck('name', 'id'))
+                                ->options(fn () => User::all()->pluck('name', 'id'))
                                 ->searchable()
                                 ->required(),
                         ])
@@ -56,149 +57,42 @@ class PersetujuanResource extends Resource
                         ->minItems(1)
                         ->columns(1)
                         ->required(),
+
                     Grid::make(4)->schema([
-                        Toggle::make('menggunakan_teknisi')
-                            ->label('Menggunakan Teknisi')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $koordinator = User::role('koordinator teknisi')->first();
-                                if (!$koordinator) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
-                                        $approvers->push(['approver_id' => $koordinator->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-                        Toggle::make('asset_teknisi')
-                            ->label('Asset Teknisi')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $koordinator = User::role('rt')->first();
-                                if (!$koordinator) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
-                                        $approvers->push(['approver_id' => $koordinator->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-                        Toggle::make('use_pengiriman')
-                            ->label('Pengiriman Barang/Gudang')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $koordinator = User::role('koordinator gudang')->first();
-                                if (!$koordinator) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
-                                        $approvers->push(['approver_id' => $koordinator->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-                        Toggle::make('use_car')
-                            ->label('Request Mobil')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $koordinator = User::role('koordinator gudang')->first();
-                                if (!$koordinator) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
-                                        $approvers->push(['approver_id' => $koordinator->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-
-                        Toggle::make('use_manager')
-                            ->label('Persetujuan Manager')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $manager = User::role('manager')->first();
-                                if (!$manager) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $manager->id)) {
-                                        $approvers->push(['approver_id' => $manager->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $manager->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-
-                        Toggle::make('use_direktur')
-                            ->label('Persetujuan Direktur')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $direktur = User::role('direktur')->first();
-                                if (!$direktur) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $direktur->id)) {
-                                        $approvers->push(['approver_id' => $direktur->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $direktur->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
-
-                        Toggle::make('use_owner')
-                            ->label('Persetujuan Owner')
-                            ->default(false)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $approvers = collect($get('approvers'));
-                                $owner = User::role('owner')->first();
-                                if (!$owner) return;
-
-                                if ($state) {
-                                    if (!$approvers->contains('approver_id', $owner->id)) {
-                                        $approvers->push(['approver_id' => $owner->id]);
-                                    }
-                                } else {
-                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $owner->id);
-                                }
-
-                                $set('approvers', $approvers->values()->all());
-                            }),
+                        self::autoToggle('menggunakan_teknisi', 'koordinator teknisi'),
+                        self::autoToggle('asset_teknisi', 'rt'),
+                        self::autoToggle('use_pengiriman', 'koordinator gudang'),
+                        self::autoToggle('use_car', 'koordinator gudang'),
+                        self::autoToggle('use_manager', 'manager'),
+                        self::autoToggle('use_direktur', 'direktur'),
+                        self::autoToggle('use_owner', 'owner'),
                     ]),
-
-
                 ])
                 ->columns(1)
         ]);
+    }
+
+    public static function autoToggle(string $field, string $role)
+    {
+        return Toggle::make($field)
+            ->label(ucwords(str_replace('_', ' ', $field)))
+            ->default(false)
+            ->reactive()
+            ->afterStateUpdated(function ($state, callable $set, callable $get) use ($role) {
+                $approvers = collect($get('approvers'));
+                $user = User::role($role)->first();
+                if (!$user) return;
+
+                if ($state) {
+                    if (!$approvers->contains('approver_id', $user->id)) {
+                        $approvers->push(['approver_id' => $user->id]);
+                    }
+                } else {
+                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $user->id);
+                }
+
+                $set('approvers', $approvers->values()->all());
+            });
     }
 
     public static function table(Table $table): Table
@@ -219,56 +113,23 @@ class PersetujuanResource extends Resource
                             ->join(', ');
                     }),
 
-                TextColumn::make('menggunakan_teknisi')
-                    ->label('Teknisi')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('asset_teknisi')
-                    ->label('RT')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('use_pengiriman')
-                    ->label('Gudang')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('use_car')
-                    ->label('Mobil')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('use_manager')
-                    ->label('Manager')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('use_direktur')
-                    ->label('Direktur')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-                TextColumn::make('use_owner')
-                    ->label('Owner')
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn($state) => $state ? 'success' : 'danger'),
-
-            ])
-            ->filters([
-                //
+                TextColumn::make('menggunakan_teknisi')->label('Teknisi')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('asset_teknisi')->label('RT')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_pengiriman')->label('Gudang')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_car')->label('Mobil')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_manager')->label('Manager')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_direktur')->label('Direktur')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_owner')->label('Owner')->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn($record) => Auth::user()?->hasRole('superadmin') || $record->user_id === Auth::id()),
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -279,17 +140,43 @@ class PersetujuanResource extends Resource
             'edit' => Pages\EditPersetujuan::route('/{record}/edit'),
         ];
     }
+
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->hasRole('superadmin');
+        return Auth::check() && (Auth::user()->hasRole('superadmin') || Auth::user()->hasRole('marcomm') || Auth::user()->hasRole('rt'));
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasRole('superadmin');
+        return Auth::check() && (Auth::user()->hasRole('superadmin') || Auth::user()->hasRole('marcomm') || Auth::user()->hasRole('rt'));
     }
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+
+    public static function canCreate(): bool
     {
-        return parent::getEloquentQuery()->with('approvers');
+        return Auth::check() && (
+            Auth::user()->hasRole('superadmin') ||
+            Auth::user()->hasRole('marcomm') ||
+            Auth::user()->hasRole('rt')
+        );
+    }
+
+    public static function canEdit($record): bool
+    {
+        return Auth::check() && (
+            Auth::user()->hasRole('superadmin') ||
+            $record->user_id === Auth::id()
+        );
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->with('approvers');
+
+        // Batasi untuk marcomm/rt hanya melihat miliknya sendiri
+        if (Auth::user()?->hasRole('marcomm') || Auth::user()?->hasRole('rt')) {
+            $query->where('user_id', Auth::id());
+        }
+
+        return $query;
     }
 }
