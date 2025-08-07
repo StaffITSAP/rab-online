@@ -274,7 +274,7 @@ class PenggunaanMobilResource extends Resource
                     Tables\Actions\RestoreAction::make()
                         ->visible(
                             fn($record) =>
-                            auth()->user()->hasRole('SuperAdmin') && $record->trashed()
+                            auth()->user()->hasRole('superadmin') && $record->trashed()
                         ),
 
                 ]),

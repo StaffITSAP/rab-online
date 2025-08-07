@@ -15,7 +15,9 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
@@ -121,7 +123,8 @@ class UserResource extends Resource
                     ->color(fn($state) => $state ? 'success' : 'danger'),
             ])
             ->filters([
-                //
+                TrashedFilter::make()
+                    ->visible(fn() => Auth::user()->hasRole('superadmin')), // gunakan ini jika pakai Spatie
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

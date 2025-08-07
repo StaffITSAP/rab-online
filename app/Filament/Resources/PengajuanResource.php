@@ -149,7 +149,7 @@ class PengajuanResource extends Resource
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 TrashedFilter::make()
-                    ->visible(fn() => Auth::user()->hasRole('SuperAdmin')), // gunakan ini jika pakai Spatie
+                    ->visible(fn() => Auth::user()->hasRole('superadmin')), // gunakan ini jika pakai Spatie
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -338,7 +338,7 @@ class PengajuanResource extends Resource
                     Tables\Actions\RestoreAction::make()
                         ->visible(
                             fn($record) =>
-                            auth()->user()->hasRole('SuperAdmin') && $record->trashed()
+                            auth()->user()->hasRole('superadmin') && $record->trashed()
                         ),
 
                 ]),
