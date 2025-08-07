@@ -41,7 +41,7 @@ class PersetujuanResource extends Resource
                         ->searchable()
                         ->required()
                         ->default(Auth::id())
-                        ->disabled(fn () => !Auth::user()->hasRole('superadmin')),
+                        ->disabled(fn() => !Auth::user()->hasRole('superadmin')),
 
                     Repeater::make('approvers')
                         ->label('Daftar Approver')
@@ -49,7 +49,7 @@ class PersetujuanResource extends Resource
                         ->schema([
                             Select::make('approver_id')
                                 ->label('Pilih Approver')
-                                ->options(fn () => User::all()->pluck('name', 'id'))
+                                ->options(fn() => User::all()->pluck('name', 'id'))
                                 ->searchable()
                                 ->required(),
                         ])
@@ -153,12 +153,18 @@ class PersetujuanResource extends Resource
 
     public static function canCreate(): bool
     {
-        return Auth::check() && (
-            Auth::user()->hasRole('superadmin') ||
-            Auth::user()->hasRole('marcomm') ||
-            Auth::user()->hasRole('rt')
-        );
+        if (Auth::user()->hasRole('superadmin')) {
+            return true;
+        }
+
+        if (Auth::user()->hasRole('marcomm') || Auth::user()->hasRole('rt')) {
+            // Cek apakah sudah punya persetujuan
+            return !Persetujuan::where('user_id', Auth::id())->exists();
+        }
+
+        return false;
     }
+
 
     public static function canEdit($record): bool
     {
