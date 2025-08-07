@@ -38,7 +38,7 @@ class CreatePengajuan extends CreateRecord
 
         foreach ($persetujuans as $persetujuan) {
             $skipTeknisi    = !($pengajuan->menggunakan_teknisi && $persetujuan->menggunakan_teknisi);
-            $skipPengiriman = !($pengajuan->use_pengiriman && $persetujuan->use_pengiriman);
+            $skipPengiriman = !(($pengajuan->use_pengiriman || $pengajuan->use_car) && $persetujuan->use_pengiriman || $persetujuan->use_car);
 
             foreach ($persetujuan->pengajuanApprovers as $approver) {
                 $user = $approver->approver;

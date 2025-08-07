@@ -23,7 +23,7 @@ class DinasFormSection
         return [
             Section::make('Pengajuan RAB Perjalanan Dinas')
                 ->schema([
-                    Grid::make(3)->schema([
+                    Grid::make(4)->schema([
                         DatePicker::make('tgl_realisasi')
                             ->label('Tanggal Berangkat/ Realisasi')
                             ->dehydrated()
@@ -42,13 +42,20 @@ class DinasFormSection
                         TextInput::make('jml_personil')
                             ->label('Jumlah Personil')
                             ->placeholder('Silahkan isi personil'),
-                        Toggle::make('menggunakan_teknisi')
-                            ->label('Menggunakan Teknisi/Survey')
+                        Toggle::make('use_mobil')
+                            ->label('Request Mobil')
                             ->inline(false)
                             ->default(false)
-                            ->reactive(),
+                            ->reactive()
+                            ->helperText('Digunakan untuk request penggunaan Mobil.'),
                         Toggle::make('use_pengiriman')
                             ->label('Pengiriman Barang/Gudang')
+                            ->inline(false)
+                            ->default(false)
+                            ->reactive()
+                            ->helperText('Bisa juga di gunakan untuk request penggunaan Mobil dan Sopir.'),
+                        Toggle::make('menggunakan_teknisi')
+                            ->label('Menggunakan Teknisi/Survey')
                             ->inline(false)
                             ->default(false)
                             ->reactive(),

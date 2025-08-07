@@ -95,6 +95,25 @@ class PersetujuanResource extends Resource
 
                                 $set('approvers', $approvers->values()->all());
                             }),
+                        Toggle::make('use_car')
+                            ->label('Request Mobil')
+                            ->default(false)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $approvers = collect($get('approvers'));
+                                $koordinator = User::role('koordinator gudang')->first();
+                                if (!$koordinator) return;
+
+                                if ($state) {
+                                    if (!$approvers->contains('approver_id', $koordinator->id)) {
+                                        $approvers->push(['approver_id' => $koordinator->id]);
+                                    }
+                                } else {
+                                    $approvers = $approvers->reject(fn($item) => $item['approver_id'] == $koordinator->id);
+                                }
+
+                                $set('approvers', $approvers->values()->all());
+                            }),
 
                         Toggle::make('use_manager')
                             ->label('Persetujuan Manager')
@@ -186,6 +205,11 @@ class PersetujuanResource extends Resource
                     ->badge()
                     ->color(fn($state) => $state ? 'success' : 'danger'),
                 TextColumn::make('use_pengiriman')
+                    ->label('Gudang')
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('use_car')
                     ->label('Gudang')
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak')
                     ->badge()

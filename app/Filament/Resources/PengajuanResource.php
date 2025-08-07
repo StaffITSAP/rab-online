@@ -45,7 +45,7 @@ class PengajuanResource extends Resource
         return $table
             ->columns([
 
-                Tables\Columns\TextColumn::make('no_rab')
+                Tables\Columns\TextColumn::make('no_rab')->label('No RAB')
                     ->disabled(fn($record) => $record && $record->status === 'selesai')->searchable(),
                 Tables\Columns\TextColumn::make('user.name')->label('Pemohon'),
                 Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),

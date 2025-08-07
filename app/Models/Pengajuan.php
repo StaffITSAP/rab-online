@@ -23,12 +23,14 @@ class Pengajuan extends Model
         'deletion_reason',
         'jml_personil',
         'menggunakan_teknisi',
-        'use_pengiriman'
+        'use_pengiriman',
+        'use_car'
     ];
 
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
         'use_pengiriman' => 'boolean',
+        'use_car' => 'boolean',
     ];
 
 
