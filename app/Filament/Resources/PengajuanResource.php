@@ -47,7 +47,7 @@ class PengajuanResource extends Resource
 
                 Tables\Columns\TextColumn::make('no_rab')->label('No RAB')
                     ->disabled(fn($record) => $record && $record->status === 'selesai')->searchable(),
-                Tables\Columns\TextColumn::make('user.name')->label('Pemohon'),
+                Tables\Columns\TextColumn::make('user.name')->label('Pemohon')->searchable(),
                 Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
                 TextColumn::make('created_at')
                     ->label('Tanggal Pengajuan')
@@ -91,7 +91,7 @@ class PengajuanResource extends Resource
                             return $status?->catatan_approve ? 'Catatan: ' . $status->catatan_approve : null;
                         }
                         return null;
-                    }),
+                    })->searchable(),
 
                 TextColumn::make('pending_approvers')
                     ->label('Belum Disetujui Oleh')
