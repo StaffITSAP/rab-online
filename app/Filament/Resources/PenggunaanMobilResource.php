@@ -5,13 +5,16 @@ namespace App\Filament\Resources;
 use App\Models\Pengajuan;
 use App\Models\PengajuanStatus;
 use Carbon\Carbon;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
-
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
 
 class PenggunaanMobilResource extends Resource
 {
@@ -22,7 +25,7 @@ class PenggunaanMobilResource extends Resource
     protected static ?string $label = 'Penggunaan Mobil';
     protected static ?string $pluralLabel = 'Penggunaan Mobil';
     protected static ?int $navigationSort = 1;
-    protected static ?string $slug ='penggunaan-mobil';
+    protected static ?string $slug = 'penggunaan-mobil';
 
     public static function form(Form $form): Form
     {
@@ -84,6 +87,198 @@ class PenggunaanMobilResource extends Resource
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
                 TextColumn::make('no_rab')->label('No RAB'),
             ])
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('Setujui')
+                        ->label('Setujui')
+                        ->color('success')
+                        ->icon('heroicon-o-check-circle')
+                        ->requiresConfirmation()
+                        ->form([
+                            Textarea::make('catatan_approve')->label('Catatan (opsional)')->rows(2),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $user = auth()->user();
+
+                            // Tidak bisa setujui jika expired
+                            if ($record->status === 'expired') {
+                                Notification::make()
+                                    ->title('Pengajuan sudah expired dan tidak dapat disetujui.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            // Cegah pengaju menyetujui pengajuan sendiri
+                            if ($record->user_id === $user->id) {
+                                Notification::make()
+                                    ->title('Anda tidak dapat menyetujui pengajuan Anda sendiri.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            $status = $record->statuses()->where('user_id', $user->id)->first();
+
+                            if ($status && is_null($status->is_approved)) {
+                                $status->update([
+                                    'is_approved' => true,
+                                    'approved_at' => now(),
+                                    'catatan_approve' => $data['catatan_approve'] ?? null,
+                                ]);
+
+                                // Cek jika semua sudah approve
+                                $total = $record->statuses()->count();
+                                $approved = $record->statuses()->where('is_approved', true)->count();
+
+                                if ($approved === $total) {
+                                    $record->update(['status' => 'selesai']);
+                                }
+
+                                Notification::make()
+                                    ->title('Pengajuan berhasil disetujui.')
+                                    ->success()
+                                    ->send();
+                            }
+                        })
+                        ->visible(
+                            fn($record) =>
+                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                                $record->statuses()
+                                ->where('user_id', auth()->id())
+                                ->whereNull('is_approved')
+                                ->exists()
+                                && $record->user_id !== auth()->id()
+                        ),
+
+                    Tables\Actions\Action::make('Tolak')
+                        ->label('Tolak')
+                        ->color('danger')
+                        ->icon('heroicon-o-x-circle')
+                        ->requiresConfirmation()
+                        ->form([
+                            Textarea::make('alasan_ditolak')->label('Alasan Penolakan')->required(),
+                        ])
+                        ->action(function ($record, array $data) {
+                            $user = auth()->user();
+
+                            // Tidak bisa tolak jika expired
+                            if ($record->status === 'expired') {
+                                Notification::make()
+                                    ->title('Pengajuan sudah expired dan tidak dapat ditolak.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            if ($record->user_id === $user->id) {
+                                Notification::make()->title('Anda tidak dapat menolak pengajuan Anda sendiri.')->danger()->send();
+                                return;
+                            }
+                            $status = $record->statuses()->where('user_id', $user->id)->first();
+                            if ($status && is_null($status->is_approved)) {
+                                $status->update([
+                                    'is_approved' => false,
+                                    'approved_at' => now(),
+                                    'alasan_ditolak' => $data['alasan_ditolak'],
+                                ]);
+                                $record->update(['status' => 'ditolak']);
+                                Notification::make()->title('Pengajuan telah ditolak.')->danger()->send();
+                            }
+                        })
+                        ->visible(
+                            fn($record) =>
+                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                                $record->statuses()
+                                ->where('user_id', auth()->id())
+                                ->whereNull('is_approved')
+                                ->exists()
+                                && $record->user_id !== auth()->id()
+                        ),
+                    Tables\Actions\Action::make('open_expired')
+                        ->label('Buka Expired')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(function ($record) {
+                            $user = auth()->user();
+                            // Bisa jika:
+                            // 1. Superadmin
+                            if ($user && $user->hasRole('superadmin')) {
+                                return $record->status === 'expired';
+                            }
+                            // 2. Atau Koordinator yang jadi approver pengajuan ini
+                            if (
+                                $user
+                                && $user->hasRole('koordinator')
+                                && $record->statuses()
+                                ->where('user_id', $user->id)
+                                ->exists()
+                            ) {
+                                return $record->status === 'expired';
+                            }
+                            // selain itu, tidak boleh
+                            return false;
+                        })
+                        ->action(function ($record) {
+                            $record->update(['status' => 'menunggu']);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Status berhasil diubah menjadi menunggu!')
+                                ->success()
+                                ->send();
+                        }),
+
+
+                    Tables\Actions\ViewAction::make('preview_pdf')
+                        ->label('Preview PDF')
+                        ->icon('heroicon-o-eye')
+                        ->color('gray')
+                        ->slideOver() // lebih cocok untuk full lebar di HP
+                        ->modalHeading('Preview RAB PDF')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup')
+                        ->modalContent(fn($record) => view('filament.components.pdf-preview', [
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas']),
+                            'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
+                        ])),
+                    Tables\Actions\Action::make('download_pdf')
+                        ->label('Download PDF')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->color('success')
+                        ->url(fn($record) => route('pengajuan.pdf.download', $record), shouldOpenInNewTab: false),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(function ($record) {
+                            $user = auth()->user();
+                            $isSuperadmin = $user && $user->hasRole('superadmin');
+                            $isOwner = $user && $record->user_id === $user->id;
+
+                            // Jika status 'selesai', hanya superadmin yang bisa hapus
+                            if ($record->status === 'selesai') {
+                                return $isSuperadmin;
+                            }
+
+                            // Jika belum selesai, owner atau superadmin boleh hapus
+                            return $isOwner || $isSuperadmin;
+                        })
+                        ->requiresConfirmation()
+                        ->form(form: [
+                            Textarea::make('deletion_reason')
+                                ->label('Alasan Penghapusan')
+                                ->required()
+                        ])
+                        ->action(function (Model $record, array $data): void {
+                            $record->deletion_reason = $data['deletion_reason'];
+                            $record->save();
+                            $record->delete();
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->visible(
+                            fn($record) =>
+                            auth()->user()->hasRole('SuperAdmin') && $record->trashed()
+                        ),
+
+                ]),
+            ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns)
             ->defaultSort('tgl_realisasi', 'desc');
     }
 
