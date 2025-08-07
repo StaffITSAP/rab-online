@@ -21,6 +21,7 @@ class CreateUser extends CreateRecord
             'cabang_id' => $data['userStatus']['cabang_id'] ?? null,
             'divisi_id' => $data['userStatus']['divisi_id'] ?? null,
             'atasan_id' => $data['userStatus']['atasan_id'] ?? null,
+            'kota' => $data['userStatus']['kota'] ?? null,
         ];
 
         unset($data['userStatus']);
