@@ -16,6 +16,7 @@ class UserStatus extends Model
         'cabang_id',
         'divisi_id',
         'atasan_id',
+        'kota',
     ];
 
     public function user()

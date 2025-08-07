@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 
-
 class EditProfile extends Page implements HasForms
 {
     use InteractsWithForms;
@@ -36,6 +35,7 @@ class EditProfile extends Page implements HasForms
             'no_hp' => $user->no_hp,
             'company' => $user->company,
             'signature' => $user->userStatus?->signature_path,
+            'kota' => $user->userStatus?->kota,
         ]);
     }
 
@@ -63,7 +63,9 @@ class EditProfile extends Page implements HasForms
                             'dinatek' => 'CV Dinatek Jaya Lestari',
                             'ssm' => 'PT Sinergi Subur Makmur',
                         ])->label('Perusahaan'),
-
+                        TextInput::make('kota')
+                            ->label('Kota')
+                            ->maxLength(255),
                     ])->columns(1),
 
                 Section::make('Tanda Tangan')
@@ -96,11 +98,10 @@ class EditProfile extends Page implements HasForms
 
         $user->save();
 
-        if (!empty($data['signature'])) {
-            $user->userStatus()->updateOrCreate([], [
-                'signature_path' => $data['signature'],
-            ]);
-        }
+        $user->userStatus()->updateOrCreate([], [
+            'signature_path' => $data['signature'] ?? $user->userStatus?->signature_path,
+            'kota' => $data['kota'] ?? $user->userStatus?->kota,
+        ]);
 
         Notification::make()
             ->title('Profil berhasil diperbarui')

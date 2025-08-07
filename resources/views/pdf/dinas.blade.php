@@ -205,10 +205,11 @@
     </table>
 
     <p align="center" style="font-size: 12px;">
-        {{ optional(optional(optional($pengajuan->user)->userStatus)->cabang)->nama ?? 'Cabang Tidak Diketahui' }}
+        {{ optional(optional($pengajuan->user)->userStatus)->kota ?? 'Kota Tidak Diketahui' }},
 
         {{ $pengajuan->created_at ? \Carbon\Carbon::parse($pengajuan->created_at)->translatedFormat('d F Y') : '' }}
     </p>
+
 
     {{-- Tanda Tangan --}}
     <table class="ttd-table no-break" style="margin-top: 10px;">
