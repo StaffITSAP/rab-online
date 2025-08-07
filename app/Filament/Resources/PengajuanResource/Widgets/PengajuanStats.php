@@ -33,9 +33,24 @@ class PengajuanStats extends BaseWidget
 
         // ============ JUMLAH PENGAJUAN ============
         if ($role === 'superadmin') {
+            // Hitung semua pengajuan aktif (tidak termasuk soft-deleted)
             $totalPengajuan = Pengajuan::count();
         } else {
-            $totalPengajuan = count($allIds);
+            // Pengajuan yang dibuat user
+            $buatSendiriIds = Pengajuan::where('user_id', $user->id)
+                ->pluck('id')
+                ->toArray();
+
+            // Pengajuan yang dia approve (tidak duplikat)
+            $approveIds = PengajuanStatus::where('user_id', $user->id)
+                ->pluck('pengajuan_id')
+                ->toArray();
+
+            // Gabungkan & hilangkan duplikat
+            $allIds = array_unique(array_merge($buatSendiriIds, $approveIds));
+
+            // Pastikan hanya ambil yang BELUM di-soft-delete
+            $totalPengajuan = Pengajuan::whereIn('id', $allIds)->count();
         }
 
         // ============ JUMLAH PENGAJUAN HARI INI ============
