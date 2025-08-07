@@ -398,20 +398,25 @@ class PengajuanResource extends Resource
             return parent::getEloquentQuery();
         }
 
-        // Ambil ID pengajuan yang user ini adalah approver
-        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+        // Pengajuan yang user ini adalah approver DAN belum approve/tolak (is_approved masih null)
+        $pengajuanIdsBelumApprove = \App\Models\PengajuanStatus::where('user_id', $user->id)
+            ->whereNull('is_approved')
             ->pluck('pengajuan_id')
             ->toArray();
 
         return parent::getEloquentQuery()
-            ->where(function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
+            ->where(function ($query) use ($user, $pengajuanIdsBelumApprove) {
                 $query
-                    // sebagai pemilik pengajuan
+                    // Tampilkan jika sebagai pemilik pengajuan
                     ->where('user_id', $user->id)
-                    // atau sebagai approver di pengajuan lain
-                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
+                    // Atau tampilkan jika sebagai approver yang belum approve/tolak
+                    ->orWhere(function ($q) use ($pengajuanIdsBelumApprove, $user) {
+                        $q->whereIn('id', $pengajuanIdsBelumApprove)
+                            ->where('user_id', '!=', $user->id); // agar tidak tampil dobel jika owner sekaligus approver
+                    });
             });
     }
+
     private static function updateExpiredPengajuan(): void
     {
         $today = Carbon::now()->startOfDay();
