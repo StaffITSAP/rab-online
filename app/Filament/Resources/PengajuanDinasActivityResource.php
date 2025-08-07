@@ -26,6 +26,7 @@ class PengajuanDinasActivityResource extends Resource
     protected static ?string $navigationGroup = 'Detail Perjalanan Dinas';
     protected static ?string $label = 'Perjalanan Dinas Activity';
     protected static ?string $pluralLabel = 'Perjalanan Dinas Activity';
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

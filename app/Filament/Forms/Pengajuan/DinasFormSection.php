@@ -42,7 +42,7 @@ class DinasFormSection
                         TextInput::make('jml_personil')
                             ->label('Jumlah Personil')
                             ->placeholder('Silahkan isi personil'),
-                        Toggle::make('use_mobil')
+                        Toggle::make('use_car')
                             ->label('Request Mobil')
                             ->inline(false)
                             ->default(false)
