@@ -87,7 +87,10 @@ class EditPengajuan extends EditRecord
 
                 $roleNames = $user->getRoleNames();
 
-                $isKoordinatorTeknisi = $roleNames->contains('koordinator teknisi');
+                $isKoordinatorTeknisi = $roleNames->contains(function ($value) {
+                    return $value === 'koordinator teknisi' || $value === 'rt';
+                });
+
                 $isKoordinatorGudang  = $roleNames->contains('koordinator gudang');
                 $isManager            = $roleNames->contains('manager');
                 $isDirektur           = $roleNames->contains('direktur');
