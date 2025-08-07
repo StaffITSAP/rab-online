@@ -188,7 +188,8 @@ class PersetujuanResource extends Resource
             ->defaultSort('user_id')
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('User'),
+                    ->label('User')
+                    ->searchable(),
 
                 TextColumn::make('approvers')
                     ->label('Approver')
