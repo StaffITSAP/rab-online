@@ -191,4 +191,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(\App\Models\PersetujuanApprover::class, 'pengajuan_id');
     }
+    public function marcommPromosis()
+    {
+        return $this->hasMany(PengajuanMarcommPromosi::class);
+    }
 }

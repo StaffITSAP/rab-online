@@ -30,6 +30,7 @@ class PengajuanAllResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $label = 'Semua Pengajuan';
     protected static ?string $pluralLabel = 'Semua Pengajuan';
+    protected static ?string $slug = 'semua-pengajuan';
 
     public static function table(Table $table): Table
     {
