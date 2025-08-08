@@ -26,6 +26,7 @@ class Pengajuan extends Model
         'use_pengiriman',
         'use_car',
         'asset_teknisi',
+        'keterangan',
     ];
 
     protected $casts = [
@@ -194,5 +195,9 @@ class Pengajuan extends Model
     public function marcommPromosis()
     {
         return $this->hasMany(PengajuanMarcommPromosi::class);
+    }
+     public function lampiranPromosi()
+    {
+        return $this->hasMany(LampiranMarcommPromosi::class);
     }
 }

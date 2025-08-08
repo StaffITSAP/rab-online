@@ -51,6 +51,7 @@ class EditPengajuan extends EditRecord
 
         $data['lampiran_asset'] = $lampiran?->lampiran_asset ?? false;
         $data['lampiran_dinas'] = $lampiran?->lampiran_dinas ?? false;
+        $data['lampiran_marcomm_promosi'] = $lampiran?->lampiran_marcomm_promosi ?? false;
 
         return $data;
     }
@@ -66,6 +67,7 @@ class EditPengajuan extends EditRecord
             [
                 'lampiran_asset' => $formData['lampiran_asset'] ?? false,
                 'lampiran_dinas' => $formData['lampiran_dinas'] ?? false,
+                'lampiran_marcomm_promosi' => $formData['lampiran_marcomm_promosi'] ?? false,
             ]
         );
 

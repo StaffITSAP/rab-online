@@ -42,6 +42,27 @@
     </div>
     @endif
 
+    {{-- ✅ Daftar file lampiranPromosi --}}
+    @if ($record->lampiran?->lampiran_marcomm_promosi)
+    <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <h2 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">
+            Daftar Lampiran:
+        </h2>
+        @forelse ($record->lampiranPromosi as $lampiran)
+        <div class="text-sm flex items-center gap-2 mb-1 text-gray-800 dark:text-gray-200">
+            📎
+            <a href="{{ asset('storage/' . $lampiran->file_path) }}"
+                target="_blank"
+                class="text-blue-600 hover:underline dark:text-blue-400">
+                {{ $lampiran->original_name }}
+            </a>
+        </div>
+        @empty
+        <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada lampiran yang diunggah.</p>
+        @endforelse
+    </div>
+    @endif
+
     {{-- ✅ Preview PDF --}}
     <div class="w-full bg-white dark:bg-gray-900 rounded-md shadow dark:shadow-md" style="height: 75vh;">
         <object

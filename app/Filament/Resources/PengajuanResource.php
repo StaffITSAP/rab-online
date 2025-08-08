@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
+use App\Filament\Forms\Pengajuan\PromosiFormSection;
 use App\Models\PengajuanStatus;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -36,6 +37,7 @@ class PengajuanResource extends Resource
             ...BasePengajuanForm::schema(),
             ...AssetFormSection::schema(),
             ...DinasFormSection::schema(),
+            ...PromosiFormSection::schema(),
 
         ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
     }
@@ -302,7 +304,7 @@ class PengajuanResource extends Resource
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas']),
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas','lampiranPromosi']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
                         ])),
                     Tables\Actions\Action::make('download_pdf')

@@ -9,7 +9,7 @@ class Persetujuan extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_pengiriman', 'use_manager', 'use_direktur','use_owner','use_car','asset_teknisi'];
+    protected $fillable = ['user_id', 'approver_id', 'menggunakan_teknisi', 'use_pengiriman', 'use_manager', 'use_direktur', 'use_owner', 'use_car', 'asset_teknisi'];
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
         'use_manager' => 'boolean',
@@ -18,7 +18,14 @@ class Persetujuan extends Model
         'use_car' => 'boolean',
         'asset_teknisi' => 'boolean',
     ];
-
+    protected static function booted()
+    {
+        static::creating(function ($persetujuan) {
+            if (!$persetujuan->user_id) {
+                $persetujuan->user_id = auth()->id();
+            }
+        });
+    }
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

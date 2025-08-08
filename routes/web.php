@@ -9,12 +9,21 @@ Route::get('/', function () {
 });
 Route::get('/pengajuan/{pengajuan}/pdf', function (Pengajuan $pengajuan) {
     $view = match ((int) $pengajuan->tipe_rab_id) {
-        1 => 'pdf.pengajuan',
-        2 => 'pdf.dinas',
+        1 => 'pdf.pengajuan',   // Barang Intern
+        2 => 'pdf.dinas',       // Perjalanan Dinas
+        4 => 'pdf.promosi',     // Marcomm Promosi
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
     };
 
-    $pdf = Pdf::loadView($view, compact('pengajuan'));
+    // Tentukan orientasi
+    $orientation = match ((int) $pengajuan->tipe_rab_id) {
+        4 => 'landscape', // promosi
+        default => 'portrait', // pengajuan & dinas
+    };
+
+    $pdf = Pdf::loadView($view, compact('pengajuan'))
+        ->setPaper('a4', $orientation);
+
     $filename = str_replace(['/', '\\'], '_', $pengajuan->no_rab);
 
     return $pdf->stream("RAB_{$filename}.pdf");
@@ -24,10 +33,18 @@ Route::get('/pengajuan/{pengajuan}/download-pdf', function (Pengajuan $pengajuan
     $view = match ((int) $pengajuan->tipe_rab_id) {
         1 => 'pdf.pengajuan',
         2 => 'pdf.dinas',
+        4 => 'pdf.promosi',
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
     };
 
-    $pdf = Pdf::loadView($view, compact('pengajuan'));
+    $orientation = match ((int) $pengajuan->tipe_rab_id) {
+        4 => 'landscape',
+        default => 'portrait',
+    };
+
+    $pdf = Pdf::loadView($view, compact('pengajuan'))
+        ->setPaper('a4', $orientation);
+
     $filename = str_replace(['/', '\\'], '_', $pengajuan->no_rab);
 
     return $pdf->download("RAB_{$filename}.pdf");
