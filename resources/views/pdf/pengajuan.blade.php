@@ -20,7 +20,8 @@
         td,
         th {
             border: 1px solid #000;
-            padding: 4px;
+            padding: 4px 6px;
+            font-size: 9px;
         }
 
         .ttd {
@@ -35,9 +36,47 @@
             border: none;
         }
 
-        .note,
+        .keterangan-table {
+            width: 100%;
+            margin-top: 12px;
+            border: 1px solid #444;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+        .keterangan-table th,
+        .keterangan-table td {
+            border: 1px solid #444;
+            padding: 4px 8px;
+        }
+
+        .keterangan-table th {
+            background: #eee;
+        }
+
+        .note-table {
+            width: 100%;
+            margin-top: 12px;
+            border: 1px solid #444;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+        .note-table td {
+            border: none;
+            padding: 4px 8px 4px 8px;
+            vertical-align: top;
+        }
+
+        .note-table .note-title {
+            width: 60px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
         .footer-note {
             font-size: 9px;
+            margin-top: 10px;
         }
 
         .no-break {
@@ -58,6 +97,12 @@
             page-break-inside: auto;
         }
 
+        .item-table td,
+        .item-table th {
+            word-break: break-word;
+            white-space: pre-line;
+        }
+
         .item-table tbody tr {
             page-break-inside: avoid;
             page-break-after: auto;
@@ -75,14 +120,14 @@
     'ssm' => 'PT Sinergi Subur Makmur',
     default => '-',
     };
-    // Mapping nama file logo (pastikan file ada di public_path)
     $logoMap = [
     'sap' => public_path('logo-sap.png'),
     'dinatek' => public_path('logo-dinatek.png'),
     'ssm' => public_path('logo-ssm.png'),
     ];
-    $logoPath = $logoMap[$companyKey] ?? public_path('logo-default.png'); // Default logo jika tidak ketemu
+    $logoPath = $logoMap[$companyKey] ?? public_path('logo-default.png');
     @endphp
+
     <h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN BARANG INTERN</h2>
     <h3 align="center" style="margin: 5px 0;">
         No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}
@@ -128,17 +173,17 @@
         </tr>
     </table>
 
-    <table class="item-table" style="font-size: 9px;">
+    <!-- Tabel Barang -->
+    <table class="keterangan-table" style="font-size: 9px;">
         <thead>
             <tr>
-                <th>NO</th>
-                <th>NAMA DAN TIPE BARANG</th>
-                <th>KEPERLUAN</th>
-                <th>QTY</th>
-                <th>SATUAN</th>
-                <th>HARGA SATUAN</th>
-                <th>TOTAL</th>
-                <th>KETERANGAN</th>
+                <th style="width:5%;">NO</th>
+                <th style="width:30%;">NAMA DAN TIPE BARANG</th>
+                <th style="width:30%;">KEPERLUAN</th>
+                <th style="width:5%;">QTY</th>
+                <th style="width:10%;">SATUAN</th>
+                <th style="width:15%;">HARGA SATUAN</th>
+                <th style="width:15%;">TOTAL</th>
             </tr>
         </thead>
         <tbody>
@@ -151,7 +196,6 @@
                 <td align="center">{{ $item->tipe_barang ?? '' }}</td>
                 <td align="right">Rp {{ number_format($item->harga_unit ?? 0, 0, ',', '.') }}</td>
                 <td align="right">Rp {{ number_format($item->subtotal ?? 0, 0, ',', '.') }}</td>
-                <td style="text-align: justify;">{{ $item->keterangan ?? '' }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -159,25 +203,51 @@
             <tr>
                 <td colspan="6" align="center"><strong>TOTAL</strong></td>
                 <td align="right"><strong>Rp {{ number_format(collect($pengajuan->barangs ?? [])->sum('subtotal') ?? 0, 0, ',', '.') }}</strong></td>
-                <td></td>
             </tr>
         </tfoot>
     </table>
+    <!-- END Tabel Barang -->
 
-    <p class="note">
-        <strong>Note:</strong><br>
-        - Barang yang sudah diajukan / sudah ada, tidak boleh diajukan lagi (kecuali barang habis pakai & rusak)<br>
-        - Setiap permintaan penggantian barang (kecuali barang habis pakai) harus disertai dengan barang lama
-    </p>
+    <!-- TABEL KETERANGAN (BARU) -->
+    <table class="keterangan-table">
+        <thead>
+            <tr>
+                <th style="width:30px;">No</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (($pengajuan->barangs ?? []) as $item)
+            <tr>
+                <td align="center">{{ $loop->iteration }}</td>
+                <td style="text-align: justify;">
+                    {{ $item->keterangan ?? '-' }}
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <!-- END TABEL KETERANGAN -->
+
+    <!-- NOTE TETAP DI BAWAH -->
+    <table class="note-table">
+        <tr>
+            <td class="note-title">Note:</td>
+            <td>
+                <ul style="margin:0;padding-left:18px;">
+                    <li>Barang yang sudah diajukan / sudah ada, tidak boleh diajukan lagi (kecuali barang habis pakai & rusak).</li>
+                    <li>Setiap permintaan penggantian barang (kecuali barang habis pakai) harus disertai dengan barang lama.</li>
+                </ul>
+            </td>
+        </tr>
+    </table>
 
     <p align="center" style="font-size: 12px;">
         {{ optional(optional($pengajuan->user)->userStatus)->kota ?? 'Kota Tidak Diketahui' }},
-
         {{ $pengajuan->created_at ? \Carbon\Carbon::parse($pengajuan->created_at)->translatedFormat('d F Y') : '' }}
     </p>
 
-
-    {{-- Tanda Tangan --}}
+    <!-- Tanda Tangan -->
     <table class="ttd-table no-break" style="margin-top: 10px;">
         <tr>
             <td class="ttd">
@@ -191,7 +261,6 @@
                 <strong>{{ optional(optional($pengajuan->user)->userStatus)->divisi->nama ?? '' }}</strong><br>
                 {{ $pengajuan->created_at ? \Carbon\Carbon::parse($pengajuan->created_at)->translatedFormat('d F Y H:i') : '' }}
             </td>
-
             @foreach (($pengajuan->statuses ?? []) as $status)
             @if ($status->is_approved ?? false)
             <td class="ttd">

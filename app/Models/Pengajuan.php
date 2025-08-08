@@ -196,8 +196,16 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanMarcommPromosi::class);
     }
-     public function lampiranPromosi()
+    public function lampiranPromosi()
     {
         return $this->hasMany(LampiranMarcommPromosi::class);
+    }
+    public function marcommKebutuhans()
+    {
+        return $this->hasMany(PengajuanMarcommKebutuhan::class);
+    }
+    public function marcommKebutuhanAmplops()
+    {
+        return $this->hasMany(PengajuanMarcommKebutuhanAmplop::class);
     }
 }

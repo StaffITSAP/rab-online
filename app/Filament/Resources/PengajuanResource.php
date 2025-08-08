@@ -14,6 +14,7 @@ use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
 use App\Filament\Forms\Pengajuan\PromosiFormSection;
+use App\Filament\Forms\Pengajuan\KebutuhanFormSection;
 use App\Models\PengajuanStatus;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -38,6 +39,7 @@ class PengajuanResource extends Resource
             ...AssetFormSection::schema(),
             ...DinasFormSection::schema(),
             ...PromosiFormSection::schema(),
+            ...KebutuhanFormSection::schema(),
 
         ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
     }
