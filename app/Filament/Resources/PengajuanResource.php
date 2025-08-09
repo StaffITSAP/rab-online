@@ -38,8 +38,8 @@ class PengajuanResource extends Resource
             ...BasePengajuanForm::schema(),
             ...AssetFormSection::schema(),
             ...DinasFormSection::schema(),
-            ...PromosiFormSection::schema(),
-            ...KebutuhanFormSection::schema(),
+            // ...PromosiFormSection::schema(),
+            // ...KebutuhanFormSection::schema(),
 
         ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
     }
@@ -301,14 +301,16 @@ class PengajuanResource extends Resource
                         ->label('Preview PDF')
                         ->icon('heroicon-o-eye')
                         ->color('gray')
-                        ->slideOver() // lebih cocok untuk full lebar di HP
+                        ->slideOver()
+                        ->modalWidth('screen') // full screen width untuk slideOver
                         ->modalHeading('Preview RAB PDF')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas','lampiranPromosi']),
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
-                        ])),
+                        ]))
+                        ->closeModalByClickingAway(false),
                     Tables\Actions\Action::make('download_pdf')
                         ->label('Download PDF')
                         ->icon('heroicon-o-arrow-down-tray')
