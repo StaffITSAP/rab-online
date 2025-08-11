@@ -20,6 +20,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
@@ -48,7 +49,8 @@ class PengajuanResource extends Resource
                 ->hidden()
                 ->disabled()
                 ->dehydrated(false)
-                ->formatStateUsing(fn ($state, $record) =>
+                ->formatStateUsing(
+                    fn($state, $record) =>
                     number_format($record?->total_biaya ?? 0, 0, ',', '.')
                 ),
         ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
@@ -164,6 +166,15 @@ class PengajuanResource extends Resource
             ->filters([
                 TrashedFilter::make()
                     ->visible(fn() => Auth::user()->hasRole('superadmin')), // gunakan ini jika pakai Spatie
+                TernaryFilter::make('menggunakan_teknisi')
+                    ->label('Menggunakan Teknisi')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('menggunakan_teknisi', 1),
+                        false: fn($query) => $query->where('menggunakan_teknisi', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -317,7 +328,7 @@ class PengajuanResource extends Resource
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi','lampiranKebutuhan']),
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi', 'lampiranKebutuhan']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
                         ]))
                         ->closeModalByClickingAway(false),

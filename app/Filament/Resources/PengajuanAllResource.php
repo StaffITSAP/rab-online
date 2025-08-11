@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PengajuanStatus;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\TernaryFilter;
 
 class PengajuanAllResource extends Resource
 {
@@ -133,6 +134,16 @@ class PengajuanAllResource extends Resource
             ->filters([
                 TrashedFilter::make()
                     ->visible(fn() => Auth::user()->hasRole('superadmin')),
+
+                TernaryFilter::make('menggunakan_teknisi')
+                    ->label('Menggunakan Teknisi')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('menggunakan_teknisi', 1),
+                        false: fn($query) => $query->where('menggunakan_teknisi', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([

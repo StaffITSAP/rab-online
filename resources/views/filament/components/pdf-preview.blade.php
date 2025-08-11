@@ -54,7 +54,7 @@
     @endif
 
     {{-- ====================== --}}
-    {{--  Lampiran: Kebutuhan    --}}
+    {{--  Lampiran: Kebutuhan  --}}
     {{-- ====================== --}}
     @if ($record->lampiran?->lampiran_marcomm_kebutuhan && $record->lampiranKebutuhan->isNotEmpty())
         <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
@@ -75,12 +75,12 @@
     {{--  Detail Kebutuhan Amplop (AMPLOP)     --}}
     {{-- ===================================== --}}
     @php
-        // Ambil toggle kebutuhan_amplop dari baris pertama tabel pengajuan_marcomm_kebutuhans
+        // Toggle kebutuhan_amplop dari baris pertama kebutuhan
         $needAmplop = (bool) optional(
             $record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first()
         )->kebutuhan_amplop;
 
-        // Detail amplop dari relasi pengajuan_marcomm_kebutuhan_amplops (pastikan relasinya ada di model)
+        // Detail amplop
         $amplopRows  = $record->marcommKebutuhanAmplops ?? collect();
         $totalAmplop = $amplopRows->sum('jumlah');
     @endphp
@@ -128,6 +128,56 @@
                                 </th>
                             </tr>
                         </tfoot>
+                    </table>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    {{-- ===================================== --}}
+    {{--  Detail Kebutuhan Kartu (KARTU)       --}}
+    {{-- ===================================== --}}
+    @php
+        // Toggle kebutuhan_kartu dari baris pertama kebutuhan (boolean)
+        $needKartu = (bool) optional(
+            $record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first()
+        )->kebutuhan_kartu;
+
+        // Detail kartu dari relasi pengajuan_marcomm_kebutuhan_kartus
+        $kartuRows = $record->marcommKebutuhanKartus ?? collect();
+    @endphp
+
+    @if ($needKartu || $kartuRows->isNotEmpty())
+        <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kebutuhan Kartu Nama dan ID Card</h2>
+                <div class="text-xs px-2 py-1 rounded-full
+                    {{ $needKartu ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
+                    {{ $needKartu ? 'Aktif' : 'Tidak Aktif' }}
+                </div>
+            </div>
+
+            @if ($kartuRows->isEmpty())
+                <p class="text-sm text-gray-500 dark:text-gray-400">Belum ada data kebutuhan kartu yang diisi.</p>
+            @else
+                <div class="overflow-hidden rounded-md border dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">#</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Kartu Nama</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">ID Card</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                            @foreach ($kartuRows as $i => $row)
+                                <tr>
+                                    <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $i + 1 }}</td>
+                                    <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $row->kartu_nama }}</td>
+                                    <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $row->id_card }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
                     </table>
                 </div>
             @endif

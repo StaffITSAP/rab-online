@@ -56,6 +56,10 @@ class EditPengajuan extends EditRecord
         $data['kebutuhan_amplop'] = (bool) \App\Models\PengajuanMarcommKebutuhan::where('pengajuan_id', $pengajuan->id)
             ->orderBy('id')
             ->value('kebutuhan_amplop');
+        $data['kebutuhan_kartu'] = (bool) \App\Models\PengajuanMarcommKebutuhan::where('pengajuan_id', $pengajuan->id)
+            ->orderBy('id')
+            ->value('kebutuhan_kartu');
+
         return $data;
     }
 
@@ -79,6 +83,8 @@ class EditPengajuan extends EditRecord
         \App\Models\PengajuanMarcommKebutuhan::writeAmplopToggle($pengajuan->id, $amplopOn);
         \App\Models\PengajuanMarcommKebutuhan::syncTotalAmplop($pengajuan->id);
 
+        $kartuOn = !empty($formData['kebutuhan_kartu']);
+        \App\Models\PengajuanMarcommKebutuhan::writeKartuToggle($pengajuan->id, $kartuOn);
         // Hapus status existing dulu (hati-hati jika pengen preserve approval sebelumnya)
         \App\Models\PengajuanStatus::where('pengajuan_id', $pengajuan->id)->delete();
 

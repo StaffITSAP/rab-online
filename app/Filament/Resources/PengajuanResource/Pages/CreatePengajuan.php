@@ -36,6 +36,10 @@ class CreatePengajuan extends CreateRecord
         \App\Models\PengajuanMarcommKebutuhan::writeAmplopToggle($pengajuan->id, $amplopOn);
         \App\Models\PengajuanMarcommKebutuhan::syncTotalAmplop($pengajuan->id);
 
+        $kartuOn = !empty($formData['kebutuhan_kartu']);
+        \App\Models\PengajuanMarcommKebutuhan::writeKartuToggle($pengajuan->id, $kartuOn);
+
+
         Log::info('Running afterCreate for pengajuan ID: ' . $pengajuan->id);
 
         $persetujuans = \App\Models\Persetujuan::with(['pengajuanApprovers.approver.roles'])

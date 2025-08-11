@@ -32,14 +32,8 @@
         .text-justify { text-align: justify; }
         .nowrap { white-space: nowrap; }
 
-        /* Container 50% kiri untuk tabel amplop */
-        .half-left {
-            width: 50%;
-            float: left;
-            margin-top: 12px;
-            box-sizing: border-box;
-        }
-        /* Clear float agar bagian setelahnya tidak ketimpa */
+        /* 50% containers buat amplop & kartu */
+        .half-left { width: 50%; float: left; margin-top: 12px; box-sizing: border-box; }
         .clear { clear: both; height: 0; line-height: 0; }
     </style>
 </head>
@@ -64,13 +58,21 @@
     // ====== DATA ======
     $itemsKebutuhan = collect($pengajuan->pengajuan_marcomm_kebutuhans ?? []);
     $itemsAmplop    = collect($pengajuan->marcommKebutuhkanAmplops ?? $pengajuan->marcommKebutuhanAmplops ?? []); // fallback nama relasi
+    $kartuRows      = collect($pengajuan->marcommKebutuhanKartus ?? []); // <- relasi kebutuhan kartu
     $lampiranDinas  = collect($pengajuan->lampiranDinas ?? []);
 
     $totalItems  = (int) $itemsKebutuhan->sum(fn($i) => (int)($i->subtotal ?? 0));
     $totalAmplop = (int) $itemsAmplop->sum(fn($r) => (int)($r->jumlah ?? 0));
 
-    // Tampilkan amplop jika ada flag di kebutuhan atau ada data amplop
-    $adaAmplop = $itemsKebutuhan->contains(fn($i) => (int)($i->kebutuhan_amplop ?? 0) === 1) || $itemsAmplop->isNotEmpty();
+    // Toggles dari baris pertama kebutuhan
+    $firstNeed   = optional($pengajuan->pengajuan_marcomm_kebutuhans()->orderBy('id')->first());
+    $needAmplop  = (bool) ($firstNeed->kebutuhan_amplop ?? false);
+    $needKartu   = (bool) ($firstNeed->kebutuhan_kartu  ?? false);
+
+    // apakah ada yang tampil setengah (untuk clear)
+    $showAmplop  = ($needAmplop || $itemsAmplop->isNotEmpty());
+    $showKartu   = ($needKartu  || $kartuRows->isNotEmpty());
+    $anyHalf     = $showAmplop || $showKartu;
 @endphp
 
 <h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN RAB MARCOMM KEBUTUHAN</h2>
@@ -150,7 +152,7 @@
     </tfoot>
 </table>
 
-{{-- ====== KETERANGAN (paragraf) ====== --}}
+{{-- ====== KETERANGAN ====== --}}
 <div style="margin-top:12px; font-size:9px;">
     <strong>Keterangan:</strong><br>
     <div class="text-justify" style="margin-top:4px;">
@@ -158,8 +160,8 @@
     </div>
 </div>
 
-{{-- ====== KEBUTUHAN AMPLOP (kiri 50%) ====== --}}
-@if ($adaAmplop && $itemsAmplop->count())
+{{-- ====== KEBUTUHAN AMPLOP (50% kiri) ====== --}}
+@if ($showAmplop)
     <div class="half-left">
         <table class="section-table no-break" style="margin-top:0;">
             <thead>
@@ -171,13 +173,15 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($itemsAmplop as $row)
+                @forelse ($itemsAmplop as $row)
                     <tr>
                         <td class="text-center">{{ $loop->iteration }}</td>
                         <td class="text-justify">{{ $row->cabang ?? '-' }}</td>
                         <td class="text-right">{{ number_format((int)($row->jumlah ?? 0), 0, ',', '.') }}</td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr><td colspan="3" class="text-center">Belum ada data kebutuhan amplop.</td></tr>
+                @endforelse
             </tbody>
             <tfoot>
                 <tr>
@@ -187,6 +191,36 @@
             </tfoot>
         </table>
     </div>
+@endif
+
+{{-- ====== KEBUTUHAN KARTU (50% kiri, berdampingan) ====== --}}
+@if ($showKartu)
+    <div class="half-left">
+        <table class="section-table no-break" style="margin-top:0;">
+            <thead>
+                <tr><th colspan="3">FORM PENGAJUAN MARCOMM KEBUTUHAN KARTU NAMA dan ID CARD</th></tr>
+                <tr>
+                    <th style="width:10%;">NO</th>
+                    <th style="width:45%;">Kartu Nama</th>
+                    <th style="width:45%;">ID CARD</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($kartuRows as $row)
+                    <tr>
+                        <td class="text-center">{{ $loop->iteration }}</td>
+                        <td class="text-justify">{{ $row->kartu_nama ?? '-' }}</td>
+                        <td class="text-justify">{{ $row->id_card ?? '-' }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="3" class="text-center">Belum ada data kebutuhan kartu.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endif
+
+@if ($anyHalf)
     <div class="clear"></div>
 @endif
 

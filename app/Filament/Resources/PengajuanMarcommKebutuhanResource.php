@@ -56,7 +56,6 @@ class PengajuanMarcommKebutuhanResource extends Resource
                 Tables\Columns\TextColumn::make('harga_satuan')->money('IDR'),
                 Tables\Columns\TextColumn::make('subtotal')->money('IDR'),
                 Tables\Columns\TextColumn::make('tipe'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime(),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),

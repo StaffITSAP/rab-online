@@ -137,6 +137,25 @@ class KebutuhanFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Kebutuhan Amplop')
                         ->visible(fn($get) => $get('kebutuhan_amplop') === true),
+                    Repeater::make('marcommKebutuhanKartus')
+                        ->label('Form Pengajuan Marcomm Kebutuhan Kartu Nama dan ID Card')
+                        ->relationship('marcommKebutuhanKartus')
+                        ->schema([
+                            TextArea::make('kartu_nama')
+                                ->label('Kartu Nama')
+                                ->placeholder('Nama Sales / - ')
+                                ->required(),
+                            TextArea::make('id_card')
+                                ->label('ID Card')
+                                ->placeholder('Nama Sales / -')
+                                ->required(),
+                        ])
+                        ->columns(2)
+                        ->addActionLabel('Tambah Kebutuhan')
+                        ->columnSpanFull()
+                        ->defaultItems(1)
+                        ->itemLabel('Detail Kebutuhan Kartu')
+                        ->visible(fn($get) => $get('kebutuhan_kartu') === true),
                     Repeater::make('lampiranKebutuhan')
                         ->label('Lampiran RAB Kebutuhan Pusat/Sales')
                         ->relationship('lampiranKebutuhan')
