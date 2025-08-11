@@ -53,6 +53,24 @@
         </div>
     @endif
 
+    {{-- ====================== --}}
+    {{--  Lampiran: Kebutuhan    --}}
+    {{-- ====================== --}}
+    @if ($record->lampiran?->lampiran_marcomm_kebutuhan && $record->lampiranKebutuhan->isNotEmpty())
+        <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+            <h2 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">Daftar Lampiran Kebutuhan</h2>
+            @foreach ($record->lampiranKebutuhan as $lampiran)
+                <div class="text-sm flex items-center gap-2 mb-1 text-gray-800 dark:text-gray-200">
+                    📎
+                    <a href="{{ asset('storage/' . $lampiran->file_path) }}" target="_blank"
+                       class="text-blue-600 hover:underline dark:text-blue-400">
+                        {{ $lampiran->original_name }}
+                    </a>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     {{-- ===================================== --}}
     {{--  Detail Kebutuhan Amplop (AMPLOP)     --}}
     {{-- ===================================== --}}

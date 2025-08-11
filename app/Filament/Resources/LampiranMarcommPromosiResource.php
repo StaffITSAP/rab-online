@@ -20,8 +20,8 @@ class LampiranMarcommPromosiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
     protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Lampiran Marcomm Promosi';
-    protected static ?string $pluralLabel = 'Lampiran Marcomm Promosi';
+    protected static ?string $label = 'Lampiran Promosi';
+    protected static ?string $pluralLabel = 'Lampiran Promosi';
     protected static ?string $slug = 'lampiran-promosi';
     protected static ?int $navigationSort = 110;
 

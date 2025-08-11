@@ -210,4 +210,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanMarcommKebutuhanAmplop::class);
     }
+    public function lampiranKebutuhan()
+    {
+        return $this->hasMany(LampiranKebutuhan::class);
+    }
 }

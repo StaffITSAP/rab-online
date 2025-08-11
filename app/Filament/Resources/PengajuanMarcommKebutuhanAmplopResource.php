@@ -17,7 +17,12 @@ class PengajuanMarcommKebutuhanAmplopResource extends Resource
 {
     protected static ?string $model = PengajuanMarcommKebutuhanAmplop::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
+    protected static ?string $navigationGroup = 'Detail RAB Marcomm';
+    protected static ?string $label = 'Amplop';
+    protected static ?string $pluralLabel = 'Amplop';
+    protected static ?string $slug = 'detail-amplop';
+    protected static ?int $navigationSort = 110;
 
     public static function form(Form $form): Form
     {

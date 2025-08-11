@@ -48,7 +48,7 @@ class KebutuhanFormSection
 
                             TextInput::make('harga_satuan')
                                 ->label('Harga Satuan')
-                                ->placeholder('Contoh: 500.000')
+                                ->placeholder('Contoh: 500000')
                                 ->required()
                                 ->dehydrated()
                                 ->prefix('Rp ')
@@ -101,18 +101,17 @@ class KebutuhanFormSection
                             ->inline(false)
                             ->default(false)
                             ->reactive(),
-                        Toggle::make('use_pengiriman')
-                            ->label('Pengiriman Barang/Gudang')
-                            ->inline(false)
-                            ->default(false)
-                            ->reactive()
-                            ->helperText('Bisa juga di gunakan untuk request penggunaan Mobil dan Sopir.'),
-                        Toggle::make('menggunakan_teknisi')
-                            ->label('Menggunakan Teknisi/Survey')
+                        Toggle::make('kebutuhan_kartu')
+                            ->label('Kebutuhan Kartu/ID Card')
                             ->inline(false)
                             ->default(false)
                             ->reactive(),
-                        Toggle::make('lampiran_dinas')
+                        Toggle::make('kebutuhan_kemeja')
+                            ->label('Kebutuhan Kemeja')
+                            ->inline(false)
+                            ->default(false)
+                            ->reactive(),
+                        Toggle::make('lampiran_marcomm_kebutuhan')
                             ->label('Tambahkan Lampiran')
                             ->inline(false)
                             ->default(false)
@@ -129,7 +128,7 @@ class KebutuhanFormSection
                                 ->required(),
                             TextArea::make('jumlah')
                                 ->label('Jumlah')
-                                ->placeholder('Nama Dinas')
+                                ->placeholder('Jumlah')
                                 ->required(),
                         ])
                         ->columns(2)
@@ -138,14 +137,14 @@ class KebutuhanFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Kebutuhan Amplop')
                         ->visible(fn($get) => $get('kebutuhan_amplop') === true),
-                    Repeater::make('lampiranDinas')
-                        ->label('Lampiran RAB Perjalanan Dinas')
-                        ->relationship('lampiranDinas')
+                    Repeater::make('lampiranKebutuhan')
+                        ->label('Lampiran RAB Kebutuhan Pusat/Sales')
+                        ->relationship('lampiranKebutuhan')
                         ->schema([
                             FileUpload::make('file_path')
                                 ->label('File Lampiran (PDF/Gambar)')
                                 ->disk('public')
-                                ->directory('lampiran-dinas')
+                                ->directory('lampiran-kebutuhan')
                                 ->preserveFilenames()
                                 ->acceptedFileTypes(['application/pdf', 'image/*'])
                                 ->maxSize(10240)
@@ -166,9 +165,17 @@ class KebutuhanFormSection
                                 ->required()
                                 ->maxLength(255),
                         ])
+
                         ->defaultItems(1)
-                        ->visible(fn($get) => $get('lampiran_dinas') === true),
+                        ->visible(fn($get) => $get('lampiran_marcomm_kebutuhan') === true),
+                    Forms\Components\Textarea::make('keterangan')
+                        ->label('Keterangan')
+                        ->placeholder('Tuliskan keterangan tambahan di sini...')
+                        ->rows(4)
+                        ->maxLength(65535) // batas default untuk TEXT MySQL
+                        ->columnSpanFull(),
                 ])
+
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 5),
         ];
     }

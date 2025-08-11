@@ -47,7 +47,7 @@ class PromosiFormSection
 
                             TextInput::make('harga_satuan')
                                 ->label('Harga Satuan')
-                                ->placeholder('Contoh: 500.000')
+                                ->placeholder('Contoh: 500000')
                                 ->required()
                                 ->dehydrated()
                                 ->prefix('Rp ')

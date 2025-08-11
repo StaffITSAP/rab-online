@@ -27,6 +27,7 @@ class CreatePengajuan extends CreateRecord
                 'lampiran_asset' => $formData['lampiran_asset'] ?? false,
                 'lampiran_dinas' => $formData['lampiran_dinas'] ?? false,
                 'lampiran_marcomm_promosi' => $formData['lampiran_marcomm_promosi'] ?? false,
+                'lampiran_marcomm_kebutuhan' => $formData['lampiran_marcomm_kebutuhan'] ?? false,
             ]
         );
 
