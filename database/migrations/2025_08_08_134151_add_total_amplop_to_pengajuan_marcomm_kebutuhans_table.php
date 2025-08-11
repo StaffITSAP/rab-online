@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('pengajuan_marcomm_kebutuhans', function (Blueprint $table) {
-            $table->decimal('total_amplop', 15, 2)->nullable()->after('tipe');
+            $table->bigInteger('total_amplop')->nullable()->after('tipe');
         });
     }
 

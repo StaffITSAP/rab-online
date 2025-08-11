@@ -27,7 +27,33 @@ class PengajuanMarcommKebutuhan extends Model
         'kebutuhan_kartu' => 'boolean',
         'kebutuhan_kemeja' => 'boolean'
     ];
+    /**
+     * Set toggle kebutuhan amplop ke semua baris milik pengajuan
+     */
+    public static function writeAmplopToggle(int $pengajuanId, bool $on): void
+    {
+        static::where('pengajuan_id', $pengajuanId)->update(['kebutuhan_amplop' => $on]);
+    }
 
+    /**
+     * Hitung total amplop dari tabel detail dan simpan hanya di 1 baris (baris pertama).
+     * Baris lainnya dikosongkan (NULL).
+     */
+    public static function syncTotalAmplop(int $pengajuanId): void
+    {
+        $sum = PengajuanMarcommKebutuhanAmplop::where('pengajuan_id', $pengajuanId)->sum('jumlah');
+
+        $rows = static::where('pengajuan_id', $pengajuanId)->orderBy('id')->get(['id']);
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        // Kosongkan semua dulu
+        static::whereIn('id', $rows->pluck('id'))->update(['total_amplop' => null]);
+
+        // Tulis hanya di baris pertama
+        static::where('id', $rows->first()->id)->update(['total_amplop' => $sum]);
+    }
     public function pengajuan()
     {
         return $this->belongsTo(Pengajuan::class);

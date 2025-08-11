@@ -21,9 +21,9 @@ class KebutuhanFormSection
         return [
             Section::make('Pengajuan RAB Marcomm Kebutuhan Pusat dan Sales')
                 ->schema([
-                    Repeater::make('marcommKebutuhans')
+                    Repeater::make('pengajuan_marcomm_kebutuhans')
                         ->label('Form RAB Marcomm Kebutuhan Pusat dan Sales')
-                        ->relationship('marcommKebutuhans') // relasi ke model
+                        ->relationship('pengajuan_marcomm_kebutuhans') // relasi ke model
                         ->schema([
                             TextInput::make('deskripsi')
                                 ->label('Deskripsi')

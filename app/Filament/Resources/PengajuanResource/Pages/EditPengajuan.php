@@ -52,7 +52,10 @@ class EditPengajuan extends EditRecord
         $data['lampiran_asset'] = $lampiran?->lampiran_asset ?? false;
         $data['lampiran_dinas'] = $lampiran?->lampiran_dinas ?? false;
         $data['lampiran_marcomm_promosi'] = $lampiran?->lampiran_marcomm_promosi ?? false;
-
+        // ==== Prefill toggle kebutuhan_amplop dari DB ====
+        $data['kebutuhan_amplop'] = (bool) \App\Models\PengajuanMarcommKebutuhan::where('pengajuan_id', $pengajuan->id)
+            ->orderBy('id')
+            ->value('kebutuhan_amplop');
         return $data;
     }
 
@@ -70,6 +73,10 @@ class EditPengajuan extends EditRecord
                 'lampiran_marcomm_promosi' => $formData['lampiran_marcomm_promosi'] ?? false,
             ]
         );
+        // ==== Tulis ulang toggle & total amplop ====
+        $amplopOn = !empty($formData['kebutuhan_amplop']);
+        \App\Models\PengajuanMarcommKebutuhan::writeAmplopToggle($pengajuan->id, $amplopOn);
+        \App\Models\PengajuanMarcommKebutuhan::syncTotalAmplop($pengajuan->id);
 
         // Hapus status existing dulu (hati-hati jika pengen preserve approval sebelumnya)
         \App\Models\PengajuanStatus::where('pengajuan_id', $pengajuan->id)->delete();
@@ -144,6 +151,12 @@ class EditPengajuan extends EditRecord
                 ]);
             }
         }
+
+        $total = $this->record->calculateTotalBiaya();
+        $this->record->updateQuietly(['total_biaya' => $total]);
+
+        // refresh form agar nilai tampil sesuai DB
+        $this->fillForm();
     }
 
     protected function getRedirectUrl(): string

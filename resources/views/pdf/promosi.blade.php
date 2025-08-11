@@ -145,7 +145,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (($pengajuan->marcommPromosis ?? []) as $item)
+            @foreach (($pengajuan->pengajuan_marcomm_promosis ?? []) as $item)
             <tr>
                 <td align="center">{{ $loop->iteration }}</td>
                 <td>{{ $item->deskripsi ?? '' }}</td>
@@ -159,7 +159,7 @@
             <tr>
                 <td colspan="4" align="center"><strong>TOTAL</strong></td>
                 <td align="right">
-                    <strong>Rp {{ number_format(collect($pengajuan->marcommPromosis ?? [])->sum('subtotal') ?? 0, 0, ',', '.') }}</strong>
+                    <strong>Rp {{ number_format(collect($pengajuan->pengajuan_marcomm_promosis ?? [])->sum('subtotal') ?? 0, 0, ',', '.') }}</strong>
                 </td>
             </tr>
         </tfoot>

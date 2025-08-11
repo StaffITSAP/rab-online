@@ -16,7 +16,9 @@ use App\Filament\Forms\Pengajuan\DinasFormSection;
 use App\Filament\Forms\Pengajuan\PromosiFormSection;
 use App\Filament\Forms\Pengajuan\KebutuhanFormSection;
 use App\Models\PengajuanStatus;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Filters\TrashedFilter;
 use Illuminate\Database\Eloquent\Model;
@@ -38,9 +40,17 @@ class PengajuanResource extends Resource
             ...BasePengajuanForm::schema(),
             ...AssetFormSection::schema(),
             ...DinasFormSection::schema(),
-            // ...PromosiFormSection::schema(),
-            // ...KebutuhanFormSection::schema(),
+            ...PromosiFormSection::schema(),
+            ...KebutuhanFormSection::schema(),
 
+            TextInput::make('total_biaya')
+                ->label('Total Biaya')
+                ->hidden()
+                ->disabled()
+                ->dehydrated(false)
+                ->formatStateUsing(fn ($state, $record) =>
+                    number_format($record?->total_biaya ?? 0, 0, ',', '.')
+                ),
         ])->disabled(fn($livewire) => $livewire->isReadOnly ?? false);
     }
 
@@ -388,6 +398,10 @@ class PengajuanResource extends Resource
             $total = $record->pengajuan_assets()->sum('subtotal');
         } elseif ($record->tipe_rab_id == 2) {
             $total = $record->pengajuan_dinas()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 4) {
+            $total = $record->pengajuan_marcomm_promosis()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 5) {
+            $total = $record->pengajuan_marcomm_kebutuhans()->sum('subtotal');
         } // tambahkan elseif lagi jika ada tipe lain
 
         $record->update(['total_biaya' => $total]);

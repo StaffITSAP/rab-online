@@ -23,9 +23,9 @@ class PromosiFormSection
         return [
             Section::make('Pengajuan RAB Marcomm Promosi')
                 ->schema([
-                    Repeater::make('marcommPromosis')
+                    Repeater::make('pengajuan_marcomm_promosis')
                         ->label('Form RAB Marcomm Promosi')
-                        ->relationship('marcommPromosis') // relasi hasMany di model Pengajuan
+                        ->relationship('pengajuan_marcomm_promosis') // relasi hasMany di model Pengajuan
                         ->schema([
 
                             TextInput::make('deskripsi')

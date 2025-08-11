@@ -15,8 +15,8 @@ return new class extends Migration
                   ->onDelete('cascade');
             $table->string('deskripsi');
             $table->integer('qty');
-            $table->decimal('harga_satuan', 15, 2);
-            $table->decimal('subtotal', 15, 2);
+            $table->bigInteger('harga_satuan');
+            $table->bigInteger('subtotal');
             $table->timestamps();
             $table->softDeletes();
         });

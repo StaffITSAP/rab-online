@@ -12,8 +12,8 @@ return new class extends Migration {
             $table->foreignId('pengajuan_id')->constrained('pengajuans')->cascadeOnDelete();
             $table->string('deskripsi');
             $table->integer('qty');
-            $table->decimal('harga_satuan', 15, 2);
-            $table->decimal('subtotal', 15, 2);
+            $table->bigInteger('harga_satuan');
+            $table->bigInteger('subtotal');
             $table->string('tipe')->nullable();
             $table->timestamps();
             $table->softDeletes();

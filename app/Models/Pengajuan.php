@@ -52,14 +52,6 @@ class Pengajuan extends Model
             }
         });
 
-        static::saving(function ($pengajuan) {
-            if ($pengajuan->tipe_rab_id == 1 && $pengajuan->relationLoaded('pengajuan_assets')) {
-                $pengajuan->total_biaya = $pengajuan->pengajuan_assets->sum('subtotal');
-            } elseif ($pengajuan->tipe_rab_id == 2 && $pengajuan->relationLoaded('pengajuan_dinas')) {
-                $pengajuan->total_biaya = $pengajuan->pengajuan_dinas->sum('subtotal');
-            }
-        });
-
         static::deleting(function ($pengajuan) {
             // Soft delete check
             if (method_exists($pengajuan, 'isForceDeleting') && !$pengajuan->isForceDeleting()) {
@@ -134,7 +126,17 @@ class Pengajuan extends Model
 
         return "{$prefix}{$urut}";
     }
-
+    // === HELPER: Hitung total by tipe ===
+    public function calculateTotalBiaya(): int
+    {
+        return match ((int) $this->tipe_rab_id) {
+            1 => (int) $this->pengajuan_assets()->sum('subtotal'),
+            2 => (int) $this->pengajuan_dinas()->sum('subtotal'),
+            4 => (int) $this->pengajuan_marcomm_promosis()->sum('subtotal'),
+            5 => (int) $this->pengajuan_marcomm_kebutuhans()->sum('subtotal'),
+            default => 0,
+        };
+    }
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -192,7 +194,7 @@ class Pengajuan extends Model
     {
         return $this->hasMany(\App\Models\PersetujuanApprover::class, 'pengajuan_id');
     }
-    public function marcommPromosis()
+    public function pengajuan_marcomm_promosis()
     {
         return $this->hasMany(PengajuanMarcommPromosi::class);
     }
@@ -200,7 +202,7 @@ class Pengajuan extends Model
     {
         return $this->hasMany(LampiranMarcommPromosi::class);
     }
-    public function marcommKebutuhans()
+    public function pengajuan_marcomm_kebutuhans()
     {
         return $this->hasMany(PengajuanMarcommKebutuhan::class);
     }

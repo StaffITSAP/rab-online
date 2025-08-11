@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PengajuanResource\Pages;
 
 use App\Filament\Resources\PengajuanResource;
 use App\Models\Lampiran;
+use App\Models\PengajuanMarcommKebutuhan;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\PengajuanStatus;
@@ -28,6 +29,11 @@ class CreatePengajuan extends CreateRecord
                 'lampiran_marcomm_promosi' => $formData['lampiran_marcomm_promosi'] ?? false,
             ]
         );
+
+        // ====== PAKSA SIMPAN TOGGLE & TOTAL AMPLOP ======
+        $amplopOn = !empty($formData['kebutuhan_amplop']);
+        \App\Models\PengajuanMarcommKebutuhan::writeAmplopToggle($pengajuan->id, $amplopOn);
+        \App\Models\PengajuanMarcommKebutuhan::syncTotalAmplop($pengajuan->id);
 
         Log::info('Running afterCreate for pengajuan ID: ' . $pengajuan->id);
 
@@ -112,6 +118,13 @@ class CreatePengajuan extends CreateRecord
                 Log::info("✅ Disimpan: user_id {$user->id}" . ($autoApprove ? " (auto approve {$autoApproveBy})" : ''));
             }
         }
+
+        // setelah form & RELATIONSHIPS tersimpan
+        $total = $this->record->calculateTotalBiaya();
+        $this->record->updateQuietly(['total_biaya' => $total]);
+
+        // refresh state supaya field di UI ikut angka baru
+        $this->fillForm();
     }
 
     protected function getRedirectUrl(): string
