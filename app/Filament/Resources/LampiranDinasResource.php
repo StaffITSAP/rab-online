@@ -36,7 +36,7 @@ class LampiranDinasResource extends Resource
                     ->label('Upload Lampiran (PDF & Image)')
                     ->multiple()
                     ->preserveFilenames()
-                    ->directory('lampiran/assets')
+                    ->directory('lampiran/dinas')
                     ->disk('public')
                     ->acceptedFileTypes(['application/pdf', 'image/*'])
                     ->maxSize(10240),

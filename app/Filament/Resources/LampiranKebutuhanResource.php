@@ -4,9 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LampiranKebutuhanResource\Pages;
 use App\Models\LampiranKebutuhan;
+use App\Models\PengajuanStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class LampiranKebutuhanResource extends Resource
 {
@@ -25,13 +28,19 @@ class LampiranKebutuhanResource extends Resource
                 Forms\Components\Select::make('pengajuan_id')
                     ->relationship('pengajuan', 'id')
                     ->required(),
+
                 Forms\Components\FileUpload::make('file_path')
+                    ->label('Upload Lampiran (PDF & Image)')
+                    ->multiple()
+                    ->preserveFilenames()
+                    ->directory('lampiran/kebutuhan')
                     ->disk('public')
-                    ->directory('lampiran_marcomm_kebutuhan')
-                    ->required(),
+                    ->acceptedFileTypes(['application/pdf', 'image/*'])
+                    ->maxSize(10240),
+
                 Forms\Components\TextInput::make('original_name')
-                    ->maxLength(255)
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
             ]);
     }
 
@@ -39,10 +48,14 @@ class LampiranKebutuhanResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('pengajuan.id')->label('ID Pengajuan'),
-                Tables\Columns\TextColumn::make('original_name'),
-                Tables\Columns\TextColumn::make('created_at')->dateTime(),
-            ]);
+                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
+                Tables\Columns\ViewColumn::make('preview')
+                    ->label('Preview Lampiran')
+                    ->view('filament.tables.columns.lampiran-preview')
+                    ->viewData(fn($record) => ['record' => $record]), // ⬅️ ini agar bisa pakai $record,
+                Tables\Columns\TextColumn::make('original_name')->label('Nama Lampiran')->limit(40),
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getPages(): array
@@ -52,5 +65,45 @@ class LampiranKebutuhanResource extends Resource
             'create' => Pages\CreateLampiranKebutuhan::route('/create'),
             'edit' => Pages\EditLampiranKebutuhan::route('/{record}/edit'),
         ];
+    }
+    public static function canViewAny(): bool
+    {
+        return true; // Semua user bisa lihat list
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+    public static function getEloquentQuery(): Builder
+    {
+        $user = auth()->user();
+
+        // Superadmin boleh melihat semua
+        if ($user->hasRole('superadmin')) {
+            return parent::getEloquentQuery();
+        }
+
+        // Ambil ID pengajuan yang user ini adalah approver-nya
+        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+            ->pluck('pengajuan_id')
+            ->toArray();
+
+        return parent::getEloquentQuery()
+            ->whereHas('pengajuan', function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
+                $query
+                    ->where('user_id', $user->id)
+                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
+            });
     }
 }

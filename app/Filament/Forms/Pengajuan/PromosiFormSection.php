@@ -115,7 +115,7 @@ class PromosiFormSection
                             FileUpload::make('file_path')
                                 ->label('File Lampiran (PDF/Gambar)')
                                 ->disk('public')
-                                ->directory('lampiran-dinas')
+                                ->directory('lampiran-promosi')
                                 ->preserveFilenames()
                                 ->acceptedFileTypes(['application/pdf', 'image/*'])
                                 ->maxSize(10240)
