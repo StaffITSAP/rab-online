@@ -114,7 +114,7 @@
         <tr>
             <td>
                 <span style="float:left;">
-                    Tanggal Berangkat/Realisasi :
+                    Tanggal Realisasi :
                     {{ $pengajuan->tgl_realisasi ? \Carbon\Carbon::parse($pengajuan->tgl_realisasi)->translatedFormat('d F Y') : '-' }}
                 </span>
                 <span style="float:right;">
@@ -172,7 +172,7 @@
                 <td style="text-align: center">{{ $detail->pic }}</td>
                 <td style="text-align: center">{{ $detail->jml_hari }}</td>
                 <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
-                <td style="text-align: right"><span style="float: left;">Rp<span style="float: left;">Rp{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+                <td style="text-align: right"><span style="float: left;">Rp</span>{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
             </tr>
             @php $grandTotal += $detail->subtotal; @endphp
             @endforeach

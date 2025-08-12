@@ -49,7 +49,15 @@ class PenggunaanMobilResource extends Resource
                         // Gabungkan
                         return "{$tanggal} {$jam}";
                     }),
-
+                TextColumn::make('nama_dinas')
+                    ->label('Nama Dinas')
+                    ->getStateUsing(function ($record) {
+                        return optional(
+                            $record->dinasActivities()
+                                ->orderBy('id', 'asc')
+                                ->first()
+                        )->nama_dinas ?? '-';
+                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn($state) => match ($state) {
@@ -233,14 +241,16 @@ class PenggunaanMobilResource extends Resource
                         ->label('Preview PDF')
                         ->icon('heroicon-o-eye')
                         ->color('gray')
-                        ->slideOver() // lebih cocok untuk full lebar di HP
+                        ->slideOver()
+                        ->modalWidth('screen') // full screen width untuk slideOver
                         ->modalHeading('Preview RAB PDF')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas']),
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi', 'lampiranKebutuhan']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
-                        ])),
+                        ]))
+                        ->closeModalByClickingAway(false),
                     Tables\Actions\Action::make('download_pdf')
                         ->label('Download PDF')
                         ->icon('heroicon-o-arrow-down-tray')

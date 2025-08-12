@@ -2,56 +2,54 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PengajuanAllResource\Pages;
 use App\Models\Pengajuan;
+use App\Models\PengajuanStatus;
+use Carbon\Carbon;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Carbon\Carbon;
-use App\Filament\Forms\Pengajuan\BasePengajuanForm;
-use App\Filament\Forms\Pengajuan\AssetFormSection;
-use App\Filament\Forms\Pengajuan\DinasFormSection;
-use Filament\Forms\Components\Textarea;
-use Filament\Tables\Filters\TrashedFilter;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Auth;
-use App\Models\PengajuanStatus;
-use Filament\Notifications\Notification;
-use Filament\Tables\Filters\TernaryFilter;
 
-class PengajuanAllResource extends Resource
+class PenggunaanTeknisiResource extends Resource
 {
     protected static ?string $model = Pengajuan::class;
 
-    protected static ?string $navigationGroup = 'Detail Pengajuan RAB';
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $label = 'Semua Pengajuan';
-    protected static ?string $pluralLabel = 'Semua Pengajuan';
-    protected static ?string $slug = 'semua-pengajuan';
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+    protected static ?string $navigationGroup = 'Detail Perjalanan Dinas';
+    protected static ?string $label = 'Penggunaan Teknisi';
+    protected static ?string $pluralLabel = 'Penggunaan Teknisi';
+    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'penggunaan-teknisi';
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([]);
+    }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('no_rab')->label('No RAB')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')->label('Pemohon')->searchable(),
-                Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
-                TextColumn::make('created_at')
-                    ->label('Tanggal Pengajuan')
-                    ->formatStateUsing(fn($state) => Carbon::parse($state)->translatedFormat('d F Y H:i')),
-                TextColumn::make('realisasi')
+                Tables\Columns\TextColumn::make('user.name')->label('Pemohon'),
+
+                TextColumn::make('tgl_realisasi')
                     ->label('Tanggal Realisasi')
+                    ->formatStateUsing(fn($state) => $state ? Carbon::parse($state)->translatedFormat('d F Y') : '-'),
+
+                TextColumn::make('nama_dinas')
+                    ->label('Nama Dinas')
                     ->getStateUsing(function ($record) {
-                        $tanggal = $record->tgl_realisasi
-                            ? Carbon::parse($record->tgl_realisasi)->translatedFormat('d F Y')
-                            : '-';
-                        $jam = $record->jam ?? ' ';
-                        return "{$tanggal} {$jam}";
+                        return optional(
+                            $record->dinasActivities()
+                                ->orderBy('id', 'asc')
+                                ->first()
+                        )->nama_dinas ?? '-';
                     }),
 
                 Tables\Columns\TextColumn::make('status')
@@ -61,6 +59,7 @@ class PengajuanAllResource extends Resource
                         'ditolak' => 'danger',
                         'expired' => 'danger',
                         'menunggu' => 'warning',
+                        default => 'gray',
                     })
                     ->description(function ($record) {
                         if ($record->status === 'ditolak') {
@@ -70,7 +69,7 @@ class PengajuanAllResource extends Resource
                                 ->first();
                             return $status?->alasan_ditolak ? 'Alasan: ' . $status->alasan_ditolak : null;
                         }
-                        if ($record->status === 'selesai' || $record->status === 'menunggu') {
+                        if (in_array($record->status, ['selesai', 'menunggu'])) {
                             $status = $record->statuses()
                                 ->where('is_approved', true)
                                 ->latest('approved_at')
@@ -78,88 +77,16 @@ class PengajuanAllResource extends Resource
                             return $status?->catatan_approve ? 'Catatan: ' . $status->catatan_approve : null;
                         }
                         return null;
-                    })->searchable(),
-
-                TextColumn::make('pending_approvers')
-                    ->label('Belum Disetujui Oleh')
-                    ->html()
-                    ->getStateUsing(function ($record) {
-                        $pending = $record->statuses()
-                            ->whereNull('is_approved')
-                            ->with('user')
-                            ->get();
-
-                        $names = $pending->pluck('user.name')->filter()->toArray();
-                        return count($names) ? implode('<br>', $names) : '-';
                     }),
-
-                TextColumn::make('approved_info')
-                    ->label('Disetujui / Ditolak Oleh (Tanggal)')
-                    ->html()
-                    ->getStateUsing(function ($record) {
-                        $approvedStatuses = $record->statuses()
-                            ->whereNotNull('is_approved')
-                            ->with('user')
-                            ->orderBy('approved_at')
-                            ->get();
-
-                        if ($approvedStatuses->isEmpty()) {
-                            return '-';
-                        }
-
-                        $list = $approvedStatuses->map(function ($status) {
-                            $name = e($status->user?->name ?? '-');
-                            $approvedText = $status->is_approved ? 'Disetujui' : 'Ditolak';
-                            $date = $status->approved_at
-                                ? \Carbon\Carbon::parse($status->approved_at)->translatedFormat('d F Y H:i')
-                                : '-';
-                            return "<div>{$name} ({$approvedText})<br><span style=\"font-size:13px;color:#aaa;\">{$date}</span></div>";
-                        })->implode('');
-
-                        return $list;
-                    }),
-
                 Tables\Columns\TextColumn::make('menggunakan_teknisi')
-                    ->label('Teknisi')
+                    ->label('Request Teknisi')
                     ->badge()
                     ->color(fn($state) => match ($state) {
                         true => 'success',
                         false => 'danger',
                     })
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
-                Tables\Columns\TextColumn::make('use_car')
-                    ->label('Mobil')
-                    ->badge()
-                    ->color(fn($state) => match ($state) {
-                        true => 'success',
-                        false => 'danger',
-                    })
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
-                Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->filters([
-                TrashedFilter::make()
-                    ->visible(fn() => Auth::user()->hasRole('superadmin')),
-
-                TernaryFilter::make('menggunakan_teknisi')
-                    ->label('Menggunakan Teknisi')
-                    ->trueLabel('Ya')
-                    ->falseLabel('Tidak')
-                    ->queries(
-                        true: fn($query) => $query->where('menggunakan_teknisi', 1),
-                        false: fn($query) => $query->where('menggunakan_teknisi', 0),
-                        blank: fn($query) => $query // untuk semua data
-                    ),
-                TernaryFilter::make('use_car')
-                    ->label('Mobil')
-                    ->trueLabel('Ya')
-                    ->falseLabel('Tidak')
-                    ->queries(
-                        true: fn($query) => $query->where('use_car', 1),
-                        false: fn($query) => $query->where('use_car', 0),
-                        blank: fn($query) => $query // untuk semua data
-                    ),
+                TextColumn::make('no_rab')->label('No RAB'),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -354,65 +281,49 @@ class PengajuanAllResource extends Resource
                         ),
 
                 ]),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
-
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
-
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')), // jika ingin sekalian
-                ]),
-            ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
-    }
-
-    public static function getRelations(): array
-    {
-        return [];
+            ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns)
+            ->defaultSort('tgl_realisasi', 'desc');
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPengajuanAlls::route('/'),
-            // tambahkan create/edit jika memang ingin, atau cukup index saja
+            'index' => \App\Filament\Resources\PenggunaanTeknisiResource\Pages\ListPenggunaanTeknisis::route('/'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
     }
 
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        // Update expired pengajuan terlebih dahulu sebelum menampilkan data
-        static::updateExpiredPengajuan();
 
-        // Superadmin boleh lihat semua
+        $query = parent::getEloquentQuery()->where('menggunakan_teknisi', true);
+
         if ($user->hasRole('superadmin')) {
-            return parent::getEloquentQuery();
+            return $query;
         }
 
-        // Ambil ID pengajuan yang user ini adalah approver
-        $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
+        $pengajuanIdsApprover = PengajuanStatus::where('user_id', $user->id)
             ->pluck('pengajuan_id')
             ->toArray();
 
-        return parent::getEloquentQuery()
-            ->where(function ($query) use ($user, $pengajuanIdsSebagaiApprover) {
-                $query
-                    // sebagai pemilik pengajuan
-                    ->where('user_id', $user->id)
-                    // atau sebagai approver di pengajuan lain
-                    ->orWhereIn('id', $pengajuanIdsSebagaiApprover);
-            });
-    }
-    private static function updateExpiredPengajuan(): void
-    {
-        $today = Carbon::now()->startOfDay();
-        Pengajuan::where('status', 'menunggu')
-            ->whereNotNull('tgl_realisasi')
-            ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(1))
-            ->update(['status' => 'expired']);
+        return $query->where(function ($q) use ($user, $pengajuanIdsApprover) {
+            $q->where('user_id', $user->id)
+                ->orWhereIn('id', $pengajuanIdsApprover);
+        });
     }
 }

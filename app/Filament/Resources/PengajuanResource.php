@@ -159,7 +159,14 @@ class PengajuanResource extends Resource
                         false => 'danger',
                     })
                     ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
-
+                Tables\Columns\TextColumn::make('use_car')
+                    ->label('Mobil')
+                    ->badge()
+                    ->color(fn($state) => match ($state) {
+                        true => 'success',
+                        false => 'danger',
+                    })
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
                 Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
             ])
             ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
@@ -173,6 +180,15 @@ class PengajuanResource extends Resource
                     ->queries(
                         true: fn($query) => $query->where('menggunakan_teknisi', 1),
                         false: fn($query) => $query->where('menggunakan_teknisi', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
+                TernaryFilter::make('use_car')
+                    ->label('Mobil')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('use_car', 1),
+                        false: fn($query) => $query->where('use_car', 0),
                         blank: fn($query) => $query // untuk semua data
                     ),
             ])
