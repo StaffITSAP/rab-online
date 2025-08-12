@@ -361,7 +361,7 @@
                         <strong>{{ $lamp->original_name ?? '-' }}</strong>
                         <div style="font-size:8px; color:#666; margin-top:2px;">
                             File: {{ basename($filePath) }}<br>
-                            <a class="download-link" href="{{ asset('storage/' . $filePath) }}" target="_blank">Unduh / Buka</a>
+                            
                         </div>
                     </td>
                     <td style="text-align:center;">
