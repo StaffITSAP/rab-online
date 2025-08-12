@@ -40,6 +40,11 @@ class PengajuanMarcommKebutuhan extends Model
         static::where('pengajuan_id', $pengajuanId)->update(['kebutuhan_kartu' => $on]);
     }
 
+    public static function writeKemejaToggle(int $pengajuanId, bool $on): void
+    {
+        static::where('pengajuan_id', $pengajuanId)->update(['kebutuhan_kemeja' => $on]);
+    }
+
 
     /**
      * Hitung total amplop dari tabel detail dan simpan hanya di 1 baris (baris pertama).

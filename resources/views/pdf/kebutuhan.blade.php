@@ -11,8 +11,9 @@
         .ttd-table, .ttd-table td { border: none; }
 
         .section-table { width: 100%; margin-top: 12px; border: 1px solid #444; border-collapse: collapse; font-size: 9px; }
-        .section-table th, .section-table td { border: 1px solid #444; padding: 4px 8px; }
-        .section-table th { background: #eee; }
+        .section-table th, .section-table td { border: 1px solid #444; padding: 2px 4px; vertical-align: top; }
+        .section-table th { background: #eee; font-size: 8px; }
+        .section-table td { font-size: 8px; line-height: 1.1; }
 
         .note-table { width: 100%; margin-top: 12px; border: 1px solid #444; border-collapse: collapse; font-size: 9px; }
         .note-table td { border: none; padding: 4px 8px; vertical-align: top; }
@@ -32,9 +33,49 @@
         .text-justify { text-align: justify; }
         .nowrap { white-space: nowrap; }
 
-        /* 50% containers buat amplop & kartu */
-        .half-left { width: 50%; float: left; margin-top: 12px; box-sizing: border-box; }
+        /* Multi-column layout menggunakan float */
+        .multi-column-container { width: 100%; margin-top: 8px; overflow: hidden; }
+        .column-item { 
+            float: left; 
+            box-sizing: border-box; 
+            padding-right: 2px;
+        }
+        .column-item:last-child { padding-right: 0; }
+        .column-item table { margin-top: 0 !important; }
         .clear { clear: both; height: 0; line-height: 0; }
+        
+        /* Fixed width for columns - kurangi sedikit untuk padding */
+        .col-width-1 { width: 100%; }
+        .col-width-2 { width: 49.5%; }
+        .col-width-3 { width: 32.8%; }
+        .col-width-4 { width: 24.5%; }
+        .col-width-5 { width: 19.5%; }
+        .col-width-6 { width: 16.2%; }
+
+        /* Style untuk halaman baru */
+        .page-break { page-break-before: always; }
+        
+        /* Style untuk lampiran */
+        .lampiran-container { margin-top: 20px; }
+        .download-link { 
+            color: #0066cc; 
+            text-decoration: underline; 
+            font-size: 8px; 
+            display: inline-block; 
+            margin-top: 2px; 
+        }
+        .lampiran-image { 
+            max-height: 200px; 
+            max-width: 100%; 
+            object-fit: contain; 
+            margin-top: 5px; 
+            border: 1px solid #ccc; 
+        }
+        .file-info { 
+            font-size: 8px; 
+            color: #666; 
+            margin-top: 2px; 
+        }
     </style>
 </head>
 <body>
@@ -59,7 +100,8 @@
     $itemsKebutuhan = collect($pengajuan->pengajuan_marcomm_kebutuhans ?? []);
     $itemsAmplop    = collect($pengajuan->marcommKebutuhkanAmplops ?? $pengajuan->marcommKebutuhanAmplops ?? []); // fallback nama relasi
     $kartuRows      = collect($pengajuan->marcommKebutuhanKartus ?? []); // <- relasi kebutuhan kartu
-    $lampiranDinas  = collect($pengajuan->lampiranDinas ?? []);
+    $kemejaRows     = collect($pengajuan->marcommKebutuhanKemejas ?? []); // <- relasi kebutuhan kemeja
+    $lampiranKebutuhan  = collect($pengajuan->lampiranKebutuhan ?? []);
 
     $totalItems  = (int) $itemsKebutuhan->sum(fn($i) => (int)($i->subtotal ?? 0));
     $totalAmplop = (int) $itemsAmplop->sum(fn($r) => (int)($r->jumlah ?? 0));
@@ -68,11 +110,57 @@
     $firstNeed   = optional($pengajuan->pengajuan_marcomm_kebutuhans()->orderBy('id')->first());
     $needAmplop  = (bool) ($firstNeed->kebutuhan_amplop ?? false);
     $needKartu   = (bool) ($firstNeed->kebutuhan_kartu  ?? false);
+    $needKemeja  = (bool) ($firstNeed->kebutuhan_kemeja ?? false);
 
-    // apakah ada yang tampil setengah (untuk clear)
+    // apakah ada yang tampil
     $showAmplop  = ($needAmplop || $itemsAmplop->isNotEmpty());
     $showKartu   = ($needKartu  || $kartuRows->isNotEmpty());
-    $anyHalf     = $showAmplop || $showKartu;
+    $showKemeja  = ($needKemeja || $kemejaRows->isNotEmpty());
+    
+    // Fungsi untuk split data menjadi chunks maksimal 10
+    $maxRowsPerColumn = 8; // Kurangi dari 10 ke 8 untuk lebih compact
+    
+    // Split data
+    $amplopChunks = $showAmplop ? $itemsAmplop->chunk($maxRowsPerColumn) : collect([]);
+    $kartuChunks = $showKartu ? $kartuRows->chunk($maxRowsPerColumn) : collect([]);
+    $kemejaChunks = $showKemeja ? $kemejaRows->chunk($maxRowsPerColumn) : collect([]);
+    
+    // Hitung total kolom yang dibutuhkan
+    $totalColumns = $amplopChunks->count() + $kartuChunks->count() + $kemejaChunks->count();
+    
+    // Tentukan class width berdasarkan total kolom
+    if ($totalColumns <= 1) {
+        $columnClass = 'col-width-1';
+    } elseif ($totalColumns == 2) {
+        $columnClass = 'col-width-2';
+    } elseif ($totalColumns == 3) {
+        $columnClass = 'col-width-3';
+    } elseif ($totalColumns == 4) {
+        $columnClass = 'col-width-4';
+    } elseif ($totalColumns == 5) {
+        $columnClass = 'col-width-5';
+    } else {
+        $columnClass = 'col-width-6';
+    }
+
+    // Function untuk mendapatkan URL download
+    function getDownloadUrl($lampiran) {
+        // Sesuaikan dengan routing aplikasi Anda
+        return route('download.lampiran', ['id' => $lampiran->id]);
+    }
+
+    // Function untuk cek apakah file adalah PDF
+    function isPdfFile($filePath) {
+        return strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'pdf';
+    }
+
+    // Function untuk cek apakah file adalah gambar
+    function isImageFile($filePath) {
+        $abs = public_path('storage/' . $filePath);
+        if (!is_file($abs)) return false;
+        $mimeType = mime_content_type($abs);
+        return $mimeType && str_starts_with($mimeType, 'image/');
+    }
 @endphp
 
 <h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN RAB MARCOMM KEBUTUHAN</h2>
@@ -160,97 +248,94 @@
     </div>
 </div>
 
-{{-- ====== KEBUTUHAN AMPLOP (50% kiri) ====== --}}
-@if ($showAmplop)
-    <div class="half-left">
-        <table class="section-table no-break" style="margin-top:0;">
-            <thead>
-                <tr><th colspan="3">FORM PENGAJUAN MARCOMM KEBUTUHAN AMPLOP</th></tr>
-                <tr>
-                    <th style="width:10%;">NO</th>
-                    <th style="width:60%;">CABANG</th>
-                    <th style="width:30%;">JUMLAH</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($itemsAmplop as $row)
-                    <tr>
-                        <td class="text-center">{{ $loop->iteration }}</td>
-                        <td class="text-justify">{{ $row->cabang ?? '-' }}</td>
-                        <td class="text-right">{{ number_format((int)($row->jumlah ?? 0), 0, ',', '.') }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="3" class="text-center">Belum ada data kebutuhan amplop.</td></tr>
-                @endforelse
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2" class="text-center"><strong>JUMLAH AMPLOP</strong></td>
-                    <td class="text-right"><strong>{{ number_format($totalAmplop, 0, ',', '.') }}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
+{{-- ====== MULTI-COLUMN CONTAINER UNTUK SEMUA CHUNKS ====== --}}
+@if ($totalColumns > 0)
+    <div class="multi-column-container">
+        {{-- CHUNKS AMPLOP --}}
+        @foreach ($amplopChunks as $chunkIndex => $chunk)
+            <div class="column-item {{ $columnClass }}">
+                <table class="section-table no-break" style="margin-top:0; font-size: 8px;">
+                    <thead>
+                        <tr><th colspan="3" style="font-size: 7px; padding: 1px 2px;">AMPLOP {{ $amplopChunks->count() > 1 ? '(' . ($chunkIndex + 1) . ')' : '' }}</th></tr>
+                        <tr>
+                            <th style="width:8%;">NO</th>
+                            <th style="width:62%;">CABANG</th>
+                            <th style="width:30%;">JML</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($chunk as $row)
+                            <tr>
+                                <td class="text-center">{{ ($chunkIndex * $maxRowsPerColumn) + $loop->iteration }}</td>
+                                <td class="text-justify">{{ $row->cabang ?? '-' }}</td>
+                                <td class="text-right">{{ number_format((int)($row->jumlah ?? 0), 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    @if ($chunkIndex == $amplopChunks->count() - 1)
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-center" style="font-weight: bold; font-size: 7px;">TOTAL</td>
+                                <td class="text-right" style="font-weight: bold;">{{ number_format($totalAmplop, 0, ',', '.') }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
+        @endforeach
+
+        {{-- CHUNKS KARTU --}}
+        @foreach ($kartuChunks as $chunkIndex => $chunk)
+            <div class="column-item {{ $columnClass }}">
+                <table class="section-table no-break" style="margin-top:0; font-size: 8px;">
+                    <thead>
+                        <tr><th colspan="3" style="font-size: 7px; padding: 1px 2px;">KARTU {{ $kartuChunks->count() > 1 ? '(' . ($chunkIndex + 1) . ')' : '' }}</th></tr>
+                        <tr>
+                            <th style="width:8%;">NO</th>
+                            <th style="width:46%;">Nama</th>
+                            <th style="width:46%;">ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($chunk as $row)
+                            <tr>
+                                <td class="text-center">{{ ($chunkIndex * $maxRowsPerColumn) + $loop->iteration }}</td>
+                                <td class="text-justify">{{ $row->kartu_nama ?? '-' }}</td>
+                                <td class="text-justify">{{ $row->id_card ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+
+        {{-- CHUNKS KEMEJA --}}
+        @foreach ($kemejaChunks as $chunkIndex => $chunk)
+            <div class="column-item {{ $columnClass }}">
+                <table class="section-table no-break" style="margin-top:0; font-size: 8px;">
+                    <thead>
+                        <tr><th colspan="3" style="font-size: 7px; padding: 1px 2px;">KEMEJA {{ $kemejaChunks->count() > 1 ? '(' . ($chunkIndex + 1) . ')' : '' }}</th></tr>
+                        <tr>
+                            <th style="width:8%;">NO</th>
+                            <th style="width:62%;">Nama</th>
+                            <th style="width:30%;">Ukuran</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($chunk as $row)
+                            <tr>
+                                <td class="text-center">{{ ($chunkIndex * $maxRowsPerColumn) + $loop->iteration }}</td>
+                                <td class="text-justify">{{ $row->nama ?? '-' }}</td>
+                                <td class="text-center">{{ $row->ukuran ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+        
+        <div class="clear"></div>
     </div>
-@endif
-
-{{-- ====== KEBUTUHAN KARTU (50% kiri, berdampingan) ====== --}}
-@if ($showKartu)
-    <div class="half-left">
-        <table class="section-table no-break" style="margin-top:0;">
-            <thead>
-                <tr><th colspan="3">FORM PENGAJUAN MARCOMM KEBUTUHAN KARTU NAMA dan ID CARD</th></tr>
-                <tr>
-                    <th style="width:10%;">NO</th>
-                    <th style="width:45%;">Kartu Nama</th>
-                    <th style="width:45%;">ID CARD</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($kartuRows as $row)
-                    <tr>
-                        <td class="text-center">{{ $loop->iteration }}</td>
-                        <td class="text-justify">{{ $row->kartu_nama ?? '-' }}</td>
-                        <td class="text-justify">{{ $row->id_card ?? '-' }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="3" class="text-center">Belum ada data kebutuhan kartu.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-@endif
-
-@if ($anyHalf)
-    <div class="clear"></div>
-@endif
-
-{{-- ====== LAMPIRAN DINAS (opsional) ====== --}}
-@if ($lampiranDinas->count())
-    <table class="section-table no-break">
-        <thead>
-            <tr><th colspan="3">LAMPIRAN RAB PERJALANAN DINAS</th></tr>
-            <tr>
-                <th style="width:8%;">NO</th>
-                <th style="width:62%;">NAMA LAMPIRAN</th>
-                <th style="width:30%;">FILE</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($lampiranDinas as $lamp)
-                <tr>
-                    <td class="text-center">{{ $loop->iteration }}</td>
-                    <td class="text-justify">{{ $lamp->original_name ?? '-' }}</td>
-                    <td class="text-justify">
-                        {{ $lamp->file_path ?? '-' }}
-                        @php $abs = isset($lamp->file_path) ? public_path('storage/'.$lamp->file_path) : null; @endphp
-                        @if ($abs && is_file($abs) && str_starts_with(mime_content_type($abs) ?: '', 'image/'))
-                            <br><img src="{{ $abs }}" alt="Lampiran" style="max-height:140px; max-width:100%; object-fit:contain;">
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
 @endif
 
 <p align="center" style="font-size: 12px;">
@@ -290,5 +375,97 @@
         @endforeach
     </tr>
 </table>
+
+{{-- ====== LAMPIRAN DI HALAMAN BARU ====== --}}
+@if ($lampiranKebutuhan->count())
+    <div class="page-break">
+        <h2 align="center" style="margin: 20px 0 10px 0;">LAMPIRAN RAB PERJALANAN DINAS</h2>
+        <h3 align="center" style="margin: 5px 0 20px 0;">No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}</h3>
+        
+        <table class="section-table no-break lampiran-container">
+            <thead>
+                <tr>
+                    <th style="width:5%;">NO</th>
+                    <th style="width:25%;">NAMA LAMPIRAN</th>
+                    <th style="width:70%;">FILE / PREVIEW</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($lampiranKebutuhan as $lamp)
+                    <tr>
+                        <td class="text-center">{{ $loop->iteration }}</td>
+                        <td class="text-justify">
+                            <strong>{{ $lamp->original_name ?? '-' }}</strong>
+                            <div class="file-info">
+                                File: {{ basename($lamp->file_path ?? '') }}<br>
+                                @php
+                                    $filePath = $lamp->file_path ?? '';
+                                    $abs = $filePath ? public_path('storage/' . $filePath) : null;
+                                    $fileSize = $abs && is_file($abs) ? filesize($abs) : 0;
+                                @endphp
+                                @if ($fileSize > 0)
+                                    Size: {{ number_format($fileSize / 1024, 1) }} KB
+                                @endif
+                            </div>
+                        </td>
+                        <td class="text-justify">
+                            @php $filePath = $lamp->file_path ?? ''; @endphp
+                            
+                            @if ($filePath)
+                                @if (isPdfFile($filePath))
+                                    {{-- PDF File - Show download link --}}
+                                    <div style="text-align: center; padding: 20px; border: 2px dashed #ccc; background-color: #f9f9f9;">
+                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcgMTh2LTJIM1YxNkg3VjE0SDE3VjE2SDEzVjE4SDE3VjIwSDdWMThaTTIwIDEySDE2VjEwSDIwVjEyWk0xNiA2VjRIMTRWMkgxNlY2WiIgZmlsbD0iIzg4OCIvPgo8L3N2Zz4K" alt="PDF" style="width: 40px; height: 40px;"><br>
+                                        <strong style="color: #d32f2f;">FILE PDF</strong><br>
+                                        <small style="color: #666;">{{ basename($filePath) }}</small><br><br>
+                                        
+                                        {{-- Link Download --}}
+                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank" style="background: #1976d2; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                                            📥 Download PDF
+                                        </a>
+                                    </div>
+                                @elseif (isImageFile($filePath))
+                                    {{-- Image File - Show preview --}}
+                                    <div style="text-align: center;">
+                                        <img src="{{ public_path('storage/' . $filePath) }}" alt="Lampiran" class="lampiran-image"><br>
+                                        <small style="color: #666; margin-top: 5px; display: block;">{{ basename($filePath) }}</small>
+                                        
+                                        {{-- Optional download link untuk image juga --}}
+                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank">
+                                            📥 Download Gambar
+                                        </a>
+                                    </div>
+                                @else
+                                    {{-- File lainnya --}}
+                                    <div style="text-align: center; padding: 20px; border: 2px dashed #ccc; background-color: #f9f9f9;">
+                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE0IDJINlY0SDIwVjIySDZWMjBIMTRWMThINlYyMEgyMFYyMkg2VjRIMTRWMloiIGZpbGw9IiM4ODgiLz4KPC9zdmc+" alt="File" style="width: 40px; height: 40px;"><br>
+                                        <strong style="color: #666;">{{ strtoupper(pathinfo($filePath, PATHINFO_EXTENSION)) }} FILE</strong><br>
+                                        <small style="color: #666;">{{ basename($filePath) }}</small><br><br>
+                                        
+                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank" style="background: #1976d2; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                                            📥 Download File
+                                        </a>
+                                    </div>
+                                @endif
+                            @else
+                                <div style="text-align: center; color: #999; padding: 20px;">
+                                    File tidak tersedia
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        
+        {{-- Footer untuk halaman lampiran --}}
+        <div style="margin-top: 30px; text-align: center; color: #666; font-size: 8px;">
+            <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;">
+            Halaman Lampiran - {{ $companyName }}<br>
+            Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y H:i') }}
+        </div>
+    </div>
+@endif
+
 </body>
 </html>

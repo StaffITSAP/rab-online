@@ -17,7 +17,7 @@ class PengajuanMarcommKebutuhanAmplopResource extends Resource
 {
     protected static ?string $model = PengajuanMarcommKebutuhanAmplop::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
+    protected static ?string $navigationIcon = 'heroicon-o-inbox';
     protected static ?string $navigationGroup = 'Detail RAB Marcomm';
     protected static ?string $label = 'Amplop';
     protected static ?string $pluralLabel = 'Amplop';
@@ -46,19 +46,16 @@ class PengajuanMarcommKebutuhanAmplopResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('cabang')->sortable()->searchable(),
-                Tables\Columns\TextColumn::make('jumlah')->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('cabang'),
+                Tables\Columns\TextColumn::make('jumlah'),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+            ->actions([])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    
                 ]),
             ]);
     }
@@ -77,5 +74,18 @@ class PengajuanMarcommKebutuhanAmplopResource extends Resource
             'create' => Pages\CreatePengajuanMarcommKebutuhanAmplop::route('/create'),
             'edit' => Pages\EditPengajuanMarcommKebutuhanAmplop::route('/{record}/edit'),
         ];
+    }
+    public static function canCreate(): bool
+    {
+        return false; // Tidak bisa membuat data baru
+    }
+    public static function canEdit($record): bool
+    {
+        return false; // Matikan tombol Edit
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false; // Matikan tombol Delete
     }
 }

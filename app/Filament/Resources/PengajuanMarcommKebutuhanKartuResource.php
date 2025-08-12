@@ -17,7 +17,7 @@ class PengajuanMarcommKebutuhanKartuResource extends Resource
 {
     protected static ?string $model = PengajuanMarcommKebutuhanKartu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
+    protected static ?string $navigationIcon = 'heroicon-o-identification';
     protected static ?string $navigationGroup = 'Detail RAB Marcomm';
     protected static ?string $label = 'Kartu Nama dan ID Card';
     protected static ?string $pluralLabel = 'Kartu Nama dan ID Card';
@@ -28,7 +28,22 @@ class PengajuanMarcommKebutuhanKartuResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Forms\Components\Select::make('pengajuan_id')
+                    ->relationship('pengajuan', 'no_rab')
+                    ->required()
+                    ->searchable(),
+                Forms\Components\TextInput::make('kartu_nama')
+                    ->label('Kartu Nama')
+                    ->inline(false)
+                    ->default(false)
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('id_card')
+                    ->required()
+                    ->label('ID Card')
+                    ->inline(false)
+                    ->default(false)
+                    ->maxLength(255),
             ]);
     }
 
@@ -36,17 +51,17 @@ class PengajuanMarcommKebutuhanKartuResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('kartu_nama')->label('Kartu Nama'),
+                Tables\Columns\TextColumn::make('id_card')->label('ID Card'),
             ])
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+            ->actions([])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    
                 ]),
             ]);
     }
@@ -65,5 +80,18 @@ class PengajuanMarcommKebutuhanKartuResource extends Resource
             'create' => Pages\CreatePengajuanMarcommKebutuhanKartu::route('/create'),
             'edit' => Pages\EditPengajuanMarcommKebutuhanKartu::route('/{record}/edit'),
         ];
+    }
+    public static function canCreate(): bool
+    {
+        return false; // Tidak bisa membuat data baru
+    }
+    public static function canEdit($record): bool
+    {
+        return false; // Matikan tombol Edit
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false; // Matikan tombol Delete
     }
 }

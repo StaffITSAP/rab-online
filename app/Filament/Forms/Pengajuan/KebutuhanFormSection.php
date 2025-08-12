@@ -156,6 +156,25 @@ class KebutuhanFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Kebutuhan Kartu')
                         ->visible(fn($get) => $get('kebutuhan_kartu') === true),
+                    Repeater::make('marcommKebutuhanKemejas')
+                        ->label('Form Pengajuan Marcomm Kebutuhan Kemeja')
+                        ->relationship('marcommKebutuhanKemejas')
+                        ->schema([
+                            TextArea::make('nama')
+                                ->label('Nama')
+                                ->placeholder('Nama')
+                                ->required(),
+                            TextArea::make('ukuran')
+                                ->label('Ukuran')
+                                ->placeholder('S,M,L,XL / Jika tidak tahu di isi -')
+                                ->required(),
+                        ])
+                        ->columns(2)
+                        ->addActionLabel('Tambah Kebutuhan')
+                        ->columnSpanFull()
+                        ->defaultItems(1)
+                        ->itemLabel('Detail Kebutuhan Kemeja')
+                        ->visible(fn($get) => $get('kebutuhan_kemeja') === true),
                     Repeater::make('lampiranKebutuhan')
                         ->label('Lampiran RAB Kebutuhan Pusat/Sales')
                         ->relationship('lampiranKebutuhan')

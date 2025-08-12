@@ -39,6 +39,9 @@ class CreatePengajuan extends CreateRecord
         $kartuOn = !empty($formData['kebutuhan_kartu']);
         \App\Models\PengajuanMarcommKebutuhan::writeKartuToggle($pengajuan->id, $kartuOn);
 
+        $kemejaOn = !empty($formData['kebutuhan_kemeja']);
+        \App\Models\PengajuanMarcommKebutuhan::writeKemejaToggle($pengajuan->id, $kemejaOn);
+
 
         Log::info('Running afterCreate for pengajuan ID: ' . $pengajuan->id);
 

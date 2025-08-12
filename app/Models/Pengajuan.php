@@ -214,6 +214,10 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanMarcommKebutuhanKartu::class);
     }
+    public function marcommKebutuhanKemejas()
+    {
+        return $this->hasMany(PengajuanMarcommKebutuhanKemeja::class);
+    }
     public function lampiranKebutuhan()
     {
         return $this->hasMany(LampiranKebutuhan::class);
