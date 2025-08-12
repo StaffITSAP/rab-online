@@ -217,12 +217,12 @@
         <thead>
             <tr>
                 <th style="width:5%;">NO</th>
-                <th style="width:20%;">NAMA DAN TIPE BARANG</th>
-                <th style="width:20%;">KEPERLUAN</th>
+                <th style="width:25%;">NAMA DAN TIPE BARANG</th>
+                <th style="width:25%;">KEPERLUAN</th>
                 <th style="width:8%;">QTY</th>
                 <th style="width:10%;">SATUAN</th>
-                <th style="width:23%;">HARGA SATUAN</th>
-                <th style="width:22%;">TOTAL</th>
+                <th style="width:15%;">HARGA SATUAN</th>
+                <th style="width:10%;">TOTAL</th>
             </tr>
         </thead>
         <tbody>
