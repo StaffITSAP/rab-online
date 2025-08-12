@@ -143,17 +143,6 @@
         $columnClass = 'col-width-6';
     }
 
-    // Function untuk mendapatkan URL download
-    function getDownloadUrl($lampiran) {
-        // Sesuaikan dengan routing aplikasi Anda
-        return route('download.lampiran', ['id' => $lampiran->id]);
-    }
-
-    // Function untuk cek apakah file adalah PDF
-    function isPdfFile($filePath) {
-        return strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'pdf';
-    }
-
     // Function untuk cek apakah file adalah gambar
     function isImageFile($filePath) {
         $abs = public_path('storage/' . $filePath);
@@ -163,7 +152,7 @@
     }
 @endphp
 
-<h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN RAB MARCOMM KEBUTUHAN</h2>
+<h2 align="center" style="margin: 5px 0;">FORM PENGAJUAN RAB MARCOMM KEBUTUHAN PUSAT/SALES</h2>
 <h3 align="center" style="margin: 5px 0;">No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}</h3>
 <h2 align="center" style="margin: 5px 0;">{{ $companyName }}</h2>
 <h3 align="center" style="margin: 5px 0;">
@@ -379,15 +368,15 @@
 {{-- ====== LAMPIRAN DI HALAMAN BARU ====== --}}
 @if ($lampiranKebutuhan->count())
     <div class="page-break">
-        <h2 align="center" style="margin: 20px 0 10px 0;">LAMPIRAN RAB PERJALANAN DINAS</h2>
+        <h2 align="center" style="margin: 20px 0 10px 0;">LAMPIRAN RAB MARCOMM KEBUTUHAN PUSAT/SALES</h2>
         <h3 align="center" style="margin: 5px 0 20px 0;">No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}</h3>
         
         <table class="section-table no-break lampiran-container">
             <thead>
                 <tr>
                     <th style="width:5%;">NO</th>
-                    <th style="width:25%;">NAMA LAMPIRAN</th>
-                    <th style="width:70%;">FILE / PREVIEW</th>
+                    <th style="width:35%;">NAMA LAMPIRAN</th>
+                    <th style="width:60%;">FILE / PREVIEW</th>
                 </tr>
             </thead>
             <tbody>
@@ -412,39 +401,18 @@
                             @php $filePath = $lamp->file_path ?? ''; @endphp
                             
                             @if ($filePath)
-                                @if (isPdfFile($filePath))
-                                    {{-- PDF File - Show download link --}}
-                                    <div style="text-align: center; padding: 20px; border: 2px dashed #ccc; background-color: #f9f9f9;">
-                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTcgMTh2LTJIM1YxNkg3VjE0SDE3VjE2SDEzVjE4SDE3VjIwSDdWMThaTTIwIDEySDE2VjEwSDIwVjEyWk0xNiA2VjRIMTRWMkgxNlY2WiIgZmlsbD0iIzg4OCIvPgo8L3N2Zz4K" alt="PDF" style="width: 40px; height: 40px;"><br>
-                                        <strong style="color: #d32f2f;">FILE PDF</strong><br>
-                                        <small style="color: #666;">{{ basename($filePath) }}</small><br><br>
-                                        
-                                        {{-- Link Download --}}
-                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank" style="background: #1976d2; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                                            📥 Download PDF
-                                        </a>
-                                    </div>
-                                @elseif (isImageFile($filePath))
+                                @if (isImageFile($filePath))
                                     {{-- Image File - Show preview --}}
                                     <div style="text-align: center;">
                                         <img src="{{ public_path('storage/' . $filePath) }}" alt="Lampiran" class="lampiran-image"><br>
                                         <small style="color: #666; margin-top: 5px; display: block;">{{ basename($filePath) }}</small>
-                                        
-                                        {{-- Optional download link untuk image juga --}}
-                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank">
-                                            📥 Download Gambar
-                                        </a>
                                     </div>
                                 @else
-                                    {{-- File lainnya --}}
+                                    {{-- File lainnya (PDF, DOC, dll) - Show name only --}}
                                     <div style="text-align: center; padding: 20px; border: 2px dashed #ccc; background-color: #f9f9f9;">
                                         <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE0IDJINlY0SDIwVjIySDZWMjBIMTRWMThINlYyMEgyMFYyMkg2VjRIMTRWMloiIGZpbGw9IiM4ODgiLz4KPC9zdmc+" alt="File" style="width: 40px; height: 40px;"><br>
                                         <strong style="color: #666;">{{ strtoupper(pathinfo($filePath, PATHINFO_EXTENSION)) }} FILE</strong><br>
-                                        <small style="color: #666;">{{ basename($filePath) }}</small><br><br>
-                                        
-                                        <a href="{{ getDownloadUrl($lamp) }}" class="download-link" target="_blank" style="background: #1976d2; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; display: inline-block;">
-                                            📥 Download File
-                                        </a>
+                                        <small style="color: #666;">{{ basename($filePath) }}</small>
                                     </div>
                                 @endif
                             @else
