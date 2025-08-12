@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PengajuanStatus;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 
 class PengajuanAllResource extends Resource
@@ -141,7 +142,17 @@ class PengajuanAllResource extends Resource
             ->filters([
                 TrashedFilter::make()
                     ->visible(fn() => Auth::user()->hasRole('superadmin')),
-
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->placeholder('Semua')
+                    ->options([
+                        'menunggu' => 'Menunggu',
+                        'draft'    => 'Draft',
+                        'ditolak'  => 'Ditolak',
+                        'selesai'  => 'Selesai',
+                        'expired'  => 'Expired',
+                    ])
+                    ->indicator('Status'),
                 TernaryFilter::make('menggunakan_teknisi')
                     ->label('Menggunakan Teknisi')
                     ->trueLabel('Ya')
