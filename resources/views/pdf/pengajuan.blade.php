@@ -143,7 +143,7 @@
             <th style="width:5%;">NO</th>
             <th style="width:25%;">NAMA DAN TIPE BARANG</th>
             <th style="width:25%;">KEPERLUAN</th>
-            <th style="width:5%;">QTY</th>
+            <th style="width:10%;">QTY</th>
             <th style="width:10%;">SATUAN</th>
             <th style="width:15%;">HARGA SATUAN</th>
             <th style="width:15%;">TOTAL</th>
