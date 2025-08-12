@@ -124,7 +124,7 @@ class KebutuhanFormSection
                         ->schema([
                             TextArea::make('cabang')
                                 ->label('Cabang')
-                                ->placeholder('2505-000001 / Jika tidak tahu di isi - ')
+                                ->placeholder('Nama Cabang / Jika tidak tahu di isi - ')
                                 ->required(),
                             TextArea::make('jumlah')
                                 ->label('Jumlah')
