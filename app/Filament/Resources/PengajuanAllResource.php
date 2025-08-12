@@ -20,7 +20,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PengajuanStatus;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Fieldset;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 
@@ -142,6 +145,39 @@ class PengajuanAllResource extends Resource
             ->filters([
                 TrashedFilter::make()
                     ->visible(fn() => Auth::user()->hasRole('superadmin')),
+                // === Satu filter dengan judul "Tanggal Realisasi" ===
+                Filter::make('tgl_realisasi_range')
+                    ->label('Tanggal Realisasi') // buat chip indikator
+                    ->form([
+                        Fieldset::make('Tanggal Realisasi') // judul grup di panel filter
+                            ->schema([
+                                DatePicker::make('dari')
+                                    ->label('Dari')
+                                    ->native(false),
+                                DatePicker::make('sampai')
+                                    ->label('Sampai')
+                                    ->native(false),
+                            ])
+                            ->columns(2), // tampil berdampingan
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $from = $data['dari']   ?? null;
+                        $to   = $data['sampai'] ?? null;
+
+                        return $query
+                            ->when($from && $to, fn($q) => $q->whereBetween(
+                                'tgl_realisasi',
+                                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
+                            ))
+                            ->when($from && ! $to, fn($q) => $q->whereDate('tgl_realisasi', '>=', $from))
+                            ->when($to   && ! $from, fn($q) => $q->whereDate('tgl_realisasi', '<=', $to));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $chips = [];
+                        if (!empty($data['dari']))   $chips[] = 'Mulai '  . Carbon::parse($data['dari'])->translatedFormat('d M Y');
+                        if (!empty($data['sampai'])) $chips[] = 'Sampai ' . Carbon::parse($data['sampai'])->translatedFormat('d M Y');
+                        return $chips;
+                    }),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->placeholder('Semua')
