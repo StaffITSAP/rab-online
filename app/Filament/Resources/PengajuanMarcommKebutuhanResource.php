@@ -67,6 +67,7 @@ class PengajuanMarcommKebutuhanResource extends Resource
                 Tables\Actions\RestoreAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     

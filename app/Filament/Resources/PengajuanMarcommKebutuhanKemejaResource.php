@@ -42,6 +42,7 @@ class PengajuanMarcommKebutuhanKemejaResource extends Resource
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->actions([]) // Tidak ada edit/delete
             ->bulkActions([]);
     }

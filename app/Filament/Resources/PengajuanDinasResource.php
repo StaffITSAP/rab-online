@@ -63,6 +63,7 @@ class PengajuanDinasResource extends Resource
             ->filters([
                 //
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->actions([
                 Tables\Actions\EditAction::make(),
             ]);

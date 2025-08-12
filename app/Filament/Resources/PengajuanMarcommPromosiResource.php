@@ -64,6 +64,7 @@ class PengajuanMarcommPromosiResource extends Resource
                 Tables\Columns\TextColumn::make('subtotal')->money('IDR'),
                 Tables\Columns\TextColumn::make('keterangan')->limit(30),
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->filters([
                 //
             ]);

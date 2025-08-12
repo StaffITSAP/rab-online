@@ -58,6 +58,7 @@ class PengajuanMarcommKebutuhanKartuResource extends Resource
             ->filters([
                 //
             ])
+            ->defaultSort('created_at', 'desc') // ⬅️ Tambahkan ini
             ->actions([])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
