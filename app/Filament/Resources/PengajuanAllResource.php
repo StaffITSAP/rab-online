@@ -145,6 +145,39 @@ class PengajuanAllResource extends Resource
             ->filters([
                 TrashedFilter::make()
                     ->visible(fn() => Auth::user()->hasRole('superadmin')),
+                // === Satu filter dengan judul "Tanggal Dibuat" ===
+                Filter::make('tgl_dibuat_range')
+                    ->label('Tanggal Dibuat') // buat chip indikator
+                    ->form([
+                        Fieldset::make('Tanggal Dibuat') // judul grup di panel filter
+                            ->schema([
+                                DatePicker::make('dari')
+                                    ->label('Dari')
+                                    ->native(false),
+                                DatePicker::make('sampai')
+                                    ->label('Sampai')
+                                    ->native(false),
+                            ])
+                            ->columns(2), // tampil berdampingan
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $from = $data['dari']   ?? null;
+                        $to   = $data['sampai'] ?? null;
+
+                        return $query
+                            ->when($from && $to, fn($q) => $q->whereBetween(
+                                'created_at',
+                                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
+                            ))
+                            ->when($from && ! $to, fn($q) => $q->whereDate('created_at', '>=', $from))
+                            ->when($to   && ! $from, fn($q) => $q->whereDate('created_at', '<=', $to));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $chips = [];
+                        if (!empty($data['dari']))   $chips[] = 'Mulai '  . Carbon::parse($data['dari'])->translatedFormat('d M Y');
+                        if (!empty($data['sampai'])) $chips[] = 'Sampai ' . Carbon::parse($data['sampai'])->translatedFormat('d M Y');
+                        return $chips;
+                    }),
                 // === Satu filter dengan judul "Tanggal Realisasi" ===
                 Filter::make('tgl_realisasi_range')
                     ->label('Tanggal Realisasi') // buat chip indikator
