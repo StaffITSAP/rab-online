@@ -2,30 +2,25 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\LampiranMarcommPromosiResource\Pages;
-use App\Filament\Resources\LampiranMarcommPromosiResource\RelationManagers;
-use App\Models\LampiranMarcommPromosi;
+use App\Filament\Resources\LampiranMarcommKegiatanResource\Pages;
+use App\Models\LampiranMarcommKegiatan;
 use App\Models\PengajuanStatus;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class LampiranMarcommPromosiResource extends Resource
+class LampiranMarcommKegiatanResource extends Resource
 {
-    protected static ?string $model = LampiranMarcommPromosi::class;
-
+    protected static ?string $model = LampiranMarcommKegiatan::class;
     protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
     protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Promosi';
-    protected static ?string $pluralLabel = 'Promosi';
-    protected static ?string $slug = 'lampiran-promosi';
-    protected static ?int $navigationSort = 110;
+    protected static ?string $label = 'Event/Kegiatan';
+    protected static ?string $pluralLabel = 'Event/Kegiatan';
+    protected static ?string $slug = 'lampiran-marcomm-kegiatan';
+    protected static ?int $navigationSort = 112;
 
-    public static function form(Form $form): Form
+    public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
@@ -35,59 +30,50 @@ class LampiranMarcommPromosiResource extends Resource
 
                 Forms\Components\FileUpload::make('file_path')
                     ->label('Upload Lampiran (PDF & Image)')
-                    ->multiple()
                     ->preserveFilenames()
-                    ->directory('lampiran/promosi')
+                    ->directory('lampiran/marcomm-kegiatan')
                     ->disk('public')
                     ->acceptedFileTypes(['application/pdf', 'image/*'])
-                    ->maxSize(10240),
+                    ->maxSize(10240) // max 10 MB
+                    ->required(),
 
                 Forms\Components\TextInput::make('original_name')
+                    ->label('Nama Lampiran')
                     ->required()
                     ->maxLength(255),
             ]);
     }
 
-    public static function table(Table $table): Table
+    public static function table(Tables\Table $table): Tables\Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('pengajuan.no_rab')
+                    ->label('No RAB')
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\ViewColumn::make('preview')
                     ->label('Preview Lampiran')
                     ->view('filament.tables.columns.lampiran-preview')
-                    ->viewData(fn($record) => ['record' => $record]), // ⬅️ ini agar bisa pakai $record,
-                Tables\Columns\TextColumn::make('original_name')->label('Nama Lampiran')->limit(40),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    
-                ]),
-            ]);
-    }
+                    ->viewData(fn($record) => ['record' => $record]),
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+                Tables\Columns\TextColumn::make('original_name')
+                    ->label('Nama Lampiran')
+                    ->limit(40),
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListLampiranMarcommPromosis::route('/'),
-            'create' => Pages\CreateLampiranMarcommPromosi::route('/create'),
-            'edit' => Pages\EditLampiranMarcommPromosi::route('/{record}/edit'),
+            'index' => Pages\ListLampiranMarcommKegiatans::route('/'),
+            'create' => Pages\CreateLampiranMarcommKegiatan::route('/create'),
+            'edit' => Pages\EditLampiranMarcommKegiatan::route('/{record}/edit'),
         ];
     }
+
     public static function canViewAny(): bool
     {
         return true; // Semua user bisa lihat list
@@ -107,6 +93,7 @@ class LampiranMarcommPromosiResource extends Resource
     {
         return false;
     }
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();

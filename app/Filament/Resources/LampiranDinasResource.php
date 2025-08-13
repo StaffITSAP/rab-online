@@ -20,8 +20,8 @@ class LampiranDinasResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
     protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Lampiran Dinas';
-    protected static ?string $pluralLabel = 'Lampiran Dinas';
+    protected static ?string $label = 'Pejalanan Dinas';
+    protected static ?string $pluralLabel = 'Perjalanan Dinas';
     protected static ?int $navigationSort = 99;
 
     public static function form(Form $form): Form

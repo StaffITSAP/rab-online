@@ -2,24 +2,23 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\LampiranKebutuhanResource\Pages;
-use App\Models\LampiranKebutuhan;
+use App\Filament\Resources\LampiranMarcommKegiatanPusatResource\Pages;
+use App\Models\LampiranMarcommKegiatanPusat;
 use App\Models\PengajuanStatus;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 
-
-class LampiranKebutuhanResource extends Resource
+class LampiranMarcommKegiatanPusatResource extends Resource
 {
-    protected static ?string $model = LampiranKebutuhan::class;
-    protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
+    protected static ?string $model = LampiranMarcommKegiatanPusat::class;
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Kebutuhan Pusat/Sales';
-    protected static ?string $pluralLabel = 'Kebutuhan Pusat/Sales';
-    protected static ?string $slug = 'lampiran-kebutuhan';
-    protected static ?int $navigationSort = 111;
+    protected static ?string $label = 'Lampiran Marcomm Kegiatan Pusat';
+    protected static ?string $pluralLabel = 'Lampiran Marcomm Kegiatan Pusat';
+    protected static ?string $slug = 'lampiran-marcomm-kegiatan-pusat';
+    protected static ?int $navigationSort = 112;
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -29,18 +28,18 @@ class LampiranKebutuhanResource extends Resource
                     ->relationship('pengajuan', 'id')
                     ->required(),
 
-                Forms\Components\FileUpload::make('file_path')
-                    ->label('Upload Lampiran (PDF & Image)')
-                    ->multiple()
-                    ->preserveFilenames()
-                    ->directory('lampiran/kebutuhan')
-                    ->disk('public')
-                    ->acceptedFileTypes(['application/pdf', 'image/*'])
-                    ->maxSize(10240),
-
-                Forms\Components\TextInput::make('original_name')
+                Forms\Components\TextInput::make('nama')
+                    ->label('Nama')
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\Select::make('gender')
+                    ->label('Jenis Kelamin')
+                    ->options([
+                        'Laki-laki' => 'Laki-laki',
+                        'Perempuan' => 'Perempuan',
+                    ])
+                    ->required(),
             ]);
     }
 
@@ -49,11 +48,8 @@ class LampiranKebutuhanResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('pengajuan.no_rab')->label('No RAB')->sortable()->searchable(),
-                Tables\Columns\ViewColumn::make('preview')
-                    ->label('Preview Lampiran')
-                    ->view('filament.tables.columns.lampiran-preview')
-                    ->viewData(fn($record) => ['record' => $record]), // ⬅️ ini agar bisa pakai $record,
-                Tables\Columns\TextColumn::make('original_name')->label('Nama Lampiran')->limit(40),
+                Tables\Columns\TextColumn::make('nama')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('gender')->sortable(),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -61,40 +57,40 @@ class LampiranKebutuhanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListLampiranKebutuhans::route('/'),
-            'create' => Pages\CreateLampiranKebutuhan::route('/create'),
-            'edit' => Pages\EditLampiranKebutuhan::route('/{record}/edit'),
+            'index' => Pages\ListLampiranMarcommKegiatanPusats::route('/'),
+            'create' => Pages\CreateLampiranMarcommKegiatanPusat::route('/create'),
+            'edit' => Pages\EditLampiranMarcommKegiatanPusat::route('/{record}/edit'),
         ];
     }
+
     public static function canViewAny(): bool
     {
-        return true; // Semua user bisa lihat list
+        return true;
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function canEdit($record): bool
     {
-        return false;
+        return true;
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
+
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
 
-        // Superadmin boleh melihat semua
         if ($user->hasRole('superadmin')) {
             return parent::getEloquentQuery();
         }
 
-        // Ambil ID pengajuan yang user ini adalah approver-nya
         $pengajuanIdsSebagaiApprover = PengajuanStatus::where('user_id', $user->id)
             ->pluck('pengajuan_id')
             ->toArray();

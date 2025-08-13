@@ -27,6 +27,7 @@ class Pengajuan extends Model
         'use_car',
         'asset_teknisi',
         'keterangan',
+        'lokasi',
     ];
 
     protected $casts = [
@@ -132,6 +133,7 @@ class Pengajuan extends Model
         return match ((int) $this->tipe_rab_id) {
             1 => (int) $this->pengajuan_assets()->sum('subtotal'),
             2 => (int) $this->pengajuan_dinas()->sum('subtotal'),
+            3 => (int) $this->pengajuan_marcomm_kegiatans()->sum('subtotal'),
             4 => (int) $this->pengajuan_marcomm_promosis()->sum('subtotal'),
             5 => (int) $this->pengajuan_marcomm_kebutuhans()->sum('subtotal'),
             default => 0,
@@ -221,5 +223,25 @@ class Pengajuan extends Model
     public function lampiranKebutuhan()
     {
         return $this->hasMany(LampiranKebutuhan::class);
+    }
+    public function marcommKegiatans()
+    {
+        return $this->hasMany(PengajuanMarcommKegiatan::class);
+    }
+    public function pengajuan_marcomm_kegiatans()
+    {
+        return $this->hasMany(PengajuanMarcommKegiatan::class);
+    }
+    public function lampiranKegiatan()
+    {
+        return $this->hasMany(LampiranMarcommKegiatan::class);
+    }
+    public function marcommKegiatanPusats()
+    {
+        return $this->hasMany(LampiranMarcommKegiatanPusat::class, 'pengajuan_id');
+    }
+    public function marcommKegiatanCabangs()
+    {
+        return $this->hasMany(LampiranMarcommKegiatanCabang::class, 'pengajuan_id');
     }
 }

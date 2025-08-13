@@ -17,8 +17,8 @@ class PengajuanMarcommKebutuhanResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-queue-list';
     protected static ?string $navigationGroup = 'Detail Pengajuan RAB';
-    protected static ?string $label = 'Pengajuan Marcomm Kebutuhan Pusat dan Sales';
-    protected static ?string $pluralLabel = 'Pengajuan Marcomm Kebutuhan Pusat dan Sales';
+    protected static ?string $label = 'Kebutuhan Pusat dan Sales';
+    protected static ?string $pluralLabel = 'Kebutuhan Pusat dan Sales';
     protected static ?string $slug = 'marcomm-kebutuhan';
 
     public static function form(Forms\Form $form): Forms\Form

@@ -15,6 +15,7 @@ use App\Filament\Forms\Pengajuan\AssetFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
 use App\Filament\Forms\Pengajuan\PromosiFormSection;
 use App\Filament\Forms\Pengajuan\KebutuhanFormSection;
+use App\Filament\Forms\Pengajuan\KegiatanFormSection;
 use App\Models\PengajuanStatus;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
@@ -43,6 +44,7 @@ class PengajuanResource extends Resource
             ...DinasFormSection::schema(),
             ...PromosiFormSection::schema(),
             ...KebutuhanFormSection::schema(),
+            ...KegiatanFormSection::schema(),
 
             TextInput::make('total_biaya')
                 ->label('Total Biaya')
@@ -425,6 +427,8 @@ class PengajuanResource extends Resource
             $total = $record->pengajuan_assets()->sum('subtotal');
         } elseif ($record->tipe_rab_id == 2) {
             $total = $record->pengajuan_dinas()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 3) {
+            $total = $record->pengajuan_marcomm_kegiatans()->sum('subtotal');
         } elseif ($record->tipe_rab_id == 4) {
             $total = $record->pengajuan_marcomm_promosis()->sum('subtotal');
         } elseif ($record->tipe_rab_id == 5) {

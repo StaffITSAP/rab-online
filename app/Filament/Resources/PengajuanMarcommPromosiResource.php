@@ -19,8 +19,8 @@ class PengajuanMarcommPromosiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rss';
     protected static ?string $navigationGroup = 'Detail Pengajuan RAB';
-    protected static ?string $label = 'Pengajuan Marcomm Promosi';
-    protected static ?string $pluralLabel = 'Pengajuan Marcomm Promosi';
+    protected static ?string $label = 'Promosi';
+    protected static ?string $pluralLabel = 'Promosi';
     protected static ?string $slug = 'marcomm-promosi';
 
     public static function form(Form $form): Form

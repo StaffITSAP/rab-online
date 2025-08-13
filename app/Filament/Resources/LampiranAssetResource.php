@@ -17,8 +17,8 @@ class LampiranAssetResource extends Resource
     protected static ?string $model = LampiranAsset::class;
     protected static ?string $navigationIcon = 'heroicon-o-paper-clip';
     protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Lampiran Asset';
-    protected static ?string $pluralLabel = 'Lampiran Asset';
+    protected static ?string $label = 'Asset';
+    protected static ?string $pluralLabel = 'Asset';
     protected static ?int $navigationSort = 98;
 
 
