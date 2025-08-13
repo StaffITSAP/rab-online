@@ -27,20 +27,24 @@ class DinasFormSection
                         DatePicker::make('tgl_realisasi')
                             ->label('Tanggal Berangkat/ Realisasi')
                             ->dehydrated()
+                            ->default(now())
                             ->displayFormat('d F Y')
                             ->locale('id'),
                         DatePicker::make('tgl_pulang')
                             ->label('Tanggal Pulang')
                             ->dehydrated()
+                            ->default(now())
                             ->displayFormat('d F Y')
                             ->locale('id'),
                         TextInput::make('jam')
                             ->label('Jam')
                             ->placeholder('Masukkan Jam (contoh: 13:30)')
                             ->required()
+                            ->default('08:30')
                             ->extraAttributes(['id' => 'jamPicker']),
                         TextInput::make('jml_personil')
                             ->label('Jumlah Personil')
+                            ->default(1)
                             ->placeholder('Silahkan isi personil'),
                         Toggle::make('use_car')
                             ->label('Request Mobil')
@@ -82,6 +86,7 @@ class DinasFormSection
 
                             TextInput::make('pic')
                                 ->label('PIC')
+                                ->default(1)
                                 ->placeholder('Contoh: Jumlah PIC 1,2,3...')
                                 ->nullable(),
 
@@ -89,6 +94,7 @@ class DinasFormSection
                                 ->label('QTY/Hari')
                                 ->numeric()
                                 ->minValue(1)
+                                ->default(1)
                                 ->nullable()
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                     $pic = (int) $get('pic');
@@ -101,6 +107,7 @@ class DinasFormSection
                                 ->label('Harga')
                                 ->placeholder('Contoh: 500000')
                                 ->required()
+                                ->default(0)
                                 ->dehydrated()
                                 ->prefix('Rp ')
                                 ->extraAttributes(['class' => 'currency-input'])
@@ -119,6 +126,7 @@ class DinasFormSection
                                 ->disabled()
                                 ->required()
                                 ->dehydrated()
+                                ->default(0)
                                 ->prefix('Rp ')
                                 ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
                                 ->dehydrateStateUsing(function (Get $get) {
