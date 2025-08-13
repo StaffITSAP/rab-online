@@ -86,7 +86,15 @@ class PenggunaanMobilResource extends Resource
                         return null;
                     }),
                 Tables\Columns\TextColumn::make('use_car')
-                    ->label('Request Mobil')
+                    ->label('Mobil')
+                    ->badge()
+                    ->color(fn($state) => match ($state) {
+                        true => 'success',
+                        false => 'danger',
+                    })
+                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
+                Tables\Columns\TextColumn::make('use_pengiriman')
+                    ->label('Driver dan Mobil')
                     ->badge()
                     ->color(fn($state) => match ($state) {
                         true => 'success',
