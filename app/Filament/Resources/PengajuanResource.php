@@ -96,24 +96,36 @@ class PengajuanResource extends Resource
                         'menunggu' => 'warning',
                     })
                     ->description(function ($record) {
-                        // Jika status ditolak, tampilkan alasan
-                        if ($record->status === 'ditolak') {
+                        // Status ditolak (termasuk expired unlocked)
+                        if (
+                            $record->status === 'ditolak' ||
+                            ($record->status === 'expired' && $record->expired_unlocked &&
+                                $record->statuses()->where('is_approved', false)->exists())
+                        ) {
                             $status = $record->statuses()
                                 ->where('is_approved', false)
                                 ->latest('approved_at')
                                 ->first();
                             return $status?->alasan_ditolak ? 'Alasan: ' . $status->alasan_ditolak : null;
                         }
-                        // Jika status selesai/disetujui, tampilkan catatan approve terakhir (jika ada)
-                        if ($record->status === 'selesai' || $record->status === 'menunggu') {
+
+                        // Status selesai / menunggu (termasuk expired unlocked)
+                        if (
+                            $record->status === 'selesai' ||
+                            $record->status === 'menunggu' ||
+                            ($record->status === 'expired' && $record->expired_unlocked &&
+                                $record->statuses()->where('is_approved', true)->exists())
+                        ) {
                             $status = $record->statuses()
                                 ->where('is_approved', true)
                                 ->latest('approved_at')
                                 ->first();
                             return $status?->catatan_approve ? 'Catatan: ' . $status->catatan_approve : null;
                         }
+
                         return null;
-                    })->searchable(),
+                    })
+                    ->searchable(),
 
                 TextColumn::make('pending_approvers')
                     ->label('Belum Disetujui Oleh')
