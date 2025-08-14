@@ -26,6 +26,9 @@ class Pengajuan extends Model
         'asset_teknisi',
         'keterangan',
         'lokasi',
+        'expired_unlocked',
+        'expired_unlocked_by',
+        'expired_unlocked_at',
     ];
 
     protected $casts = [
@@ -33,6 +36,8 @@ class Pengajuan extends Model
         'use_pengiriman'      => 'boolean',
         'use_car'             => 'boolean',
         'asset_teknisi'       => 'boolean',
+        'expired_unlocked'    => 'boolean',
+        'expired_unlocked_at' => 'datetime',
     ];
 
     protected $dates = ['tgl_realisasi', 'tgl_pulang'];

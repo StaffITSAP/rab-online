@@ -277,6 +277,35 @@ class PengajuanResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
+                    // OPEN EXPIRED
+                    Tables\Actions\Action::make('open_expired')
+                        ->label('Buka Expired')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->visible(function ($record) {
+                            $user = auth()->user();
+
+                            return $record->status === 'expired'
+                                && !$record->expired_unlocked
+                                && $user
+                                && ($user->hasRole('superadmin') || $user->hasRole('hrd'));
+                        })
+                        ->action(function ($record) {
+                            $record->update([
+                                'status' => 'expired', // tetap expired
+                                'expired_unlocked' => true,
+                                'expired_unlocked_by' => auth()->id(),
+                                'expired_unlocked_at' => now(),
+                            ]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Expired berhasil dibuka!')
+                                ->success()
+                                ->send();
+                        }),
+
+                    // SETUJUI
                     Tables\Actions\Action::make('Setujui')
                         ->label('Setujui')
                         ->color('success')
@@ -288,8 +317,8 @@ class PengajuanResource extends Resource
                         ->action(function ($record, array $data) {
                             $user = auth()->user();
 
-                            // Tidak bisa setujui jika expired
-                            if ($record->status === 'expired') {
+                            // Tidak bisa setujui jika expired dan belum dibuka
+                            if ($record->status === 'expired' && !$record->expired_unlocked) {
                                 Notification::make()
                                     ->title('Pengajuan sudah expired dan tidak dapat disetujui.')
                                     ->danger()
@@ -329,16 +358,18 @@ class PengajuanResource extends Resource
                                     ->send();
                             }
                         })
-                        ->visible(
-                            fn($record) =>
-                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                        ->visible(function ($record) {
+                            return
+                                // Muncul kalau tidak expired, atau expired tapi sudah dibuka
+                                ($record->status !== 'expired' || $record->expired_unlocked) &&
                                 $record->statuses()
                                 ->where('user_id', auth()->id())
                                 ->whereNull('is_approved')
-                                ->exists()
-                                && $record->user_id !== auth()->id()
-                        ),
+                                ->exists() &&
+                                $record->user_id !== auth()->id();
+                        }),
 
+                    // TOLAK
                     Tables\Actions\Action::make('Tolak')
                         ->label('Tolak')
                         ->color('danger')
@@ -350,8 +381,8 @@ class PengajuanResource extends Resource
                         ->action(function ($record, array $data) {
                             $user = auth()->user();
 
-                            // Tidak bisa tolak jika expired
-                            if ($record->status === 'expired') {
+                            // Tidak bisa tolak jika expired dan belum dibuka
+                            if ($record->status === 'expired' && !$record->expired_unlocked) {
                                 Notification::make()
                                     ->title('Pengajuan sudah expired dan tidak dapat ditolak.')
                                     ->danger()
@@ -360,9 +391,13 @@ class PengajuanResource extends Resource
                             }
 
                             if ($record->user_id === $user->id) {
-                                Notification::make()->title('Anda tidak dapat menolak pengajuan Anda sendiri.')->danger()->send();
+                                Notification::make()
+                                    ->title('Anda tidak dapat menolak pengajuan Anda sendiri.')
+                                    ->danger()
+                                    ->send();
                                 return;
                             }
+
                             $status = $record->statuses()->where('user_id', $user->id)->first();
                             if ($status && is_null($status->is_approved)) {
                                 $status->update([
@@ -371,52 +406,22 @@ class PengajuanResource extends Resource
                                     'alasan_ditolak' => $data['alasan_ditolak'],
                                 ]);
                                 $record->update(['status' => 'ditolak']);
-                                Notification::make()->title('Pengajuan telah ditolak.')->danger()->send();
+                                Notification::make()
+                                    ->title('Pengajuan telah ditolak.')
+                                    ->danger()
+                                    ->send();
                             }
                         })
-                        ->visible(
-                            fn($record) =>
-                            $record->status !== 'expired' && // tambahkan pengecekan ini
+                        ->visible(function ($record) {
+                            return
+                                // Muncul kalau tidak expired, atau expired tapi sudah dibuka
+                                ($record->status !== 'expired' || $record->expired_unlocked) &&
                                 $record->statuses()
                                 ->where('user_id', auth()->id())
                                 ->whereNull('is_approved')
-                                ->exists()
-                                && $record->user_id !== auth()->id()
-                        ),
-                    Tables\Actions\Action::make('open_expired')
-                        ->label('Buka Expired')
-                        ->icon('heroicon-o-arrow-path')
-                        ->color('warning')
-                        ->requiresConfirmation()
-                        ->visible(function ($record) {
-                            $user = auth()->user();
-                            // Bisa jika:
-                            // 1. Superadmin
-                            if ($user && $user->hasRole('superadmin')) {
-                                return $record->status === 'expired';
-                            }
-                            // 2. Atau Koordinator yang jadi approver pengajuan ini
-                            if (
-                                $user
-                                && $user->hasRole('koordinator')
-                                && $record->statuses()
-                                ->where('user_id', $user->id)
-                                ->exists()
-                            ) {
-                                return $record->status === 'expired';
-                            }
-                            // selain itu, tidak boleh
-                            return false;
-                        })
-                        ->action(function ($record) {
-                            $record->update(['status' => 'menunggu']);
-                            \Filament\Notifications\Notification::make()
-                                ->title('Status berhasil diubah menjadi menunggu!')
-                                ->success()
-                                ->send();
+                                ->exists() &&
+                                $record->user_id !== auth()->id();
                         }),
-
-
                     Tables\Actions\ViewAction::make('preview_pdf')
                         ->label('Preview PDF')
                         ->icon('heroicon-o-eye')
