@@ -20,6 +20,16 @@ class PengajuanMarcommKegiatan extends Model
         'subtotal',
     ];
 
+    public static function writePusatToggle(int $pengajuanId, bool $on): void
+    {
+        static::where('pengajuan_id', $pengajuanId)->update(['tim_pusat' => $on]);
+    }
+
+    public static function writeCabangToggle(int $pengajuanId, bool $on): void
+    {
+        static::where('pengajuan_id', $pengajuanId)->update(['tim_cabang' => $on]);
+    }
+
     public function pengajuan()
     {
         return $this->belongsTo(Pengajuan::class);

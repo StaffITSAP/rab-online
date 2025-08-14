@@ -63,6 +63,13 @@ class EditPengajuan extends EditRecord
             ->orderBy('id')
             ->value('kebutuhan_kemeja');
 
+        $data['tim_pusat'] = (bool) \App\Models\PengajuanMarcommKegiatan::where('pengajuan_id', $pengajuan->id)
+            ->orderBy('id')
+            ->value('tim_pusat');
+        $data['tim_cabang'] = (bool) \App\Models\PengajuanMarcommKegiatan::where('pengajuan_id', $pengajuan->id)
+            ->orderBy('id')
+            ->value('tim_cabang');
+
         return $data;
     }
 
@@ -91,6 +98,12 @@ class EditPengajuan extends EditRecord
 
         $kemejaOn = !empty($formData['kebutuhan_kemeja']);
         \App\Models\PengajuanMarcommKebutuhan::writeKemejaToggle($pengajuan->id, $kemejaOn);
+
+        $pusatOn = !empty($formData['tim_pusat']);
+        \App\Models\PengajuanMarcommKegiatan::writePusatToggle($pengajuan->id, $pusatOn);
+
+        $cabangOn = !empty($formData['tim_cabang']);
+        \App\Models\PengajuanMarcommKegiatan::writeCabangToggle($pengajuan->id, $cabangOn);
         // Hapus status existing dulu (hati-hati jika pengen preserve approval sebelumnya)
         \App\Models\PengajuanStatus::where('pengajuan_id', $pengajuan->id)->delete();
 

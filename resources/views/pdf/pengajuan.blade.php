@@ -295,11 +295,21 @@
             </td>
         </tr>
     </table>
+    {{-- ====== KETERANGAN ====== --}}
+    @if(isset($pengajuan->keterangan) && trim($pengajuan->keterangan) !== '')
+    <div style="margin-top:12px; font-size:9px;">
+        <strong>Keterangan:</strong><br>
+        <div style="margin-top:4px; text-align:justify;">
+            {{ $pengajuan->keterangan }}
+        </div>
+    </div>
+    @endif
 
     <p align="center" style="font-size:12px;">
         {{ optional(optional($pengajuan->user)->userStatus)->kota ?? 'Kota Tidak Diketahui' }},
         {{ $pengajuan->created_at ? \Carbon\Carbon::parse($pengajuan->created_at)->translatedFormat('d F Y') : '' }}
     </p>
+
 
     <!-- ===== TANDA TANGAN ===== -->
     <table class="ttd-table" style="margin-top:10px; width:100%;">
@@ -361,7 +371,7 @@
                         <strong>{{ $lamp->original_name ?? '-' }}</strong>
                         <div style="font-size:8px; color:#666; margin-top:2px;">
                             File: {{ basename($filePath) }}<br>
-                            
+
                         </div>
                     </td>
                     <td style="text-align:center;">

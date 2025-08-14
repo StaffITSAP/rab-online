@@ -11,6 +11,7 @@ Route::get('/pengajuan/{pengajuan}/pdf', function (Pengajuan $pengajuan) {
     $view = match ((int) $pengajuan->tipe_rab_id) {
         1 => 'pdf.pengajuan',   // Barang Intern
         2 => 'pdf.dinas',       // Perjalanan Dinas
+        3 => 'pdf.kegiatan',       // Marcomm Event/Kegiatan
         4 => 'pdf.promosi',     // Marcomm Promosi
         5 => 'pdf.kebutuhan',     // Marcomm Kebutuhan
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
@@ -18,6 +19,7 @@ Route::get('/pengajuan/{pengajuan}/pdf', function (Pengajuan $pengajuan) {
 
     // Tentukan orientasi
     $orientation = match ((int) $pengajuan->tipe_rab_id) {
+        3 => 'landscape', // kegiatan
         4 => 'landscape', // promosi
         5 => 'landscape', // kebutuhan
         default => 'portrait', // pengajuan & dinas
@@ -35,12 +37,14 @@ Route::get('/pengajuan/{pengajuan}/download-pdf', function (Pengajuan $pengajuan
     $view = match ((int) $pengajuan->tipe_rab_id) {
         1 => 'pdf.pengajuan',
         2 => 'pdf.dinas',
+        3 => 'pdf.kegiatan',
         4 => 'pdf.promosi',
         5 => 'pdf.kebutuhan',
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
     };
 
     $orientation = match ((int) $pengajuan->tipe_rab_id) {
+        3 => 'landscape',
         4 => 'landscape',
         5 => 'landscape',
         default => 'portrait',

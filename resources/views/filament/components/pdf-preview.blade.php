@@ -71,24 +71,42 @@
     </div>
     @endif
 
+    {{-- ====================== --}}
+    {{-- Lampiran: Kegiatan   --}}
+    {{-- ====================== --}}
+    @php
+    // tabel: lampiran_marcomm_kegiatans
+    $lampiranKegiatan = $record->lampiranKegiatan ?? collect();
+    @endphp
+    @if ($lampiranKegiatan->isNotEmpty())
+    <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <h2 class="text-sm font-semibold mb-2 text-gray-800 dark:text-gray-100">Daftar Lampiran Kegiatan</h2>
+        @foreach ($lampiranKegiatan as $lampiran)
+        <div class="text-sm flex items-center gap-2 mb-1 text-gray-800 dark:text-gray-200">
+            📎
+            <a href="{{ asset('storage/' . $lampiran->file_path) }}" target="_blank"
+                class="text-blue-600 hover:underline dark:text-blue-400">
+                {{ $lampiran->original_name }}
+            </a>
+        </div>
+        @endforeach
+    </div>
+    @endif
+
     {{-- ===================================== --}}
     {{-- Detail Kebutuhan Amplop (AMPLOP)     --}}
     {{-- ===================================== --}}
     @php
-    $needAmplop = (bool) optional(
-    $record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first()
-    )->kebutuhan_amplop;
-
+    $needAmplop = (bool) optional($record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first())->kebutuhan_amplop;
     $amplopRows = $record->marcommKebutuhanAmplops ?? collect();
     $totalAmplop = $amplopRows->sum('jumlah');
     @endphp
-
     @if ($needAmplop || $amplopRows->isNotEmpty())
     <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kebutuhan Amplop</h2>
             <div class="text-xs px-2 py-1 rounded-full
-                    {{ $needAmplop ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
+                {{ $needAmplop ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
                 {{ $needAmplop ? 'Aktif' : 'Tidak Aktif' }}
             </div>
         </div>
@@ -136,19 +154,15 @@
     {{-- Detail Kebutuhan Kartu (KARTU)       --}}
     {{-- ===================================== --}}
     @php
-    $needKartu = (bool) optional(
-    $record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first()
-    )->kebutuhan_kartu;
-
+    $needKartu = (bool) optional($record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first())->kebutuhan_kartu;
     $kartuRows = $record->marcommKebutuhanKartus ?? collect();
     @endphp
-
     @if ($needKartu || $kartuRows->isNotEmpty())
     <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kebutuhan Kartu Nama dan ID Card</h2>
             <div class="text-xs px-2 py-1 rounded-full
-                    {{ $needKartu ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
+                {{ $needKartu ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
                 {{ $needKartu ? 'Aktif' : 'Tidak Aktif' }}
             </div>
         </div>
@@ -184,19 +198,15 @@
     {{-- Detail Kebutuhan Kemeja (KEMEJA)     --}}
     {{-- ===================================== --}}
     @php
-    $needKemeja = (bool) optional(
-    $record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first()
-    )->kebutuhan_kemeja;
-
+    $needKemeja = (bool) optional($record->pengajuan_marcomm_kebutuhans()->orderBy('id')->first())->kebutuhan_kemeja;
     $kemejaRows = $record->marcommKebutuhanKemejas ?? collect();
     @endphp
-
     @if ($needKemeja || $kemejaRows->isNotEmpty())
     <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kebutuhan Kemeja</h2>
             <div class="text-xs px-2 py-1 rounded-full
-                    {{ $needKemeja ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
+                {{ $needKemeja ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">
                 {{ $needKemeja ? 'Aktif' : 'Tidak Aktif' }}
             </div>
         </div>
@@ -225,6 +235,162 @@
             </table>
         </div>
         @endif
+    </div>
+    @endif
+
+    {{-- ===================================== --}}
+    {{-- Detail KEGIATAN (RAB KEGIATAN)      --}}
+    {{-- ===================================== --}}
+    @php
+    $kegiatanRows = $record->marcommKegiatans ?? collect();
+    $totalKegiatan = $kegiatanRows->sum(fn($i) => (int) ($i->subtotal ?? 0));
+
+    // Group by DESKRIPSI untuk rowspan seperti contoh
+    $kegiatanGrouped = $kegiatanRows->groupBy(function ($row) {
+    return $row->deskripsi ?? '-';
+    });
+    $noKelompok = 1;
+    @endphp
+
+    @if ($kegiatanRows->isNotEmpty())
+    <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kegiatan (RAB Kegiatan)</h2>
+            <span class="text-xs text-gray-600 dark:text-gray-300">
+                Total: <strong>Rp {{ number_format($totalKegiatan, 0, ',', '.') }}</strong>
+            </span>
+        </div>
+
+        <div class="overflow-hidden rounded-md border dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300" style="width:5%">NO</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300" style="width:18%">DESKRIPSI</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">KETERANGAN</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300" style="width:8%">PIC</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300" style="width:10%">QTY/HARI</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-600 dark:text-gray-300" style="width:14%">HARGA SATUAN</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-600 dark:text-gray-300" style="width:14%">SUBTOTAL</th>
+                    </tr>
+                </thead>
+
+                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                    @foreach ($kegiatanGrouped as $deskripsi => $rows)
+                    @php $rowspan = $rows->count(); @endphp
+                    @foreach ($rows as $idx => $row)
+                    <tr>
+                        {{-- NO (rowspan per kelompok) --}}
+                        @if ($idx === 0)
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200 align-top" rowspan="{{ $rowspan }}">
+                            {{ $noKelompok }}
+                        </td>
+                        {{-- DESKRIPSI (rowspan per kelompok) --}}
+                        <td class="px-3 py-2 text-sm font-semibold text-gray-800 dark:text-gray-100 align-top" rowspan="{{ $rowspan }}">
+                            {{ $deskripsi }}
+                        </td>
+                        @endif
+
+                        {{-- KETERANGAN + kolom item (tiap baris) --}}
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+                            {{ $row->keterangan ?? '-' }}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-center text-gray-800 dark:text-gray-200">
+                            {{ $row->pic ?? 0 }}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-center text-gray-800 dark:text-gray-200">
+                            {{ $row->jml_hari ?? 0 }}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-800 dark:text-gray-200">
+                            Rp {{ number_format((int)($row->harga_satuan ?? 0), 0, ',', '.') }}
+                        </td>
+                        <td class="px-3 py-2 text-sm text-right text-gray-800 dark:text-gray-200">
+                            Rp {{ number_format((int)($row->subtotal ?? 0), 0, ',', '.') }}
+                        </td>
+                    </tr>
+                    @endforeach
+                    @php $noKelompok++; @endphp
+                    @endforeach
+                </tbody>
+
+                <tfoot class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th colspan="6" class="px-3 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-200">
+                            TOTAL
+                        </th>
+                        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-900 dark:text-gray-100">
+                            Rp {{ number_format($totalKegiatan, 0, ',', '.') }}
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- ===================================== --}}
+    {{-- Detail KEGIATAN (TIM PUSAT & CABANG) --}}
+    {{-- ===================================== --}}
+    @php
+    $kegiatanPusat = $record->marcommKegiatanPusats ?? collect();
+    $kegiatanCabang = $record->marcommKegiatanCabangs ?? collect();
+    @endphp
+
+    @if ($kegiatanPusat->isNotEmpty())
+    <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kegiatan – Tim Pusat</h2>
+        </div>
+        <div class="overflow-hidden rounded-md border dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">#</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Nama</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Gender</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                    @foreach ($kegiatanPusat as $i => $row)
+                    <tr>
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $i + 1 }}</td>
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $row->nama ?? '-' }}</td>
+                        <td class="px-3 py-2 text-sm text-center text-gray-800 dark:text-gray-200">{{ $row->gender ?? '-' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    @if ($kegiatanCabang->isNotEmpty())
+    <div class="border rounded-md p-4 bg-white shadow-sm dark:bg-gray-900 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Detail Kegiatan – Tim Cabang</h2>
+        </div>
+        <div class="overflow-hidden rounded-md border dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">#</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Cabang</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Nama</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Gender</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                    @foreach ($kegiatanCabang as $i => $row)
+                    <tr>
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $i + 1 }}</td>
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $row->cabang ?? '-' }}</td>
+                        <td class="px-3 py-2 text-sm text-gray-800 dark:text-gray-200">{{ $row->nama ?? '-' }}</td>
+                        <td class="px-3 py-2 text-sm text-center text-gray-800 dark:text-gray-200">{{ $row->gender ?? '-' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
     @endif
 

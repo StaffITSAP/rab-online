@@ -242,6 +242,12 @@ class KegiatanFormSection
                         ])
                         ->defaultItems(1)
                         ->visible(fn($get) => $get('lampiran_kegiatan') === true),
+                    Forms\Components\Textarea::make('keterangan')
+                        ->label('Keterangan')
+                        ->placeholder('Tuliskan keterangan tambahan di sini...')
+                        ->rows(4)
+                        ->maxLength(65535) // batas default untuk TEXT MySQL
+                        ->columnSpanFull(),
                 ])
                 ->visible(fn(Get $get) => $get('tipe_rab_id') == 3),
         ];
