@@ -26,6 +26,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Forms;
 
 class PengajuanAllResource extends Resource
 {
@@ -37,417 +38,21 @@ class PengajuanAllResource extends Resource
     protected static ?string $pluralLabel = 'Semua Pengajuan';
     protected static ?string $slug = 'semua-pengajuan';
 
-    public static function table(Table $table): Table
+    /**
+     * PENTING: Reuse form schema dari PengajuanResource supaya hal. edit tidak kosong.
+     */
+    public static function form(Forms\Form $form): Forms\Form
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('no_rab')->label('No RAB')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('user.name')->label('Pemohon')->searchable(),
-                Tables\Columns\TextColumn::make('total_biaya')->money('IDR', true),
-                TextColumn::make('created_at')
-                    ->label('Tanggal Pengajuan')
-                    ->formatStateUsing(fn($state) => Carbon::parse($state)->translatedFormat('d F Y H:i')),
-                TextColumn::make('realisasi')
-                    ->label('Tanggal Realisasi')
-                    ->getStateUsing(function ($record) {
-                        $tanggal = $record->tgl_realisasi
-                            ? Carbon::parse($record->tgl_realisasi)->translatedFormat('d F Y')
-                            : '-';
-                        $jam = $record->jam ?? ' ';
-                        return "{$tanggal} {$jam}";
-                    }),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'selesai' => 'success',
-                        'ditolak' => 'danger',
-                        'expired' => 'danger',
-                        'menunggu' => 'warning',
-                    })
-                    ->description(function ($record) {
-                        if ($record->status === 'ditolak') {
-                            $status = $record->statuses()
-                                ->where('is_approved', false)
-                                ->latest('approved_at')
-                                ->first();
-                            return $status?->alasan_ditolak ? 'Alasan: ' . $status->alasan_ditolak : null;
-                        }
-                        if ($record->status === 'selesai' || $record->status === 'menunggu') {
-                            $status = $record->statuses()
-                                ->where('is_approved', true)
-                                ->latest('approved_at')
-                                ->first();
-                            return $status?->catatan_approve ? 'Catatan: ' . $status->catatan_approve : null;
-                        }
-                        return null;
-                    })->searchable(),
-
-                TextColumn::make('pending_approvers')
-                    ->label('Belum Disetujui Oleh')
-                    ->html()
-                    ->getStateUsing(function ($record) {
-                        $pending = $record->statuses()
-                            ->whereNull('is_approved')
-                            ->with('user')
-                            ->get();
-
-                        $names = $pending->pluck('user.name')->filter()->toArray();
-                        return count($names) ? implode('<br>', $names) : '-';
-                    }),
-
-                TextColumn::make('approved_info')
-                    ->label('Disetujui / Ditolak Oleh (Tanggal)')
-                    ->html()
-                    ->getStateUsing(function ($record) {
-                        $approvedStatuses = $record->statuses()
-                            ->whereNotNull('is_approved')
-                            ->with('user')
-                            ->orderBy('approved_at')
-                            ->get();
-
-                        if ($approvedStatuses->isEmpty()) {
-                            return '-';
-                        }
-
-                        $list = $approvedStatuses->map(function ($status) {
-                            $name = e($status->user?->name ?? '-');
-                            $approvedText = $status->is_approved ? 'Disetujui' : 'Ditolak';
-                            $date = $status->approved_at
-                                ? \Carbon\Carbon::parse($status->approved_at)->translatedFormat('d F Y H:i')
-                                : '-';
-                            return "<div>{$name} ({$approvedText})<br><span style=\"font-size:13px;color:#aaa;\">{$date}</span></div>";
-                        })->implode('');
-
-                        return $list;
-                    }),
-
-                Tables\Columns\TextColumn::make('menggunakan_teknisi')
-                    ->label('Teknisi')
-                    ->badge()
-                    ->color(fn($state) => match ($state) {
-                        true => 'success',
-                        false => 'danger',
-                    })
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
-                Tables\Columns\TextColumn::make('use_car')
-                    ->label('Mobil')
-                    ->badge()
-                    ->color(fn($state) => match ($state) {
-                        true => 'success',
-                        false => 'danger',
-                    })
-                    ->formatStateUsing(fn($state) => $state ? 'Ya' : 'Tidak'),
-                Tables\Columns\TextColumn::make('tipeRAB.nama')->label('Tipe RAB'),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->filters([
-                TrashedFilter::make()
-                    ->visible(fn() => Auth::user()->hasRole('superadmin')),
-                // === Satu filter dengan judul "Tanggal Dibuat" ===
-                Filter::make('tgl_dibuat_range')
-                    ->label('Tanggal Dibuat') // buat chip indikator
-                    ->form([
-                        Fieldset::make('Tanggal Dibuat') // judul grup di panel filter
-                            ->schema([
-                                DatePicker::make('dari')
-                                    ->label('Dari')
-                                    ->native(false),
-                                DatePicker::make('sampai')
-                                    ->label('Sampai')
-                                    ->native(false),
-                            ])
-                            ->columns(2), // tampil berdampingan
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        $from = $data['dari']   ?? null;
-                        $to   = $data['sampai'] ?? null;
-
-                        return $query
-                            ->when($from && $to, fn($q) => $q->whereBetween(
-                                'created_at',
-                                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
-                            ))
-                            ->when($from && ! $to, fn($q) => $q->whereDate('created_at', '>=', $from))
-                            ->when($to   && ! $from, fn($q) => $q->whereDate('created_at', '<=', $to));
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $chips = [];
-                        if (!empty($data['dari']))   $chips[] = 'Mulai '  . Carbon::parse($data['dari'])->translatedFormat('d M Y');
-                        if (!empty($data['sampai'])) $chips[] = 'Sampai ' . Carbon::parse($data['sampai'])->translatedFormat('d M Y');
-                        return $chips;
-                    }),
-                // === Satu filter dengan judul "Tanggal Realisasi" ===
-                Filter::make('tgl_realisasi_range')
-                    ->label('Tanggal Realisasi') // buat chip indikator
-                    ->form([
-                        Fieldset::make('Tanggal Realisasi') // judul grup di panel filter
-                            ->schema([
-                                DatePicker::make('dari')
-                                    ->label('Dari')
-                                    ->native(false),
-                                DatePicker::make('sampai')
-                                    ->label('Sampai')
-                                    ->native(false),
-                            ])
-                            ->columns(2), // tampil berdampingan
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        $from = $data['dari']   ?? null;
-                        $to   = $data['sampai'] ?? null;
-
-                        return $query
-                            ->when($from && $to, fn($q) => $q->whereBetween(
-                                'tgl_realisasi',
-                                [Carbon::parse($from)->startOfDay(), Carbon::parse($to)->endOfDay()]
-                            ))
-                            ->when($from && ! $to, fn($q) => $q->whereDate('tgl_realisasi', '>=', $from))
-                            ->when($to   && ! $from, fn($q) => $q->whereDate('tgl_realisasi', '<=', $to));
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $chips = [];
-                        if (!empty($data['dari']))   $chips[] = 'Mulai '  . Carbon::parse($data['dari'])->translatedFormat('d M Y');
-                        if (!empty($data['sampai'])) $chips[] = 'Sampai ' . Carbon::parse($data['sampai'])->translatedFormat('d M Y');
-                        return $chips;
-                    }),
-                SelectFilter::make('status')
-                    ->label('Status')
-                    ->placeholder('Semua')
-                    ->options([
-                        'menunggu' => 'Menunggu',
-                        'draft'    => 'Draft',
-                        'ditolak'  => 'Ditolak',
-                        'selesai'  => 'Selesai',
-                        'expired'  => 'Expired',
-                    ])
-                    ->indicator('Status'),
-                TernaryFilter::make('menggunakan_teknisi')
-                    ->label('Menggunakan Teknisi')
-                    ->trueLabel('Ya')
-                    ->falseLabel('Tidak')
-                    ->queries(
-                        true: fn($query) => $query->where('menggunakan_teknisi', 1),
-                        false: fn($query) => $query->where('menggunakan_teknisi', 0),
-                        blank: fn($query) => $query // untuk semua data
-                    ),
-                TernaryFilter::make('use_car')
-                    ->label('Mobil')
-                    ->trueLabel('Ya')
-                    ->falseLabel('Tidak')
-                    ->queries(
-                        true: fn($query) => $query->where('use_car', 1),
-                        false: fn($query) => $query->where('use_car', 0),
-                        blank: fn($query) => $query // untuk semua data
-                    ),
-            ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('Setujui')
-                        ->label('Setujui')
-                        ->color('success')
-                        ->icon('heroicon-o-check-circle')
-                        ->requiresConfirmation()
-                        ->form([
-                            Textarea::make('catatan_approve')->label('Catatan (opsional)')->rows(2),
-                        ])
-                        ->action(function ($record, array $data) {
-                            $user = auth()->user();
-
-                            // Tidak bisa setujui jika expired
-                            if ($record->status === 'expired') {
-                                Notification::make()
-                                    ->title('Pengajuan sudah expired dan tidak dapat disetujui.')
-                                    ->danger()
-                                    ->send();
-                                return;
-                            }
-
-                            // Cegah pengaju menyetujui pengajuan sendiri
-                            if ($record->user_id === $user->id) {
-                                Notification::make()
-                                    ->title('Anda tidak dapat menyetujui pengajuan Anda sendiri.')
-                                    ->danger()
-                                    ->send();
-                                return;
-                            }
-
-                            $status = $record->statuses()->where('user_id', $user->id)->first();
-
-                            if ($status && is_null($status->is_approved)) {
-                                $status->update([
-                                    'is_approved' => true,
-                                    'approved_at' => now(),
-                                    'catatan_approve' => $data['catatan_approve'] ?? null,
-                                ]);
-
-                                // Cek jika semua sudah approve
-                                $total = $record->statuses()->count();
-                                $approved = $record->statuses()->where('is_approved', true)->count();
-
-                                if ($approved === $total) {
-                                    $record->update(['status' => 'selesai']);
-                                }
-
-                                Notification::make()
-                                    ->title('Pengajuan berhasil disetujui.')
-                                    ->success()
-                                    ->send();
-                            }
-                        })
-                        ->visible(
-                            fn($record) =>
-                            $record->status !== 'expired' && // tambahkan pengecekan ini
-                                $record->statuses()
-                                ->where('user_id', auth()->id())
-                                ->whereNull('is_approved')
-                                ->exists()
-                                && $record->user_id !== auth()->id()
-                        ),
-
-                    Tables\Actions\Action::make('Tolak')
-                        ->label('Tolak')
-                        ->color('danger')
-                        ->icon('heroicon-o-x-circle')
-                        ->requiresConfirmation()
-                        ->form([
-                            Textarea::make('alasan_ditolak')->label('Alasan Penolakan')->required(),
-                        ])
-                        ->action(function ($record, array $data) {
-                            $user = auth()->user();
-
-                            // Tidak bisa tolak jika expired
-                            if ($record->status === 'expired') {
-                                Notification::make()
-                                    ->title('Pengajuan sudah expired dan tidak dapat ditolak.')
-                                    ->danger()
-                                    ->send();
-                                return;
-                            }
-
-                            if ($record->user_id === $user->id) {
-                                Notification::make()->title('Anda tidak dapat menolak pengajuan Anda sendiri.')->danger()->send();
-                                return;
-                            }
-                            $status = $record->statuses()->where('user_id', $user->id)->first();
-                            if ($status && is_null($status->is_approved)) {
-                                $status->update([
-                                    'is_approved' => false,
-                                    'approved_at' => now(),
-                                    'alasan_ditolak' => $data['alasan_ditolak'],
-                                ]);
-                                $record->update(['status' => 'ditolak']);
-                                Notification::make()->title('Pengajuan telah ditolak.')->danger()->send();
-                            }
-                        })
-                        ->visible(
-                            fn($record) =>
-                            $record->status !== 'expired' && // tambahkan pengecekan ini
-                                $record->statuses()
-                                ->where('user_id', auth()->id())
-                                ->whereNull('is_approved')
-                                ->exists()
-                                && $record->user_id !== auth()->id()
-                        ),
-                    Tables\Actions\Action::make('open_expired')
-                        ->label('Buka Expired')
-                        ->icon('heroicon-o-arrow-path')
-                        ->color('warning')
-                        ->requiresConfirmation()
-                        ->visible(function ($record) {
-                            $user = auth()->user();
-                            // Bisa jika:
-                            // 1. Superadmin
-                            if ($user && $user->hasRole('superadmin')) {
-                                return $record->status === 'expired';
-                            }
-                            // 2. Atau Koordinator yang jadi approver pengajuan ini
-                            if (
-                                $user
-                                && $user->hasRole('koordinator')
-                                && $record->statuses()
-                                ->where('user_id', $user->id)
-                                ->exists()
-                            ) {
-                                return $record->status === 'expired';
-                            }
-                            // selain itu, tidak boleh
-                            return false;
-                        })
-                        ->action(function ($record) {
-                            $record->update(['status' => 'menunggu']);
-                            \Filament\Notifications\Notification::make()
-                                ->title('Status berhasil diubah menjadi menunggu!')
-                                ->success()
-                                ->send();
-                        }),
-
-
-                    Tables\Actions\ViewAction::make('preview_pdf')
-                        ->label('Preview PDF')
-                        ->icon('heroicon-o-eye')
-                        ->color('gray')
-                        ->slideOver()
-                        ->modalWidth('screen') // full screen width untuk slideOver
-                        ->modalHeading('Preview RAB PDF')
-                        ->modalSubmitAction(false)
-                        ->modalCancelActionLabel('Tutup')
-                        ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi', 'lampiranKebutuhan']),
-                            'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
-                        ]))
-                        ->closeModalByClickingAway(false),
-                    Tables\Actions\Action::make('download_pdf')
-                        ->label('Download PDF')
-                        ->icon('heroicon-o-arrow-down-tray')
-                        ->color('success')
-                        ->url(fn($record) => route('pengajuan.pdf.download', $record), shouldOpenInNewTab: false),
-                    Tables\Actions\DeleteAction::make()
-                        ->visible(function ($record) {
-                            $user = auth()->user();
-                            $isSuperadmin = $user && $user->hasRole('superadmin');
-                            $isOwner = $user && $record->user_id === $user->id;
-
-                            // Jika status 'selesai', hanya superadmin yang bisa hapus
-                            if ($record->status === 'selesai') {
-                                return $isSuperadmin;
-                            }
-
-                            // Jika belum selesai, owner atau superadmin boleh hapus
-                            return $isOwner || $isSuperadmin;
-                        })
-                        ->requiresConfirmation()
-                        ->form(form: [
-                            Textarea::make('deletion_reason')
-                                ->label('Alasan Penghapusan')
-                                ->required()
-                        ])
-                        ->action(function (Model $record, array $data): void {
-                            $record->deletion_reason = $data['deletion_reason'];
-                            $record->save();
-                            $record->delete();
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->visible(
-                            fn($record) =>
-                            auth()->user()->hasRole('superadmin') && $record->trashed()
-                        ),
-
-                ]),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
-
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')),
-
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()?->hasRole('superadmin')), // jika ingin sekalian
-                ]),
-            ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns);
+        // Reuse persis schema yang sudah Anda pakai di PengajuanResource
+        return \App\Filament\Resources\PengajuanResource::form($form);
     }
+
+    public static function table(Tables\Table $table): Tables\Table
+    {
+        // (opsional) tampilkan kolom yang Anda perlukan di index “Semua Pengajuan”
+        return \App\Filament\Resources\PengajuanResource::table($table);
+    }
+
 
     public static function getRelations(): array
     {
@@ -458,9 +63,31 @@ class PengajuanAllResource extends Resource
     {
         return [
             'index' => Pages\ListPengajuanAlls::route('/'),
+            'edit' => Pages\EditPengajuanAll::route('/{record}/edit'),
             // tambahkan create/edit jika memang ingin, atau cukup index saja
         ];
     }
+
+    public static function afterSave(Form $form): void
+    {
+        $record = $form->getRecord();
+        $total = 0;
+
+        if ($record->tipe_rab_id == 1) {
+            $total = $record->pengajuan_assets()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 2) {
+            $total = $record->pengajuan_dinas()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 3) {
+            $total = $record->pengajuan_marcomm_kegiatans()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 4) {
+            $total = $record->pengajuan_marcomm_promosis()->sum('subtotal');
+        } elseif ($record->tipe_rab_id == 5) {
+            $total = $record->pengajuan_marcomm_kebutuhans()->sum('subtotal');
+        } // tambahkan elseif lagi jika ada tipe lain
+
+        $record->update(['total_biaya' => $total]);
+    }
+
 
     public static function getEloquentQuery(): Builder
     {
