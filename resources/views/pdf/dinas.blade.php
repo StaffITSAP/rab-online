@@ -144,6 +144,32 @@
             color: #666;
             margin-top: 2px;
         }
+
+        /* ===== Watermark untuk status expired (merah) ===== */
+        .wm-expired {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 120px;
+            font-weight: 800;
+            color: rgba(220, 0, 0, 0.18);
+            /* MERAH transparan di layar */
+            letter-spacing: 8px;
+            z-index: 9999;
+            pointer-events: none;
+            /* tidak ganggu klik */
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* Saat print, buat lebih pekat supaya tetap terbaca */
+        @media print {
+            .wm-expired {
+                color: rgba(220, 0, 0, 0.28);
+                /* merah sedikit lebih pekat */
+            }
+        }
     </style>
 </head>
 
@@ -176,6 +202,11 @@
     return $mimeType && str_starts_with($mimeType, 'image/');
     }
     @endphp
+
+    {{-- ===== Watermark muncul bila status expired ===== --}}
+    @if (strtolower($pengajuan->status ?? '') === 'expired')
+    <div class="wm-expired">EXPIRED</div>
+    @endif
 
     <h2 align="center" style="margin: 5px 0;">FORM RAB DINAS LUAR KOTA</h2>
     <h3 align="center" style="margin: 5px 0;">No RAB : {{ strtoupper($pengajuan->no_rab ?? '') }}</h3>
@@ -260,7 +291,7 @@
                 <td align="center">{{ $detail->pic ?? '-' }}</td>
                 <td align="center">{{ $detail->jml_hari ?? 0 }}</td>
 
-                <!-- HARGA SATUAN: Rp kiri, angka kanan; top aligned; nowrap -->
+                <!-- HARGA SATUAN -->
                 <td style="padding:4px 6px; text-align:right; vertical-align:top; white-space:nowrap;">
                     <span style="float:left;">Rp</span>{{ number_format((int)($detail->harga_satuan ?? 0), 0, ',', '.') }}
                 </td>
@@ -421,4 +452,5 @@
     @endif
 
 </body>
+
 </html>
