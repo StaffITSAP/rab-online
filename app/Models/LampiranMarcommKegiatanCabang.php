@@ -20,6 +20,6 @@ class LampiranMarcommKegiatanCabang extends Model
 
     public function pengajuan()
     {
-        return $this->belongsTo(PengajuanMarcommKegiatan::class, 'pengajuan_id');
+        return $this->belongsTo(Pengajuan::class, 'pengajuan_id');
     }
 }

@@ -14,10 +14,10 @@ class LampiranMarcommKegiatanPusatResource extends Resource
 {
     protected static ?string $model = LampiranMarcommKegiatanPusat::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationGroup = 'Detail Lampiran';
-    protected static ?string $label = 'Lampiran Marcomm Kegiatan Pusat';
-    protected static ?string $pluralLabel = 'Lampiran Marcomm Kegiatan Pusat';
-    protected static ?string $slug = 'lampiran-marcomm-kegiatan-pusat';
+    protected static ?string $navigationGroup = 'Detail RAB Marcomm';
+    protected static ?string $label = 'Kegiatan Pusat';
+    protected static ?string $pluralLabel = 'Kegiatan Pusat';
+    protected static ?string $slug = 'kegiatan-pusat';
     protected static ?int $navigationSort = 112;
 
     public static function form(Forms\Form $form): Forms\Form
@@ -58,8 +58,6 @@ class LampiranMarcommKegiatanPusatResource extends Resource
     {
         return [
             'index' => Pages\ListLampiranMarcommKegiatanPusats::route('/'),
-            'create' => Pages\CreateLampiranMarcommKegiatanPusat::route('/create'),
-            'edit' => Pages\EditLampiranMarcommKegiatanPusat::route('/{record}/edit'),
         ];
     }
 

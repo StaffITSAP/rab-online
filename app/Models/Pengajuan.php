@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class Pengajuan extends Model
 {
@@ -32,20 +30,60 @@ class Pengajuan extends Model
 
     protected $casts = [
         'menggunakan_teknisi' => 'boolean',
-        'use_pengiriman' => 'boolean',
-        'use_car' => 'boolean',
-        'asset_teknisi' => 'boolean',
+        'use_pengiriman'      => 'boolean',
+        'use_car'             => 'boolean',
+        'asset_teknisi'       => 'boolean',
     ];
-
 
     protected $dates = ['tgl_realisasi', 'tgl_pulang'];
 
+    /**
+     * Relasi-relasi yang harus ikut dihapus/restore/forceDelete.
+     * Nama diambil dari method relationship pada model ini.
+     */
+    protected static array $cascadeRelations = [
+        // Asset & Dinas
+        'pengajuan_assets',
+        'pengajuan_dinas',
+        'dinasActivities',
+        'dinasPersonils',
+
+        // Status & Approver
+        'statuses',
+        'persetujuanApprovers',
+
+        // Lampiran umum
+        'lampiran',
+        'lampiranAssets',
+        'lampiranDinas',
+
+        // Marcomm Promosi
+        'pengajuan_marcomm_promosis',
+        'lampiranPromosi',
+
+        // Marcomm Kebutuhan
+        'pengajuan_marcomm_kebutuhans',
+        'marcommKebutuhanAmplops',
+        'marcommKebutuhanKartus',
+        'marcommKebutuhanKemejas',
+        'lampiranKebutuhan',
+
+        // Marcomm Kegiatan
+        'marcommKegiatans',              // alias utama
+        'pengajuan_marcomm_kegiatans',   // alias jika masih dipakai
+        'lampiranKegiatan',
+        'marcommKegiatanPusats',
+        'marcommKegiatanCabangs',
+    ];
+
     protected static function booted()
     {
+        // Generate nomor RAB saat create
         static::creating(function ($pengajuan) {
-            $pengajuan->no_rab = self::generateNoRAB($pengajuan->tipe_rab_id);
+            $pengajuan->no_rab = self::generateNoRAB((int) $pengajuan->tipe_rab_id);
         });
 
+        // Auto-expire sederhana
         static::retrieved(function ($pengajuan) {
             if ($pengajuan->status === 'menunggu' && now()->diffInDays($pengajuan->created_at) > 2) {
                 $pengajuan->status = 'expired';
@@ -53,80 +91,115 @@ class Pengajuan extends Model
             }
         });
 
+        /**
+         * Soft delete child-relations ketika model ini di-soft delete.
+         */
         static::deleting(function ($pengajuan) {
-            // Soft delete check
-            if (method_exists($pengajuan, 'isForceDeleting') && !$pengajuan->isForceDeleting()) {
-                // Soft delete relasi-relasi terkait
-                $pengajuan->pengajuan_assets()->get()->each(function ($asset) {
-                    $asset->delete();
-                });
+            // Jika force delete, biarkan event forceDeleted yang menangani
+            if (method_exists($pengajuan, 'isForceDeleting') && $pengajuan->isForceDeleting()) {
+                return;
+            }
 
-                $pengajuan->pengajuan_dinas()->get()->each(function ($dinas) {
-                    $dinas->delete();
-                });
-
-                $pengajuan->dinasActivities()->get()->each(function ($activity) {
-                    $activity->delete();
-                });
-
-                $pengajuan->dinasPersonils()->get()->each(function ($personil) {
-                    $personil->delete();
-                });
-
-                $pengajuan->lampiran()->get()->each(function ($lampiran) {
-                    $lampiran->delete();
-                });
-
-                $pengajuan->lampiranAssets()->get()->each(function ($lampiranAsset) {
-                    $lampiranAsset->delete();
-                });
-
-                $pengajuan->lampiranDinas()->get()->each(function ($lampiranDinas) {
-                    $lampiranDinas->delete();
-                });
+            foreach (self::$cascadeRelations as $relation) {
+                if (!method_exists($pengajuan, $relation)) {
+                    continue;
+                }
+                try {
+                    $query = $pengajuan->{$relation}();
+                    // Ambil koleksi; untuk hasOne juga aman karena ->get() menghasilkan Collection
+                    $items = $query->get();
+                    $items->each(function ($child) {
+                        // Hanya panggil jika model anak punya method delete (umumnya ada)
+                        if (method_exists($child, 'delete')) {
+                            $child->delete();
+                        }
+                    });
+                } catch (\Throwable $e) {
+                    // Abaikan relasi yang bukan Eloquent Relationship / tidak valid
+                }
             }
         });
 
-        // Untuk restore otomatis jika ingin (opsional)
+        /**
+         * Restore otomatis semua child-relations yang di-soft delete.
+         */
         static::restoring(function ($pengajuan) {
-            $pengajuan->pengajuan_assets()->withTrashed()->get()->each->restore();
-            $pengajuan->pengajuan_dinas()->withTrashed()->get()->each->restore();
-            $pengajuan->dinasActivities()->withTrashed()->get()->each->restore();
-            $pengajuan->dinasPersonils()->withTrashed()->get()->each->restore();
-            $pengajuan->lampiran()->withTrashed()->get()->each->restore();
-            $pengajuan->lampiranAssets()->withTrashed()->get()->each->restore();
-            $pengajuan->lampiranDinas()->withTrashed()->get()->each->restore();
+            foreach (self::$cascadeRelations as $relation) {
+                if (!method_exists($pengajuan, $relation)) {
+                    continue;
+                }
+                try {
+                    $query = $pengajuan->{$relation}();
+                    // Jika relasi anak pakai SoftDeletes, withTrashed() ada; jika tidak, pakai query biasa.
+                    $items = method_exists($query, 'withTrashed')
+                        ? $query->withTrashed()->get()
+                        : $query->get();
+
+                    $items->each(function ($child) {
+                        if (method_exists($child, 'restore')) {
+                            $child->restore();
+                        }
+                    });
+                } catch (\Throwable $e) {
+                    // Abaikan jika relasi tidak mendukung restore
+                }
+            }
+        });
+
+        /**
+         * Ketika benar-benar dihapus permanen, force delete juga semua child-relations.
+         */
+        static::forceDeleted(function ($pengajuan) {
+            foreach (self::$cascadeRelations as $relation) {
+                if (!method_exists($pengajuan, $relation)) {
+                    continue;
+                }
+                try {
+                    $query = $pengajuan->{$relation}();
+                    $items = method_exists($query, 'withTrashed')
+                        ? $query->withTrashed()->get()
+                        : $query->get();
+
+                    $items->each(function ($child) {
+                        if (method_exists($child, 'forceDelete')) {
+                            $child->forceDelete();
+                        } elseif (method_exists($child, 'delete')) {
+                            // fallback: minimal hapus soft-deleted biasa
+                            $child->delete();
+                        }
+                    });
+                } catch (\Throwable $e) {
+                    // Abaikan jika ada relasi yang bukan model Eloquent
+                }
+            }
         });
     }
 
     public static function generateNoRAB(int $tipeRABId): string
     {
-        $today = now();
+        $today   = now();
         $dateStr = $today->format('ymd'); // contoh: 250802
-        $year = $today->year;
 
-        // Ambil kode dari tabel tipe_rabs
-        $tipeRAB = \App\Models\TipeRab::find($tipeRABId);
+        $tipeRAB  = \App\Models\TipeRab::find($tipeRABId);
         $kodeTipe = $tipeRAB?->kode ?? 'XX';
 
-        // Pattern prefix (tanpa urut)
         $prefix = "RAB/{$kodeTipe}/{$dateStr}/";
 
-        // Cari nomor urut terbesar untuk tipe RAB ini saja (semua tahun, semua tanggal, termasuk soft delete)
         $last = self::withTrashed()
             ->where('tipe_rab_id', $tipeRABId)
-            ->where('no_rab', 'like', "RAB/{$kodeTipe}/%") // cari semua dengan kode tipe ini, semua tanggal
+            ->where('no_rab', 'like', "RAB/{$kodeTipe}/%")
             ->orderByDesc('no_rab')
             ->first();
 
         if ($last && preg_match('/\/(\d{5})$/', $last->no_rab, $m)) {
-            $urut = str_pad(((int)$m[1]) + 1, 5, '0', STR_PAD_LEFT);
+            $urut = str_pad(((int) $m[1]) + 1, 5, '0', STR_PAD_LEFT);
         } else {
             $urut = '00001';
         }
 
         return "{$prefix}{$urut}";
     }
+
     // === HELPER: Hitung total by tipe ===
     public function calculateTotalBiaya(): int
     {
@@ -139,15 +212,19 @@ class Pengajuan extends Model
             default => 0,
         };
     }
+
+    // ================= Relasi =================
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-
     public function tipeRAB()
     {
         return $this->belongsTo(TipeRab::class, 'tipe_rab_id');
     }
+
+    // Asset / Dinas
     public function assets()
     {
         return $this->hasMany(PengajuanAsset::class);
@@ -155,14 +232,6 @@ class Pengajuan extends Model
     public function pengajuan_assets()
     {
         return $this->hasMany(PengajuanAsset::class);
-    }
-    public function statuses()
-    {
-        return $this->hasMany(PengajuanStatus::class);
-    }
-    public function barangs()
-    {
-        return $this->hasMany(PengajuanAsset::class); // ganti sesuai modelmu
     }
     public function dinas()
     {
@@ -180,22 +249,32 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanDinasPersonil::class, 'pengajuan_id');
     }
+
+    // Status / Approver
+    public function statuses()
+    {
+        return $this->hasMany(PengajuanStatus::class);
+    }
+    public function persetujuanApprovers()
+    {
+        return $this->hasMany(PersetujuanApprover::class, 'pengajuan_id');
+    }
+
+    // Lampiran umum
     public function lampiran()
     {
-        return $this->hasOne(\App\Models\Lampiran::class);
+        return $this->hasOne(Lampiran::class);
     }
     public function lampiranAssets()
     {
-        return $this->hasMany(\App\Models\LampiranAsset::class);
+        return $this->hasMany(LampiranAsset::class);
     }
     public function lampiranDinas()
     {
         return $this->hasMany(LampiranDinas::class);
     }
-    public function persetujuanApprovers()
-    {
-        return $this->hasMany(\App\Models\PersetujuanApprover::class, 'pengajuan_id');
-    }
+
+    // Marcomm Promosi
     public function pengajuan_marcomm_promosis()
     {
         return $this->hasMany(PengajuanMarcommPromosi::class);
@@ -204,6 +283,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(LampiranMarcommPromosi::class);
     }
+
+    // Marcomm Kebutuhan
     public function pengajuan_marcomm_kebutuhans()
     {
         return $this->hasMany(PengajuanMarcommKebutuhan::class);
@@ -224,6 +305,8 @@ class Pengajuan extends Model
     {
         return $this->hasMany(LampiranKebutuhan::class);
     }
+
+    // Marcomm Kegiatan
     public function marcommKegiatans()
     {
         return $this->hasMany(PengajuanMarcommKegiatan::class);
@@ -231,7 +314,7 @@ class Pengajuan extends Model
     public function pengajuan_marcomm_kegiatans()
     {
         return $this->hasMany(PengajuanMarcommKegiatan::class);
-    }
+    } // alias
     public function lampiranKegiatan()
     {
         return $this->hasMany(LampiranMarcommKegiatan::class);
@@ -244,4 +327,10 @@ class Pengajuan extends Model
     {
         return $this->hasMany(LampiranMarcommKegiatanCabang::class, 'pengajuan_id');
     }
+
+    // Lain-lain (kompatibilitas)
+    public function barangs()
+    {
+        return $this->hasMany(PengajuanAsset::class);
+    } // jika masih dipakai di tempat lain
 }
