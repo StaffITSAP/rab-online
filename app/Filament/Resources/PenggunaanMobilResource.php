@@ -58,6 +58,19 @@ class PenggunaanMobilResource extends Resource
                                 ->first()
                         )->nama_dinas ?? '-';
                     }),
+                Tables\Columns\TextColumn::make('dinas_personils_list')
+                    ->label('Personil')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        // Ambil semua nama_personil dari relasi
+                        $names = $record->dinasPersonils()
+                            ->pluck('nama_personil') // langsung ambil kolom
+                            ->filter()               // hilangkan yang null/kosong
+                            ->toArray();
+
+                        // Gabungkan dengan koma sebagai pemisah
+                        return count($names) ? implode(', ', $names) : '-';
+                    }),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn($state) => match ($state) {
