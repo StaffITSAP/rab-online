@@ -30,6 +30,7 @@ class ListPenggunaanTeknisis extends ListRecords
                 ->modalHeading('Download (Sesuai Filter)')
                 ->modalSubmitActionLabel('Download')
                 ->modalCancelActionLabel('Batal')
+                ->color('info')
                 ->action(function ($livewire) {
                     $filters = $livewire->tableFilters ?? [];
                     $nonce   = Str::uuid()->toString(); // cache-buster setiap klik
