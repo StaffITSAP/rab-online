@@ -24,6 +24,8 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\MaxWidth;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -296,7 +298,10 @@ class PengajuanResource extends Resource
                         false: fn($query) => $query->where('expired_unlocked', 0),
                         blank: fn($query) => $query // untuk semua data
                     ),
-            ])
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(2) // atur jumlah kolom di atas
+            ->filtersFormWidth(MaxWidth::FourExtraLarge) // kalau perlu lebih lebar
+            ->filtersFormMaxHeight('400px') // bisa ditambah scroll
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     // OPEN EXPIRED
