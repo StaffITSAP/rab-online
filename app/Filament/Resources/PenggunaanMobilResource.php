@@ -339,7 +339,12 @@ class PenggunaanMobilResource extends Resource
     {
         $user = auth()->user();
 
-        $query = parent::getEloquentQuery()->where('use_car', true);
+        // Ambil data jika use_car = true atau use_pengiriman = true
+        $query = parent::getEloquentQuery()
+            ->where(function ($q) {
+                $q->where('use_car', true)
+                    ->orWhere('use_pengiriman', true);
+            });
 
         // Superadmin atau koordinator gudang lihat semua
         if ($user->hasRole(['superadmin', 'koordinator gudang'])) {
