@@ -3,10 +3,12 @@
 namespace App\Exports;
 
 use App\Models\Pengajuan;
+use App\Models\PengajuanStatus;
 use App\Exports\Support\SimpleArraySheet;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class PengajuansExport implements WithMultipleSheets
@@ -62,7 +64,7 @@ class PengajuansExport implements WithMultipleSheets
                 'marcommKegiatanCabangs',
             ]);
 
-        // === Scope dasar mengikuti halaman ===
+        // === Scope sesuai halaman (Mobil / Teknisi)
         if ($this->onlyMobil) {
             $query->where(function ($q) {
                 $q->where('use_car', 1)->orWhere('use_pengiriman', 1);
@@ -72,10 +74,42 @@ class PengajuansExport implements WithMultipleSheets
             $query->where('menggunakan_teknisi', 1);
         }
 
-        // Terapkan filter dari Filament (jika ada)
+        // === Scope visibilitas berbasis role (ikuti yang tampil di UI)
+        $this->applyVisibility($query);
+
+        // === Terapkan filter dari UI (jika ada)
         $this->applyFilters($query, $this->filters);
 
         $this->records = $query->orderByDesc('created_at')->get();
+    }
+
+    /**
+     * Batasi data untuk non-superadmin:
+     * - pemilik pengajuan, atau
+     * - user yang menjadi approver (ada di pengajuan_statuses).
+     */
+    protected function applyVisibility(Builder $q): void
+    {
+        $user = Auth::user();
+
+        // Jika tidak ada user (harusnya tidak terjadi di area admin), aman-aman saja
+        if (! $user) {
+            return;
+        }
+
+        // Superadmin boleh lihat semua
+        if (method_exists($user, 'hasRole') && $user->hasRole('superadmin')) {
+            return;
+        }
+
+        // Non-superadmin: owner ATAU approver
+        $approverPengajuanIds = PengajuanStatus::where('user_id', $user->id)
+            ->pluck('pengajuan_id');
+
+        $q->where(function ($sub) use ($user, $approverPengajuanIds) {
+            $sub->where('user_id', $user->id)
+                ->orWhereIn('id', $approverPengajuanIds);
+        });
     }
 
     public function sheets(): array
@@ -131,7 +165,7 @@ class PengajuansExport implements WithMultipleSheets
             new SimpleArraySheet('Pengajuans', $mainHead, $mainRows),
         ];
 
-        // ===== Sheet Relasi: Dinas
+        // ===== Sheet Relasi - Dinas
         $headDinas = ['Pengajuan ID', 'Dinas ID', 'Deskripsi', 'Keterangan', 'PIC', 'Jml Hari', 'Harga Satuan', 'Subtotal', 'Created At'];
         $rowsDinas = $this->records->flatMap(
             fn(Pengajuan $p) =>
@@ -317,8 +351,7 @@ class PengajuansExport implements WithMultipleSheets
     }
 
     /**
-     * Terapkan filter sesuai definisi di Resource.
-     * Struktur `$filters` mengikuti query string Filament v3 (`tableFilters`)
+     * Terapkan filter sesuai definisi di Resource (ikuti struktur `tableFilters` Filament v3)
      */
     protected function applyFilters(Builder $q, ?array $filters): void
     {
@@ -357,7 +390,7 @@ class PengajuansExport implements WithMultipleSheets
             $q->whereDate('tgl_realisasi', '<=', $to);
         }
 
-        // Ternary filters (tambahkan 'use_pengiriman' juga agar mendukung halaman Mobil)
+        // Ternary filters (lengkap untuk semua halaman)
         foreach (['menggunakan_teknisi', 'use_car', 'use_pengiriman', 'expired_unlocked'] as $boolKey) {
             $tern = Arr::get($filters, $boolKey . '.value', null);
             if ($tern === true || $tern === 1 || $tern === '1') {

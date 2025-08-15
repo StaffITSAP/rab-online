@@ -5,15 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PengajuansExport;
-use Symfony\Component\HttpFoundation\BinaryFileResponse; // ⬅️ penting
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExportPengajuansController extends Controller
 {
-    // Download semua data (tanpa filter)
+    // Download semua data (dengan visibility scope: non-superadmin hanya owner/approver)
     public function all(Request $request)
     {
         /** @var BinaryFileResponse $response */
-        $response = Excel::download(new PengajuansExport(null), 'pengajuans.xlsx');
+        $response = Excel::download(
+            new PengajuansExport(null), // visibility dibatasi di exporter
+            'pengajuans.xlsx'
+        );
 
         $response->setPrivate();
         $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -23,7 +26,7 @@ class ExportPengajuansController extends Controller
         return $response;
     }
 
-    // Download sesuai filter tabel saat ini
+    // Download sesuai filter (tetap ikut visibility scope)
     public function filtered(Request $request)
     {
         $filters = $request->has('filters')

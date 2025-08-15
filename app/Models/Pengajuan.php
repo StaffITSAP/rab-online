@@ -38,6 +38,8 @@ class Pengajuan extends Model
         'asset_teknisi'       => 'boolean',
         'expired_unlocked'    => 'boolean',
         'expired_unlocked_at' => 'datetime',
+        'tgl_realisasi' => 'datetime',
+        'tgl_pulang' => 'datetime',
     ];
 
     protected $dates = ['tgl_realisasi', 'tgl_pulang'];
