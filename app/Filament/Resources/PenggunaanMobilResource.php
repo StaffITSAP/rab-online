@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -315,6 +316,17 @@ class PenggunaanMobilResource extends Resource
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns)
             ->defaultSort('tgl_realisasi', 'desc')
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->placeholder('Semua')
+                    ->options([
+                        'menunggu' => 'Menunggu',
+                        'draft'    => 'Draft',
+                        'ditolak'  => 'Ditolak',
+                        'selesai'  => 'Selesai',
+                        'expired'  => 'Expired',
+                    ])
+                    ->indicator('Status'),
                 TernaryFilter::make('use_car')
                     ->label('Mobil')
                     ->trueLabel('Ya')

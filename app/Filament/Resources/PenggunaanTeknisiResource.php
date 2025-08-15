@@ -9,9 +9,13 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
@@ -294,7 +298,22 @@ class PenggunaanTeknisiResource extends Resource
 
                 ]),
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns)
-            ->defaultSort('tgl_realisasi', 'desc');
+            ->defaultSort('tgl_realisasi', 'desc')->filters([
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->placeholder('Semua')
+                    ->options([
+                        'menunggu' => 'Menunggu',
+                        'draft'    => 'Draft',
+                        'ditolak'  => 'Ditolak',
+                        'selesai'  => 'Selesai',
+                        'expired'  => 'Expired',
+                    ])
+                    ->indicator('Status'),
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(2) // atur jumlah kolom di atas
+            ->filtersFormWidth(MaxWidth::FourExtraLarge) // kalau perlu lebih lebar
+            ->filtersFormMaxHeight('400px');
     }
 
     public static function getPages(): array

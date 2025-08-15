@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Pengajuan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\ExportPengajuansController;
+use App\Http\Controllers\ExportPenggunaanMobilController;
+
 
 
 Route::get('/', function () {
@@ -65,3 +67,9 @@ Route::get('/exports/pengajuans/all', [ExportPengajuansController::class, 'all']
 
 Route::get('/exports/pengajuans/filtered', [ExportPengajuansController::class, 'filtered'])
     ->name('exports.pengajuans.filtered');
+
+    Route::get('/exports/penggunaan-mobil/all', [ExportPenggunaanMobilController::class, 'all'])
+    ->name('exports.penggunaan_mobil.all');
+
+Route::get('/exports/penggunaan-mobil/filtered', [ExportPenggunaanMobilController::class, 'filtered'])
+    ->name('exports.penggunaan_mobil.filtered');

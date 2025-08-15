@@ -14,15 +14,20 @@ class PengajuansExport implements WithMultipleSheets
     /** @var array<string,mixed>|null */
     protected ?array $filters;
 
+    /** Jika true, batasi ke data penggunaan mobil (use_car=1 atau use_pengiriman=1) */
+    protected bool $onlyMobil = false;
+
     /** @var \Illuminate\Support\Collection<int,\App\Models\Pengajuan> */
     protected Collection $records;
 
     /**
-     * @param array<string,mixed>|null $filters  // struktur dari query string `tableFilters` Filament v3
+     * @param array<string,mixed>|null $filters  Struktur dari query string `tableFilters` Filament v3
+     * @param bool $onlyMobil  Jika true: where (use_car=1 OR use_pengiriman=1)
      */
-    public function __construct(?array $filters = null)
+    public function __construct(?array $filters = null, bool $onlyMobil = false)
     {
-        $this->filters = $filters;
+        $this->filters   = $filters;
+        $this->onlyMobil = $onlyMobil;
 
         $query = Pengajuan::query()
             ->with([
@@ -54,6 +59,13 @@ class PengajuansExport implements WithMultipleSheets
                 'marcommKegiatanCabangs',
             ]);
 
+        // Scope khusus halaman Penggunaan Mobil
+        if ($this->onlyMobil) {
+            $query->where(function ($q) {
+                $q->where('use_car', 1)->orWhere('use_pengiriman', 1);
+            });
+        }
+
         // Terapkan filter dari Filament (sesuaikan dengan definisi filter pada Resource)
         $this->applyFilters($query, $this->filters);
 
@@ -64,11 +76,25 @@ class PengajuansExport implements WithMultipleSheets
     {
         // ===== Sheet Utama: Pengajuans
         $mainHead = [
-            'ID','No RAB','Pemohon','Tipe RAB','Status','Expired Unlocked',
-            'Lokasi','Keterangan','Menggunakan Teknisi','Asset Teknisi',
-            'Use Pengiriman','Use Car','Total Biaya',
-            'Tgl Realisasi','Tgl Pulang','Jam','Jml Personil',
-            'Created At','Updated At'
+            'ID',
+            'No RAB',
+            'Pemohon',
+            'Tipe RAB',
+            'Status',
+            'Expired Unlocked',
+            'Lokasi',
+            'Keterangan',
+            'Menggunakan Teknisi',
+            'Asset Teknisi',
+            'Use Pengiriman',
+            'Use Car',
+            'Total Biaya',
+            'Tgl Realisasi',
+            'Tgl Pulang',
+            'Jam',
+            'Jml Personil',
+            'Created At',
+            'Updated At'
         ];
 
         $mainRows = $this->records->map(function (Pengajuan $p) {
@@ -100,49 +126,78 @@ class PengajuansExport implements WithMultipleSheets
         ];
 
         // ===== Sheet Relasi: Dinas
-        $headDinas = ['Pengajuan ID','Dinas ID','Deskripsi','Keterangan','PIC','Jml Hari','Harga Satuan','Subtotal','Created At'];
-        $rowsDinas = $this->records->flatMap(fn(Pengajuan $p) =>
+        $headDinas = ['Pengajuan ID', 'Dinas ID', 'Deskripsi', 'Keterangan', 'PIC', 'Jml Hari', 'Harga Satuan', 'Subtotal', 'Created At'];
+        $rowsDinas = $this->records->flatMap(
+            fn(Pengajuan $p) =>
             $p->pengajuan_dinas->map(fn($d) => [
-                $p->id,$d->id,$d->deskripsi,$d->keterangan,$d->pic,$d->jml_hari,$d->harga_satuan,$d->subtotal,
+                $p->id,
+                $d->id,
+                $d->deskripsi,
+                $d->keterangan,
+                $d->pic,
+                $d->jml_hari,
+                $d->harga_satuan,
+                $d->subtotal,
                 optional($d->created_at)?->format('Y-m-d H:i:s'),
             ])
         )->all();
         $sheets[] = new SimpleArraySheet('Dinas', $headDinas, $rowsDinas);
 
         // Dinas Activities
-        $headAct = ['Pengajuan ID','Activity ID','No Activity','Nama Dinas','Keterangan','Created At'];
-        $rowsAct = $this->records->flatMap(fn(Pengajuan $p) =>
+        $headAct = ['Pengajuan ID', 'Activity ID', 'No Activity', 'Nama Dinas', 'Keterangan', 'Created At'];
+        $rowsAct = $this->records->flatMap(
+            fn(Pengajuan $p) =>
             $p->dinasActivities->map(fn($a) => [
-                $p->id,$a->id,$a->no_activity,$a->nama_dinas,$a->keterangan,
+                $p->id,
+                $a->id,
+                $a->no_activity,
+                $a->nama_dinas,
+                $a->keterangan,
                 optional($a->created_at)?->format('Y-m-d H:i:s'),
             ])
         )->all();
         $sheets[] = new SimpleArraySheet('Dinas Activities', $headAct, $rowsAct);
 
         // Dinas Personils
-        $headPers = ['Pengajuan ID','Personil ID','Nama Personil','Created At'];
-        $rowsPers = $this->records->flatMap(fn(Pengajuan $p) =>
+        $headPers = ['Pengajuan ID', 'Personil ID', 'Nama Personil', 'Created At'];
+        $rowsPers = $this->records->flatMap(
+            fn(Pengajuan $p) =>
             $p->dinasPersonils->map(fn($r) => [
-                $p->id,$r->id,$r->nama_personil,optional($r->created_at)?->format('Y-m-d H:i:s'),
+                $p->id,
+                $r->id,
+                $r->nama_personil,
+                optional($r->created_at)?->format('Y-m-d H:i:s'),
             ])
         )->all();
         $sheets[] = new SimpleArraySheet('Dinas Personils', $headPers, $rowsPers);
 
         // Assets
-        $headAssets = ['Pengajuan ID','Asset ID','Nama Barang','Tipe','Jumlah','Keperluan','Harga Unit','Subtotal','Keterangan','Created At'];
-        $rowsAssets = $this->records->flatMap(fn(Pengajuan $p) =>
+        $headAssets = ['Pengajuan ID', 'Asset ID', 'Nama Barang', 'Tipe', 'Jumlah', 'Keperluan', 'Harga Unit', 'Subtotal', 'Keterangan', 'Created At'];
+        $rowsAssets = $this->records->flatMap(
+            fn(Pengajuan $p) =>
             $p->pengajuan_assets->map(fn($a) => [
-                $p->id,$a->id,$a->nama_barang,$a->tipe_barang,$a->jumlah,$a->keperluan,$a->harga_unit,$a->subtotal,$a->keterangan,
+                $p->id,
+                $a->id,
+                $a->nama_barang,
+                $a->tipe_barang,
+                $a->jumlah,
+                $a->keperluan,
+                $a->harga_unit,
+                $a->subtotal,
+                $a->keterangan,
                 optional($a->created_at)?->format('Y-m-d H:i:s'),
             ])
         )->all();
         $sheets[] = new SimpleArraySheet('Assets', $headAssets, $rowsAssets);
 
         // Statuses (approvals)
-        $headStat = ['Pengajuan ID','Status ID','User','Is Approved','Approved At','Alasan Ditolak','Catatan Approve','Created At'];
-        $rowsStat = $this->records->flatMap(fn(Pengajuan $p) =>
+        $headStat = ['Pengajuan ID', 'Status ID', 'User', 'Is Approved', 'Approved At', 'Alasan Ditolak', 'Catatan Approve', 'Created At'];
+        $rowsStat = $this->records->flatMap(
+            fn(Pengajuan $p) =>
             $p->statuses->map(fn($s) => [
-                $p->id,$s->id,$s->user?->name,
+                $p->id,
+                $s->id,
+                $s->user?->name,
                 is_null($s->is_approved) ? null : ($s->is_approved ? 'Ya' : 'Tidak'),
                 optional($s->approved_at)?->format('Y-m-d H:i:s'),
                 $s->alasan_ditolak,
@@ -153,84 +208,103 @@ class PengajuansExport implements WithMultipleSheets
         $sheets[] = new SimpleArraySheet('Statuses', $headStat, $rowsStat);
 
         // Lampiran flag (lampirans)
-        $headLamp = ['Pengajuan ID','Lampiran ID','Asset','Dinas','Marcomm Kegiatan','Marcomm Kebutuhan','Marcomm Promosi','Created At'];
+        $headLamp = ['Pengajuan ID', 'Lampiran ID', 'Asset', 'Dinas', 'Marcomm Kegiatan', 'Marcomm Kebutuhan', 'Marcomm Promosi', 'Created At'];
         $rowsLamp = $this->records->map(function (Pengajuan $p) {
             $l = $p->lampiran;
             return $l ? [
-                $p->id,$l->id,
+                $p->id,
+                $l->id,
                 $l->lampiran_asset ? 'Ya' : 'Tidak',
                 $l->lampiran_dinas ? 'Ya' : 'Tidak',
                 $l->lampiran_marcomm_kegiatan ? 'Ya' : 'Tidak',
                 $l->lampiran_marcomm_kebutuhan ? 'Ya' : 'Tidak',
                 $l->lampiran_marcomm_promosi ? 'Ya' : 'Tidak',
                 optional($l->created_at)?->format('Y-m-d H:i:s'),
-            ] : [$p->id,null,null,null,null,null,null,null];
+            ] : [$p->id, null, null, null, null, null, null, null];
         })->all();
         $sheets[] = new SimpleArraySheet('Lampirans', $headLamp, $rowsLamp);
 
         // Lampiran detail
         $sheets[] = new SimpleArraySheet(
             'Lampiran Assets',
-            ['Pengajuan ID','ID','Original Name','Path','Created At'],
-            $this->rowsFrom($this->records, 'lampiranAssets', fn($r,$x)=>[$r->id,$x->id,$x->original_name,$x->file_path,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Original Name', 'Path', 'Created At'],
+            $this->rowsFrom($this->records, 'lampiranAssets', fn($r, $x) => [$r->id, $x->id, $x->original_name, $x->file_path, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
         $sheets[] = new SimpleArraySheet(
             'Lampiran Dinas',
-            ['Pengajuan ID','ID','Original Name','Path','Created At'],
-            $this->rowsFrom($this->records, 'lampiranDinas', fn($r,$x)=>[$r->id,$x->id,$x->original_name,$x->file_path,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Original Name', 'Path', 'Created At'],
+            $this->rowsFrom($this->records, 'lampiranDinas', fn($r, $x) => [$r->id, $x->id, $x->original_name, $x->file_path, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
 
         // Marcomm Promosi
         $sheets[] = new SimpleArraySheet(
             'Marcomm Promosi',
-            ['Pengajuan ID','ID','Deskripsi','Qty','Harga Satuan','Subtotal','Created At'],
-            $this->rowsFrom($this->records, 'pengajuan_marcomm_promosis', fn($r,$x)=>[$r->id,$x->id,$x->deskripsi,$x->qty,$x->harga_satuan,$x->subtotal,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Deskripsi', 'Qty', 'Harga Satuan', 'Subtotal', 'Created At'],
+            $this->rowsFrom($this->records, 'pengajuan_marcomm_promosis', fn($r, $x) => [$r->id, $x->id, $x->deskripsi, $x->qty, $x->harga_satuan, $x->subtotal, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
 
         // Marcomm Kebutuhan (master + detail)
         $sheets[] = new SimpleArraySheet(
             'Marcomm Kebutuhan',
-            ['Pengajuan ID','ID','Deskripsi','Qty','Harga Satuan','Subtotal','Tipe','Total Amplop','Kebutuhan Amplop','Kartu','Kemeja','Created At'],
-            $this->rowsFrom($this->records, 'pengajuan_marcomm_kebutuhans', fn($r,$x)=>[
-                $r->id,$x->id,$x->deskripsi,$x->qty,$x->harga_satuan,$x->subtotal,$x->tipe,$x->total_amplop,
-                $x->kebutuhan_amplop?'Ya':'Tidak',$x->kebutuhan_kartu?'Ya':'Tidak',$x->kebutuhan_kemeja?'Ya':'Tidak',
+            ['Pengajuan ID', 'ID', 'Deskripsi', 'Qty', 'Harga Satuan', 'Subtotal', 'Tipe', 'Total Amplop', 'Kebutuhan Amplop', 'Kartu', 'Kemeja', 'Created At'],
+            $this->rowsFrom($this->records, 'pengajuan_marcomm_kebutuhans', fn($r, $x) => [
+                $r->id,
+                $x->id,
+                $x->deskripsi,
+                $x->qty,
+                $x->harga_satuan,
+                $x->subtotal,
+                $x->tipe,
+                $x->total_amplop,
+                $x->kebutuhan_amplop ? 'Ya' : 'Tidak',
+                $x->kebutuhan_kartu ? 'Ya' : 'Tidak',
+                $x->kebutuhan_kemeja ? 'Ya' : 'Tidak',
                 optional($x->created_at)?->format('Y-m-d H:i:s')
             ])
         );
         $sheets[] = new SimpleArraySheet(
             'Kebutuhan Amplops',
-            ['Pengajuan ID','ID','Cabang','Jumlah','Created At'],
-            $this->rowsFrom($this->records, 'marcommKebutuhanAmplops', fn($r,$x)=>[$r->id,$x->id,$x->cabang,$x->jumlah,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Cabang', 'Jumlah', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKebutuhanAmplops', fn($r, $x) => [$r->id, $x->id, $x->cabang, $x->jumlah, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
         $sheets[] = new SimpleArraySheet(
             'Kebutuhan Kartus',
-            ['Pengajuan ID','ID','Kartu Nama','ID Card','Created At'],
-            $this->rowsFrom($this->records, 'marcommKebutuhanKartus', fn($r,$x)=>[$r->id,$x->id,$x->kartu_nama,$x->id_card,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Kartu Nama', 'ID Card', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKebutuhanKartus', fn($r, $x) => [$r->id, $x->id, $x->kartu_nama, $x->id_card, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
         $sheets[] = new SimpleArraySheet(
             'Kebutuhan Kemejas',
-            ['Pengajuan ID','ID','Nama','Ukuran','Created At'],
-            $this->rowsFrom($this->records, 'marcommKebutuhanKemejas', fn($r,$x)=>[$r->id,$x->id,$x->nama,$x->ukuran,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Nama', 'Ukuran', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKebutuhanKemejas', fn($r, $x) => [$r->id, $x->id, $x->nama, $x->ukuran, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
 
         // Marcomm Kegiatan + Tim
         $sheets[] = new SimpleArraySheet(
             'Marcomm Kegiatan',
-            ['Pengajuan ID','ID','Deskripsi','Keterangan','PIC','Jml Hari','Harga Satuan','Subtotal','Tim Pusat','Tim Cabang','Created At'],
-            $this->rowsFrom($this->records, 'marcommKegiatans', fn($r,$x)=>[
-                $r->id,$x->id,$x->deskripsi,$x->keterangan,$x->pic,$x->jml_hari,$x->harga_satuan,$x->subtotal,
-                $x->tim_pusat?'Ya':'Tidak',$x->tim_cabang?'Ya':'Tidak',optional($x->created_at)?->format('Y-m-d H:i:s')
+            ['Pengajuan ID', 'ID', 'Deskripsi', 'Keterangan', 'PIC', 'Jml Hari', 'Harga Satuan', 'Subtotal', 'Tim Pusat', 'Tim Cabang', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKegiatans', fn($r, $x) => [
+                $r->id,
+                $x->id,
+                $x->deskripsi,
+                $x->keterangan,
+                $x->pic,
+                $x->jml_hari,
+                $x->harga_satuan,
+                $x->subtotal,
+                $x->tim_pusat ? 'Ya' : 'Tidak',
+                $x->tim_cabang ? 'Ya' : 'Tidak',
+                optional($x->created_at)?->format('Y-m-d H:i:s')
             ])
         );
         $sheets[] = new SimpleArraySheet(
             'Kegiatan Pusat',
-            ['Pengajuan ID','ID','Nama','Gender','Created At'],
-            $this->rowsFrom($this->records, 'marcommKegiatanPusats', fn($r,$x)=>[$r->id,$x->id,$x->nama,$x->gender,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Nama', 'Gender', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKegiatanPusats', fn($r, $x) => [$r->id, $x->id, $x->nama, $x->gender, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
         $sheets[] = new SimpleArraySheet(
             'Kegiatan Cabang',
-            ['Pengajuan ID','ID','Cabang','Nama','Gender','Created At'],
-            $this->rowsFrom($this->records, 'marcommKegiatanCabangs', fn($r,$x)=>[$r->id,$x->id,$x->cabang,$x->nama,$x->gender,optional($x->created_at)?->format('Y-m-d H:i:s')])
+            ['Pengajuan ID', 'ID', 'Cabang', 'Nama', 'Gender', 'Created At'],
+            $this->rowsFrom($this->records, 'marcommKegiatanCabangs', fn($r, $x) => [$r->id, $x->id, $x->cabang, $x->nama, $x->gender, optional($x->created_at)?->format('Y-m-d H:i:s')])
         );
 
         return $sheets;
@@ -238,12 +312,7 @@ class PengajuansExport implements WithMultipleSheets
 
     /**
      * Terapkan filter sesuai definisi di Resource.
-     * Struktur `$filters` mengikuti query string Filament v3 (`tableFilters`), contoh:
-     * [
-     *   "status" => ["value" => "menunggu"],
-     *   "tgl_dibuat_range" => ["dari" => "2025-08-10", "sampai" => "2025-08-15"],
-     *   "menggunakan_teknisi" => ["value" => true], ...
-     * ]
+     * Struktur `$filters` mengikuti query string Filament v3 (`tableFilters`)
      */
     protected function applyFilters(Builder $q, ?array $filters): void
     {
@@ -276,8 +345,8 @@ class PengajuansExport implements WithMultipleSheets
             $q->whereDate('tgl_realisasi', '<=', $to);
         }
 
-        // Ternary filters
-        foreach (['menggunakan_teknisi','use_car','expired_unlocked'] as $boolKey) {
+        // Ternary filters (tambahkan use_pengiriman di sini)
+        foreach (['menggunakan_teknisi', 'use_car', 'use_pengiriman', 'expired_unlocked'] as $boolKey) {
             $tern = Arr::get($filters, $boolKey . '.value', null);
             if ($tern === true || $tern === 1 || $tern === '1') {
                 $q->where($boolKey, 1);
