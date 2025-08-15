@@ -17,6 +17,7 @@ use App\Filament\Forms\Pengajuan\PromosiFormSection;
 use App\Filament\Forms\Pengajuan\KebutuhanFormSection;
 use App\Filament\Forms\Pengajuan\KegiatanFormSection;
 use App\Models\PengajuanStatus;
+use App\Models\UserStatus;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
@@ -298,10 +299,23 @@ class PengajuanResource extends Resource
                         ->visible(function ($record) {
                             $user = auth()->user();
 
-                            return $record->status === 'expired'
-                                && !$record->expired_unlocked
-                                && $user
-                                && ($user->hasRole('superadmin') || $user->hasRole('hrd'));
+                            if (! $user) {
+                                return false;
+                            }
+
+                            // Jika superadmin, langsung boleh
+                            if ($user->hasRole('superadmin')) {
+                                return $record->status === 'expired' && ! $record->expired_unlocked;
+                            }
+
+                            // Cek apakah user adalah atasan langsung berdasarkan user_statuses
+                            $userStatus = UserStatus::where('user_id', $record->user_id)->first();
+
+                            if ($userStatus && $userStatus->atasan_id == $user->id) {
+                                return $record->status === 'expired' && ! $record->expired_unlocked;
+                            }
+
+                            return false;
                         })
                         ->action(function ($record) {
                             $record->update([
