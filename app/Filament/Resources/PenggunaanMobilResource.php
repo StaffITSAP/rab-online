@@ -9,9 +9,11 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -331,7 +333,10 @@ class PenggunaanMobilResource extends Resource
                         false: fn($query) => $query->where('use_pengiriman', 0),
                         blank: fn($query) => $query // untuk semua data
                     ),
-            ]);
+            ], layout: FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(2) // atur jumlah kolom di atas
+            ->filtersFormWidth(MaxWidth::FourExtraLarge) // kalau perlu lebih lebar
+            ->filtersFormMaxHeight('400px');
     }
 
     public static function getPages(): array
