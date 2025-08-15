@@ -25,8 +25,6 @@ class ListPengajuanAlls extends ListRecords
             Action::make('download_all_xlsx')
                 ->label('Download Semua (XLSX)')
                 ->color('success')
-                ->modalSubmitActionLabel('Download')      // ⬅️ ubah "Kirim" jadi "Download"
-                ->modalCancelActionLabel('Batal')         // ⬅️ opsional
                 ->icon('heroicon-m-arrow-down-tray')
                 ->url(fn() => route('exports.pengajuans.all'))
                 ->openUrlInNewTab(false),
@@ -35,6 +33,8 @@ class ListPengajuanAlls extends ListRecords
                 ->label('Download (Sesuai Filter)')
                 ->color('info')
                 ->icon('heroicon-m-arrow-down-tray')
+                ->modalSubmitActionLabel('Download')      // ⬅️ ubah "Kirim" jadi "Download"
+                ->modalCancelActionLabel('Batal')         // ⬅️ opsional
                 ->action(function ($livewire) {
                     $filters = $livewire->tableFilters ?? [];
                     $nonce   = Str::uuid()->toString(); // cache-buster unik setiap klik
