@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
@@ -310,7 +311,27 @@ class PenggunaanMobilResource extends Resource
 
                 ]),
             ])->actionsPosition(\Filament\Tables\Enums\ActionsPosition::BeforeColumns)
-            ->defaultSort('tgl_realisasi', 'desc');
+            ->defaultSort('tgl_realisasi', 'desc')
+            ->filters([
+                TernaryFilter::make('use_car')
+                    ->label('Mobil')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('use_car', 1),
+                        false: fn($query) => $query->where('use_car', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
+                TernaryFilter::make('use_pengiriman')
+                    ->label('Driver dan Mobil')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('use_pengiriman', 1),
+                        false: fn($query) => $query->where('use_pengiriman', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
+            ]);
     }
 
     public static function getPages(): array
