@@ -14,20 +14,23 @@ class PengajuansExport implements WithMultipleSheets
     /** @var array<string,mixed>|null */
     protected ?array $filters;
 
-    /** Jika true, batasi ke data penggunaan mobil (use_car=1 atau use_pengiriman=1) */
-    protected bool $onlyMobil = false;
+    /** Scope halaman khusus */
+    protected bool $onlyMobil    = false; // use_car=1 OR use_pengiriman=1
+    protected bool $onlyTeknisi  = false; // menggunakan_teknisi=1
 
     /** @var \Illuminate\Support\Collection<int,\App\Models\Pengajuan> */
     protected Collection $records;
 
     /**
-     * @param array<string,mixed>|null $filters  Struktur dari query string `tableFilters` Filament v3
-     * @param bool $onlyMobil  Jika true: where (use_car=1 OR use_pengiriman=1)
+     * @param array<string,mixed>|null $filters
+     * @param bool $onlyMobil    Jika true: where (use_car=1 OR use_pengiriman=1)
+     * @param bool $onlyTeknisi  Jika true: where (menggunakan_teknisi=1)
      */
-    public function __construct(?array $filters = null, bool $onlyMobil = false)
+    public function __construct(?array $filters = null, bool $onlyMobil = false, bool $onlyTeknisi = false)
     {
-        $this->filters   = $filters;
-        $this->onlyMobil = $onlyMobil;
+        $this->filters     = $filters;
+        $this->onlyMobil   = $onlyMobil;
+        $this->onlyTeknisi = $onlyTeknisi;
 
         $query = Pengajuan::query()
             ->with([
@@ -59,14 +62,17 @@ class PengajuansExport implements WithMultipleSheets
                 'marcommKegiatanCabangs',
             ]);
 
-        // Scope khusus halaman Penggunaan Mobil
+        // === Scope dasar mengikuti halaman ===
         if ($this->onlyMobil) {
             $query->where(function ($q) {
                 $q->where('use_car', 1)->orWhere('use_pengiriman', 1);
             });
         }
+        if ($this->onlyTeknisi) {
+            $query->where('menggunakan_teknisi', 1);
+        }
 
-        // Terapkan filter dari Filament (sesuaikan dengan definisi filter pada Resource)
+        // Terapkan filter dari Filament (jika ada)
         $this->applyFilters($query, $this->filters);
 
         $this->records = $query->orderByDesc('created_at')->get();
@@ -190,7 +196,7 @@ class PengajuansExport implements WithMultipleSheets
         )->all();
         $sheets[] = new SimpleArraySheet('Assets', $headAssets, $rowsAssets);
 
-        // Statuses (approvals)
+        // Statuses
         $headStat = ['Pengajuan ID', 'Status ID', 'User', 'Is Approved', 'Approved At', 'Alasan Ditolak', 'Catatan Approve', 'Created At'];
         $rowsStat = $this->records->flatMap(
             fn(Pengajuan $p) =>
@@ -207,7 +213,7 @@ class PengajuansExport implements WithMultipleSheets
         )->all();
         $sheets[] = new SimpleArraySheet('Statuses', $headStat, $rowsStat);
 
-        // Lampiran flag (lampirans)
+        // Lampiran flag
         $headLamp = ['Pengajuan ID', 'Lampiran ID', 'Asset', 'Dinas', 'Marcomm Kegiatan', 'Marcomm Kebutuhan', 'Marcomm Promosi', 'Created At'];
         $rowsLamp = $this->records->map(function (Pengajuan $p) {
             $l = $p->lampiran;
@@ -327,7 +333,10 @@ class PengajuansExport implements WithMultipleSheets
         $from = Arr::get($filters, 'tgl_dibuat_range.dari');
         $to   = Arr::get($filters, 'tgl_dibuat_range.sampai');
         if ($from && $to) {
-            $q->whereBetween('created_at', [date('Y-m-d 00:00:00', strtotime($from)), date('Y-m-d 23:59:59', strtotime($to))]);
+            $q->whereBetween('created_at', [
+                date('Y-m-d 00:00:00', strtotime($from)),
+                date('Y-m-d 23:59:59', strtotime($to)),
+            ]);
         } elseif ($from) {
             $q->whereDate('created_at', '>=', $from);
         } elseif ($to) {
@@ -338,14 +347,17 @@ class PengajuansExport implements WithMultipleSheets
         $from = Arr::get($filters, 'tgl_realisasi_range.dari');
         $to   = Arr::get($filters, 'tgl_realisasi_range.sampai');
         if ($from && $to) {
-            $q->whereBetween('tgl_realisasi', [date('Y-m-d 00:00:00', strtotime($from)), date('Y-m-d 23:59:59', strtotime($to))]);
+            $q->whereBetween('tgl_realisasi', [
+                date('Y-m-d 00:00:00', strtotime($from)),
+                date('Y-m-d 23:59:59', strtotime($to)),
+            ]);
         } elseif ($from) {
             $q->whereDate('tgl_realisasi', '>=', $from);
         } elseif ($to) {
             $q->whereDate('tgl_realisasi', '<=', $to);
         }
 
-        // Ternary filters (tambahkan use_pengiriman di sini)
+        // Ternary filters (tambahkan 'use_pengiriman' juga agar mendukung halaman Mobil)
         foreach (['menggunakan_teknisi', 'use_car', 'use_pengiriman', 'expired_unlocked'] as $boolKey) {
             $tern = Arr::get($filters, $boolKey . '.value', null);
             if ($tern === true || $tern === 1 || $tern === '1') {
@@ -359,7 +371,7 @@ class PengajuansExport implements WithMultipleSheets
     /**
      * Utility: render rows dari relasi hasMany.
      *
-     * @param \Illuminate\Support\Collection $recs  Pengajuan[]
+     * @param \Illuminate\Support\Collection $recs
      * @param string $relation
      * @param callable $map  fn(Pengajuan $r, $child): array
      * @return array<int,array<int,mixed>>

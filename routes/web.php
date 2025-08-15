@@ -5,8 +5,7 @@ use App\Models\Pengajuan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\ExportPengajuansController;
 use App\Http\Controllers\ExportPenggunaanMobilController;
-
-
+use App\Http\Controllers\ExportPenggunaanTeknisiController;
 
 Route::get('/', function () {
     return redirect('/web');
@@ -68,8 +67,14 @@ Route::get('/exports/pengajuans/all', [ExportPengajuansController::class, 'all']
 Route::get('/exports/pengajuans/filtered', [ExportPengajuansController::class, 'filtered'])
     ->name('exports.pengajuans.filtered');
 
-    Route::get('/exports/penggunaan-mobil/all', [ExportPenggunaanMobilController::class, 'all'])
+Route::get('/exports/penggunaan-mobil/all', [ExportPenggunaanMobilController::class, 'all'])
     ->name('exports.penggunaan_mobil.all');
 
 Route::get('/exports/penggunaan-mobil/filtered', [ExportPenggunaanMobilController::class, 'filtered'])
     ->name('exports.penggunaan_mobil.filtered');
+
+Route::get('/exports/penggunaan-teknisi/all', [ExportPenggunaanTeknisiController::class, 'all'])
+    ->name('exports.penggunaan_teknisi.all');
+
+Route::get('/exports/penggunaan-teknisi/filtered', [ExportPenggunaanTeknisiController::class, 'filtered'])
+    ->name('exports.penggunaan_teknisi.filtered');
