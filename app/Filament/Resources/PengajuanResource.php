@@ -287,6 +287,15 @@ class PengajuanResource extends Resource
                         false: fn($query) => $query->where('use_car', 0),
                         blank: fn($query) => $query // untuk semua data
                     ),
+                TernaryFilter::make('expired_unlocked')
+                    ->label('Buka Expired')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak')
+                    ->queries(
+                        true: fn($query) => $query->where('expired_unlocked', 1),
+                        false: fn($query) => $query->where('expired_unlocked', 0),
+                        blank: fn($query) => $query // untuk semua data
+                    ),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
