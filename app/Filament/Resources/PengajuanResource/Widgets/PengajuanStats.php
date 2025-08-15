@@ -19,6 +19,7 @@ class PengajuanStats extends BaseWidget
         $user = Auth::user();
         $role = $user->getRoleNames()->first();
         $targetUrl = url('/web/pengajuans');
+        $semuaUrl = url('/web/semua-pengajuan');
 
         // Dapatkan semua id pengajuan yang dibuat OLEH user
         $createdIds = Pengajuan::where('user_id', $user->id)->pluck('id')->toArray();
@@ -88,24 +89,38 @@ class PengajuanStats extends BaseWidget
             ->limit(1)
             ->first();
 
-        // ============ TOTAL PENGAJUAN (Rp) DENGAN STATUS "SELESAI" ============
+        // ============ TOTAL PENGAJUAN (Rp) DENGAN STATUS "SELESAI" ATAU "EXPIRED" (UNLOCKED) ============
         if ($role === 'superadmin') {
-            $totalBiaya = Pengajuan::where('status', 'selesai')->sum('total_biaya');
+            $totalBiaya = Pengajuan::where(function ($q) {
+                $q->where('status', 'selesai')
+                    ->orWhere(function ($q2) {
+                        $q2->where('status', 'expired')
+                            ->where('expired_unlocked', true);
+                    });
+            })
+                ->sum('total_biaya');
         } else {
             $totalBiaya = Pengajuan::whereIn('id', $allIds)
-                ->where('status', 'selesai')
+                ->where(function ($q) {
+                    $q->where('status', 'selesai')
+                        ->orWhere(function ($q2) {
+                            $q2->where('status', 'expired')
+                                ->where('expired_unlocked', true);
+                        });
+                })
                 ->sum('total_biaya');
         }
 
+
         return [
             StatsOverviewWidgetStat::make('Total Pengajuan', $totalPengajuan)
-                ->description('Pengajuan yang Anda buat & yang Anda setujui/minta persetujuan')
+                ->description('Semua Pengajuan yang Anda buat & yang Anda setujui/minta persetujuan')
                 ->color('info')
-                ->url($targetUrl)
+                ->url($semuaUrl)
                 ->icon('heroicon-o-document-check'),
 
             StatsOverviewWidgetStat::make('Jumlah Pengajuan Hari Ini', $pengajuanHariIni)
-                ->description('Pengajuan (buat/minta approve) hari ini')
+                ->description('Pengajuan Status Menunggu (buat/minta approve) hari ini')
                 ->color('warning')
                 ->url($targetUrl)
                 ->icon('heroicon-o-document-arrow-down'),
@@ -119,7 +134,7 @@ class PengajuanStats extends BaseWidget
             StatsOverviewWidgetStat::make('Total Pengajuan (Rp)', 'Rp ' . number_format($totalBiaya, 0, ',', '.'))
                 ->description('Total biaya pengajuan berstatus selesai')
                 ->color('success')
-                ->url($targetUrl)
+                ->url($semuaUrl)
                 ->icon('heroicon-o-currency-dollar'),
         ];
     }
