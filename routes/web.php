@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\Pengajuan;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Http\Controllers\ExportPengajuansController;
+
 
 Route::get('/', function () {
     return redirect('/web');
@@ -57,3 +59,9 @@ Route::get('/pengajuan/{pengajuan}/download-pdf', function (Pengajuan $pengajuan
 
     return $pdf->download("RAB_{$filename}.pdf");
 })->name('pengajuan.pdf.download');
+
+Route::get('/exports/pengajuans/all', [ExportPengajuansController::class, 'all'])
+    ->name('exports.pengajuans.all');
+
+Route::get('/exports/pengajuans/filtered', [ExportPengajuansController::class, 'filtered'])
+    ->name('exports.pengajuans.filtered');

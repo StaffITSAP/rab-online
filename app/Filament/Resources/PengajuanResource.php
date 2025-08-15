@@ -34,6 +34,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Filament\Actions\Action;
+
 
 
 class PengajuanResource extends Resource
@@ -603,5 +605,35 @@ class PengajuanResource extends Resource
             ->whereNotNull('tgl_realisasi')
             ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(1))
             ->update(['status' => 'expired']);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            // --- tombol ALL ---
+            Action::make('download_all_xlsx')
+                ->label('Download Semua (XLSX)')
+                ->icon('heroicon-m-arrow-down-tray')
+                ->url(fn() => route('exports.pengajuans.all'))
+                ->openUrlInNewTab(false), // atau true jika mau tab baru
+
+            // --- tombol FILTERED ---
+            Action::make('download_filtered_xlsx')
+                ->label('Download (Sesuai Filter)')
+                ->icon('heroicon-m-arrow-down-tray')
+                ->url(function () {
+                    // Ambil state filter dari query string Filament (v3 menyimpan di `tableFilters`)
+                    $filters = request()->query('tableFilters');
+
+                    // Kirimkan sebagai JSON mentah di param `filters` (biar controller gampang parse)
+                    $params = [];
+                    if (!empty($filters)) {
+                        $params['filters'] = json_encode($filters);
+                    }
+
+                    return route('exports.pengajuans.filtered', $params);
+                })
+                ->openUrlInNewTab(false),
+        ];
     }
 }

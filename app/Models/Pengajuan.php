@@ -260,9 +260,23 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanStatus::class);
     }
-    public function persetujuanApprovers()
+    public function persetujuan() // konfigurasi persetujuan milik si pemohon (user) ini
     {
-        return $this->hasMany(PersetujuanApprover::class, 'pengajuan_id');
+        // persetujuans.user_id ↔ pengajuans.user_id
+        return $this->hasOne(\App\Models\Persetujuan::class, 'user_id', 'user_id');
+    }
+
+    public function persetujuanApprovers() // daftar approver untuk user pemohon
+    {
+        // hasManyThrough(target, through, firstKey, secondKey, localKey, secondLocalKey)
+        return $this->hasManyThrough(
+            \App\Models\PersetujuanApprover::class, // target
+            \App\Models\Persetujuan::class,         // through
+            'user_id',       // FK di persetujuans yang "mengacu" ke parent (pengajuans.user_id)
+            'persetujuan_id', // FK di persetujuan_approvers yang mengacu ke persetujuans.id
+            'user_id',       // local key di pengajuans untuk join ke persetujuans.user_id
+            'id'             // local key di persetujuans untuk join ke persetujuan_approvers.persetujuan_id
+        );
     }
 
     // Lampiran umum
