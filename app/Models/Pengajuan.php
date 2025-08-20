@@ -354,4 +354,9 @@ class Pengajuan extends Model
     {
         return $this->hasMany(PengajuanAsset::class);
     } // jika masih dipakai di tempat lain
+
+    public function userStatus()
+    {
+        return $this->hasOne(UserStatus::class);
+    }
 }

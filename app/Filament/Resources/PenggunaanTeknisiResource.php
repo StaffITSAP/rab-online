@@ -256,7 +256,7 @@ class PenggunaanTeknisiResource extends Resource
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->modalContent(fn($record) => view('filament.components.pdf-preview', [
-                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi', 'lampiranKebutuhan']),
+                            'record' => $record->load(['lampiran', 'lampiranAssets', 'lampiranDinas', 'lampiranPromosi', 'lampiranKebutuhan', 'lampiranKegiatan']),
                             'url' => URL::signedRoute('pengajuan.pdf.preview', $record),
                         ]))
                         ->closeModalByClickingAway(false),
@@ -264,7 +264,20 @@ class PenggunaanTeknisiResource extends Resource
                         ->label('Download PDF')
                         ->icon('heroicon-o-arrow-down-tray')
                         ->color('success')
-                        ->url(fn($record) => route('pengajuan.pdf.download', $record), shouldOpenInNewTab: false),
+                        ->action(function ($record) {
+                            $userStatus = auth()->user()->status;
+
+                            if (!$userStatus || empty($userStatus->kota)) {
+                                Notification::make()
+                                    ->title('Gagal Download')
+                                    ->body('Isi nama kota terlebih dahulu sebelum download PDF, isi nama kota di menu edit profil.')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            return redirect()->route('pengajuan.pdf.download', $record);
+                        }),
                     Tables\Actions\DeleteAction::make()
                         ->visible(function ($record) {
                             $user = auth()->user();

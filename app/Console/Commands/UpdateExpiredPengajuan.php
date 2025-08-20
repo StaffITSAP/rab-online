@@ -20,7 +20,7 @@ class UpdateExpiredPengajuan extends Command
      *
      * @var string
      */
-    protected $description = 'Update status pengajuan menjadi expired jika sudah lewat 2 hari dari tanggal realisasi';
+    protected $description = 'Update status pengajuan menjadi expired jika sudah lewat 1 hari dari tanggal realisasi';
 
     /**
      * Execute the console command.
