@@ -157,28 +157,70 @@ class DinasFormSection
                         ->columnSpanFull()
                         ->defaultItems(1)
                         ->itemLabel('Detail Perjalanan Dinas'),
-                    Repeater::make('dinasActivities')
-                        ->label('Form Activity Perjalanan Dinas')
-                        ->relationship('dinasActivities')
-                        ->schema([
-                            TextArea::make('no_activity')
-                                ->label('No Activity')
-                                ->placeholder('2505-000001 lihat di Monitor 4(chatbot)')
-                                ->required(),
-                            TextArea::make('nama_dinas')
-                                ->label('Nama Dinas')
-                                ->placeholder('Nama Dinas')
-                                ->required(),
-                            TextArea::make('keterangan')
-                                ->label('Keterangan')
-                                ->placeholder('Vist/Follow Up/Dll')
-                                ->required(),
-                        ])
-                        ->columns(3)
-                        ->addActionLabel('Tambah Activity')
-                        ->columnSpanFull()
-                        ->defaultItems(1)
-                        ->itemLabel('Detail Activity Perjalanan Dinas'),
+                   
+
+Repeater::make('dinasActivities')
+    ->label('Form Activity Perjalanan Dinas')
+    ->relationship('dinasActivities')
+    ->schema([
+
+        // Toggle kontrol closing
+        Toggle::make('is_closed')
+            ->label('Sudah closing?')
+            ->inline(false)
+            ->default(false)
+            ->dehydrated(false)        // tidak disimpan; hapus baris ini jika ingin simpan ke DB
+            ->live(),                  // agar perubahan langsung mempengaruhi field lain
+            // ->columnSpan(1)         // atur span sesuai kebutuhan
+
+        // No Activity
+        TextInput::make('no_activity')
+            ->label('No Activity')
+            ->required()
+            ->placeholder(fn (Get $get) =>
+                $get('is_closed')
+                    ? 'EP-01K1W6EZXGFZXS1X9DP5WFA03/SSM'
+                    : '2508-055904'
+            )
+            ->helperText(fn (Get $get) =>
+                $get('is_closed')
+                    ? 'Bebas diisi (contoh: PRYK-.../SAP/SSM).'
+                    : 'Wajib format 4 digit, tanda minus, 6 digit (contoh: 2508-055904).'
+            )
+            // Validasi kondisional: regex hanya saat BELUM closing
+            ->rules(fn (Get $get) => $get('is_closed') ? [] : ['regex:/^\d{4}-\d{6}$/'])
+            // (opsional) auto-format: ketika belum closing, bersihkan non-digit & selipkan "-"
+            ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                if ($get('is_closed')) {
+                    return;
+                }
+                $digits = preg_replace('/\D+/', '', (string) $state);
+                if ($digits === '') {
+                    $set('no_activity', null);
+                    return;
+                }
+                $left  = substr($digits, 0, 4);
+                $right = substr($digits, 4, 6);
+                $formatted = $right !== '' ? ($left . '-' . $right) : $left;
+                $set('no_activity', $formatted);
+            }),
+
+        // Field lain tetap seperti semula
+        Textarea::make('nama_dinas')
+            ->label('Nama Dinas')
+            ->placeholder('Nama Dinas')
+            ->required(),
+
+        Textarea::make('keterangan')
+            ->label('Keterangan')
+            ->placeholder('Visit/Follow Up/Dll')
+            ->required(),
+    ])
+    ->columns(2)
+    ->addActionLabel('Tambah Activity')
+    ->columnSpanFull()
+    ->defaultItems(1)
+    ->itemLabel('Detail Activity Perjalanan Dinas'),
 
                     Repeater::make('dinasPersonils')
                         ->relationship('dinasPersonils')
