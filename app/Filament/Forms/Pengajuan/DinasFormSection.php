@@ -112,7 +112,12 @@ class DinasFormSection
                                 ->prefix('Rp ')
                                 ->extraAttributes(['class' => 'currency-input'])
                                 ->afterStateHydrated(function (TextInput $component, $state) {
+                                    // tampilkan dalam format ribuan
                                     $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                                })
+                                ->dehydrateStateUsing(function ($state) {
+                                    // sebelum simpan ke DB, hapus titik
+                                    return $state ? (int) str_replace('.', '', $state) : 0;
                                 })
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                     $pic = (int) $get('pic');
@@ -128,12 +133,17 @@ class DinasFormSection
                                 ->dehydrated()
                                 ->default(0)
                                 ->prefix('Rp ')
-                                ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
-                                ->dehydrateStateUsing(function (Get $get) {
-                                    $pic = (int) $get('pic');
-                                    $jmlHari = (int) $get('jml_hari');
+                                ->extraAttributes(['class' => 'currency-input'])
+                                ->afterStateHydrated(function (TextInput $component, $state) {
+                                    // tampilkan dengan format ribuan
+                                    $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                                })
+                                ->dehydrateStateUsing(function ($state, Get $get) {
+                                    // sebelum simpan ke DB, pastikan jadi angka murni
+                                    $pic   = (int) $get('pic');
+                                    $jml   = (int) $get('jml_hari');
                                     $harga = (int) str_replace('.', '', $get('harga_satuan'));
-                                    return $pic && $jmlHari && $harga ? ($pic * $jmlHari) * $harga : null;
+                                    return $pic && $jml && $harga ? ($pic * $jml) * $harga : 0;
                                 })
                                 ->columnSpanFull(),
                         ])
@@ -153,7 +163,7 @@ class DinasFormSection
                         ->schema([
                             TextArea::make('no_activity')
                                 ->label('No Activity')
-                                ->placeholder('2505-000001 / Jika tidak tahu di isi - ')
+                                ->placeholder('2505-000001 lihat di Monitor 4(chatbot)')
                                 ->required(),
                             TextArea::make('nama_dinas')
                                 ->label('Nama Dinas')
@@ -171,28 +181,55 @@ class DinasFormSection
                         ->itemLabel('Detail Activity Perjalanan Dinas'),
 
                     Repeater::make('dinasPersonils')
-                        ->label('Form Personil Perjalanan Dinas')
                         ->relationship('dinasPersonils')
+                        ->defaultItems(0) // jangan bikin item kosong
+                        ->afterStateHydrated(function (Repeater $component, ?array $state) {
+                            // Hanya saat CREATE (state masih kosong), seed 1 item: user pembuat
+                            if (blank($state)) {
+                                $component->state([[
+                                    'nama_personil' => auth()->user()->name ?? 'Pengusul',
+                                    'is_creator'    => true, // flag di state saja
+                                ]]);
+                            }
+                        })
+                        ->mutateRelationshipDataBeforeCreateUsing(function (array $data): array {
+                            // Hardening: kalau masih kosong, isi nama pembuat
+                            if (!filled($data['nama_personil'] ?? null)) {
+                                $data['nama_personil'] = auth()->user()->name ?? 'Pengusul';
+                            }
+                            return $data;
+                        })
                         ->schema([
+                            Hidden::make('is_creator')
+                                ->default(false)
+                                ->dehydrated(false), // jangan ikut ke DB
+
                             TextInput::make('nama_personil')
                                 ->label('Nama Personil')
-                                ->placeholder('Masukkan Nama Personil')
                                 ->required()
-                                ->maxLength(250),
+                                ->maxLength(250)
+                                ->dehydrated() // tetap kirim ke server meski disabled
+                                ->disabled(fn($get) => (bool) $get('is_creator')),
                         ])
                         ->addActionLabel('Tambah Personil')
-                        ->columnSpanFull()
-                        ->defaultItems(1)
-                        ->itemLabel('Detail Personil Perjalanan Dinas'),
-
-                    Forms\Components\TextInput::make('total_biaya')
+                        ->itemLabel(fn(array $state) => !empty($state['is_creator'])
+                            ? 'Anda (Pembuat Pengajuan)'
+                            : 'Detail Personil Perjalanan Dinas')
+                        ->columnSpanFull(),
+                    TextInput::make('total_biaya')
                         ->label('Total Biaya')
                         ->disabled()
                         ->dehydrated()
+                        ->default(0)
                         ->prefix('Rp ')
-                        ->formatStateUsing(fn($state) => $state ? number_format((int) $state, 0, ',', '.') : null)
-                        ->columnSpanFull()
-                        ->default(0),
+                        ->extraAttributes(['class' => 'currency-input'])
+                        ->afterStateHydrated(function (TextInput $component, $state) {
+                            $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                        })
+                        ->dehydrateStateUsing(function ($state) {
+                            return $state ? (int) str_replace('.', '', $state) : 0;
+                        })
+                        ->columnSpanFull(),
                     Toggle::make('lampiran_dinas')
                         ->label('Tambahkan Lampiran Perjalanan Dinas')
                         ->default(false)

@@ -357,6 +357,6 @@ class Pengajuan extends Model
 
     public function userStatus()
     {
-        return $this->hasOne(UserStatus::class);
+        return $this->hasOne(\App\Models\UserStatus::class, 'user_id', 'id');
     }
 }

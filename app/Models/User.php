@@ -77,4 +77,8 @@ class User extends Authenticatable
     {
         return $this->belongsTo(User::class, 'approver_id');
     }
+    public function status()
+    {
+        return $this->hasOne(\App\Models\UserStatus::class, 'user_id', 'id');
+    }
 }
