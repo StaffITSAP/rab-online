@@ -319,26 +319,63 @@
     </table>
 
     {{-- ====== TABEL AKTIVITAS ====== --}}
+    @php
+    $isSpv = auth()->user()?->hasRole('spv');
+    @endphp
+
     @if($pengajuan->dinasActivities && $pengajuan->dinasActivities->count() > 0)
-    <table class="section-table" style="margin-top:12px; font-size:9px;">
+    <table class="section-table aktivitas">
+        <colgroup>
+            @if($isSpv)
+            <col class="w-activity">
+            <col class="w-nama">
+            <col class="w-ket">
+            <col class="w-pekerjaan">
+            <col class="w-nilai">
+            <col class="w-target">
+            @else
+            {{-- Tanpa kolom SPV: proporsi lebih lebar --}}
+            <col style="width:18%">
+            <col style="width:32%">
+            <col style="width:50%">
+            @endif
+        </colgroup>
         <thead>
             <tr>
-                <th style="width:15%;">NO ACTIVITY</th>
-                <th style="width:30%;">NAMA DINAS</th>
-                <th style="width:55%;">KETERANGAN</th>
+                <th>NO ACTIVITY</th>
+                <th>NAMA DINAS</th>
+                <th>KETERANGAN</th>
+                @if($isSpv)
+                <th>PEKERJAAN</th>
+                <th>NILAI</th>
+                <th>TARGET</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             @foreach ($pengajuan->dinasActivities as $activity)
             <tr>
-                <td align="center">{{ $activity->no_activity ?? '-' }}</td>
-                <td style="text-align:justify;">{{ $activity->nama_dinas ?? '-' }}</td>
-                <td style="text-align:justify;">{{ $activity->keterangan ?? '-' }}</td>
+                <td class="text-center">{{ $activity->no_activity ?? '-' }}</td>
+                <td class="text-left">{{ $activity->nama_dinas ?? '-' }}</td>
+                <td class="text-left wrap">{{ $activity->keterangan ?? '-' }}</td>
+
+                @if($isSpv)
+                <td class="text-left wrap">{{ $activity->pekerjaan ?? '-' }}</td>
+                <td class="currency" style="text-align:right;">
+                    @if(!is_null($activity->nilai))
+                    <span style="float:left;">Rp</span> {{ number_format((int) $activity->nilai, 0, ',', '.') }}
+                    @else
+                    -
+                    @endif
+                </td>
+                <td class="text-center">{{ $activity->target ?? '-' }}</td>
+                @endif
             </tr>
             @endforeach
         </tbody>
     </table>
     @endif
+
 
     {{-- ====== KETERANGAN ====== --}}
     @if(isset($pengajuan->keterangan) && trim($pengajuan->keterangan) !== '')
