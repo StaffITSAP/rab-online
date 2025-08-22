@@ -15,6 +15,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Illuminate\Validation\Rule;
 
 class DinasFormSection
 {
@@ -158,42 +159,54 @@ class DinasFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Perjalanan Dinas'),
 
+                    // === SIMPAN KE pengajuans.closing ===
+                    Toggle::make('closing')
+                        ->label('Sudah closing ?')
+                        ->inline(false)
+                        ->default(false)
+                        ->live()        // supaya perubahan langsung mempengaruhi rules di repeater
+                        ->dehydrated(), // ⬅️ ini yg bikin tersimpan ke kolom `pengajuans.closing`
 
+                    // === Repeater anak: baca nilai closing parent ===
                     Repeater::make('dinasActivities')
                         ->label('Form Activity Perjalanan Dinas')
                         ->relationship('dinasActivities')
                         ->schema([
-
-                            // Toggle kontrol closing
-                            Toggle::make('is_closed')
-                                ->label('Sudah closing?')
-                                ->inline(false)
-                                ->default(false)
-                                ->dehydrated(false)        // tidak disimpan; hapus baris ini jika ingin simpan ke DB
-                                ->live(),                  // agar perubahan langsung mempengaruhi field lain
-                            // ->columnSpan(1)         // atur span sesuai kebutuhan
-
-                            // No Activity
                             TextInput::make('no_activity')
                                 ->label('No Activity')
                                 ->required()
                                 ->placeholder(
                                     fn(Get $get) =>
-                                    $get('is_closed')
-                                        ? 'EP-01K1W6EZXGFZXS1X9DP5WFA03/SSM'
+                                    // dari dalam item repeater, naik 2 level ke root: ../../closing
+                                    $get('../../closing')
+                                        ? 'PKT-123456789/SAP/SSM'
                                         : '2508-055904'
                                 )
                                 ->helperText(
                                     fn(Get $get) =>
-                                    $get('is_closed')
-                                        ? 'Bebas diisi (contoh: PRYK-.../SAP/SSM).'
-                                        : 'Wajib format 4 digit, tanda minus, 6 digit (contoh: 2508-055904).'
+                                    $get('../../closing')
+                                        ? 'Masukan kode paket yang akan dikirim (contoh: PKT-123456789/SAP/SSM).'
+                                        : 'Wajib format ####-###### dan harus ada di monitor4.'
                                 )
-                                // Validasi kondisional: regex hanya saat BELUM closing
-                                ->rules(fn(Get $get) => $get('is_closed') ? [] : ['regex:/^\d{4}-\d{6}$/'])
-                                // (opsional) auto-format: ketika belum closing, bersihkan non-digit & selipkan "-"
+                                ->rules(function (Get $get) {
+                                    if ($get('../../closing')) {
+                                        // saat sudah closing: bebas (varchar panjang)
+                                        return ['string', 'min:3', 'max:128'];
+                                    }
+                                    // saat BELUM closing: format ketat + harus ada di PostgreSQL
+                                    return [
+                                        'required',
+                                        'regex:/^\d{4}-\d{6}$/',
+                                        Rule::exists('monitor_sales_pgsql.activity', 'name'),
+                                    ];
+                                })
+                                ->validationMessages([
+                                    'regex'  => 'Format harus ####-###### (contoh: 2508-055904).',
+                                    'exists' => 'No Activity tidak ditemukan di monitor4.premmiere.co.id (Chatbot).',
+                                ])
+                                // Auto-format saat belum closing
                                 ->afterStateUpdated(function (Set $set, Get $get, $state) {
-                                    if ($get('is_closed')) {
+                                    if ($get('../../closing')) {
                                         return;
                                     }
                                     $digits = preg_replace('/\D+/', '', (string) $state);
@@ -203,14 +216,12 @@ class DinasFormSection
                                     }
                                     $left  = substr($digits, 0, 4);
                                     $right = substr($digits, 4, 6);
-                                    $formatted = $right !== '' ? ($left . '-' . $right) : $left;
-                                    $set('no_activity', $formatted);
-                                }),
+                                    $set('no_activity', $right !== '' ? ($left . '-' . $right) : $left);
+                                })
+                                ->dehydrateStateUsing(fn($state) => trim((string) $state)),
 
-                            // Field lain tetap seperti semula
                             Textarea::make('nama_dinas')
                                 ->label('Nama Dinas')
-                                ->placeholder('Nama Dinas')
                                 ->required(),
 
                             Textarea::make('keterangan')
@@ -218,7 +229,7 @@ class DinasFormSection
                                 ->placeholder('Visit/Follow Up/Dll')
                                 ->required(),
                         ])
-                        ->columns(2)
+                        ->columns(3)
                         ->addActionLabel('Tambah Activity')
                         ->columnSpanFull()
                         ->defaultItems(1)

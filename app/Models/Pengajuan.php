@@ -23,6 +23,7 @@ class Pengajuan extends Model
         'menggunakan_teknisi',
         'use_pengiriman',
         'use_car',
+        'closing',
         'asset_teknisi',
         'keterangan',
         'lokasi',
@@ -35,6 +36,7 @@ class Pengajuan extends Model
         'menggunakan_teknisi' => 'boolean',
         'use_pengiriman'      => 'boolean',
         'use_car'             => 'boolean',
+        'closing'             => 'boolean',
         'asset_teknisi'       => 'boolean',
         'expired_unlocked'    => 'boolean',
         'expired_unlocked_at' => 'datetime',
@@ -250,8 +252,9 @@ class Pengajuan extends Model
     }
     public function dinasActivities()
     {
-        return $this->hasMany(PengajuanDinasActivity::class);
+        return $this->hasMany(PengajuanDinasActivity::class, 'pengajuan_id', 'id');
     }
+
     public function dinasPersonils()
     {
         return $this->hasMany(PengajuanDinasPersonil::class, 'pengajuan_id');

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 
 class PengajuanDinasActivity extends Model
@@ -21,8 +22,8 @@ class PengajuanDinasActivity extends Model
         'keterangan',
     ];
 
-    public function pengajuan()
+    public function pengajuan(): BelongsTo
     {
-        return $this->belongsTo(Pengajuan::class);
+        return $this->belongsTo(PengajuanDinas::class, 'pengajuan_id', 'id');
     }
 }

@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\PengajuanDinasLampiran;
 
 class PengajuanDinas extends Model
 {
@@ -22,8 +25,8 @@ class PengajuanDinas extends Model
         'subtotal',
     ];
 
-    public function pengajuan()
+    public function pengajuan(): BelongsTo
     {
-        return $this->belongsTo(Pengajuan::class);
+        return $this->belongsTo(Pengajuan::class, 'pengajuan_id', 'id');
     }
 }

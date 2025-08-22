@@ -42,6 +42,19 @@ return [
             'synchronous' => null,
         ],
 
+        'monitor_sales_pgsql' => [
+            'driver'   => 'pgsql',
+            'host'     => env('PG_MONITOR_HOST', '127.0.0.1'),
+            'port'     => env('PG_MONITOR_PORT', '5432'),
+            'database' => env('PG_MONITOR_DATABASE', 'monitor_sales'),
+            'username' => env('PG_MONITOR_USERNAME', 'postgres'),
+            'password' => env('PG_MONITOR_PASSWORD', ''),
+            'charset'  => 'utf8',
+            'prefix'   => '',
+            'schema'   => 'public',
+            'sslmode'  => 'prefer',
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -147,7 +160,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
