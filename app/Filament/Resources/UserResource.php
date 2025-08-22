@@ -104,7 +104,7 @@ class UserResource extends Resource
                     })
                     ->html(),
                 TextColumn::make('userStatus.cabang.kode')->label('Cabang'),
-                TextColumn::make('userStatus.divisi.nama')->label('Divisi'),
+                TextColumn::make('userStatus.divisi.nama')->label('Divisi')->searchable(),
                 TextColumn::make('roles.name')
                     ->label('Role')
                     ->badge()
