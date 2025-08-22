@@ -77,6 +77,10 @@ class PersetujuanResource extends Resource
         return Toggle::make($field)
             ->label(ucwords(str_replace('_', ' ', $field)))
             ->default(false)
+            ->onIcon('heroicon-s-check')
+            ->offIcon('heroicon-s-x-mark')
+            ->onColor('success')
+            ->offColor('danger')
             ->reactive()
             ->afterStateUpdated(function ($state, callable $set, callable $get) use ($role) {
                 $approvers = collect($get('approvers'));

@@ -27,11 +27,26 @@ class LampiranResource extends Resource
                 ->relationship('pengajuan', 'id')
                 ->required(),
 
-            Forms\Components\Toggle::make('lampiran_asset')->label('Lampiran Asset'),
-            Forms\Components\Toggle::make('lampiran_dinas')->label('Lampiran Dinas'),
-            Forms\Components\Toggle::make('lampiran_marcomm_kegiatan')->label('Marcomm Kegiatan'),
-            Forms\Components\Toggle::make('lampiran_marcomm_kebutuhan')->label('Marcomm Kebutuhan'),
-            Forms\Components\Toggle::make('lampiran_marcomm_promosi')->label('Marcomm Promosi'),
+            Forms\Components\Toggle::make('lampiran_asset')->label('Lampiran Asset')->onIcon('heroicon-s-check')
+                ->offIcon('heroicon-s-x-mark')
+                ->onColor('success')
+                ->offColor('danger'),
+            Forms\Components\Toggle::make('lampiran_dinas')->label('Lampiran Dinas')->onIcon('heroicon-s-check')
+                ->offIcon('heroicon-s-x-mark')
+                ->onColor('success')
+                ->offColor('danger'),
+            Forms\Components\Toggle::make('lampiran_marcomm_kegiatan')->label('Marcomm Kegiatan')->onIcon('heroicon-s-check')
+                ->offIcon('heroicon-s-x-mark')
+                ->onColor('success')
+                ->offColor('danger'),
+            Forms\Components\Toggle::make('lampiran_marcomm_kebutuhan')->label('Marcomm Kebutuhan')->onIcon('heroicon-s-check')
+                ->offIcon('heroicon-s-x-mark')
+                ->onColor('success')
+                ->offColor('danger'),
+            Forms\Components\Toggle::make('lampiran_marcomm_promosi')->label('Marcomm Promosi')->onIcon('heroicon-s-check')
+                ->offIcon('heroicon-s-x-mark')
+                ->onColor('success')
+                ->offColor('danger'),
         ]);
     }
 

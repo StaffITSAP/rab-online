@@ -147,16 +147,28 @@ class KegiatanFormSection
                             ->label('Pusat')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive(),
                         Toggle::make('tim_cabang')
                             ->label('Cabang')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive(),
                         Toggle::make('lampiran_kegiatan')
                             ->label('Tambahkan Lampiran Kegiatan')
                             ->default(false)
                             ->inline(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive()
                             ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
                     ]),

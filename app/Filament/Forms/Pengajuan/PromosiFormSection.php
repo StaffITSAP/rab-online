@@ -104,6 +104,10 @@ class PromosiFormSection
                     Toggle::make('lampiran_marcomm_promosi')
                         ->label('Tambahkan Lampiran Marcomm Promosi')
                         ->default(false)
+                        ->onIcon('heroicon-s-check')
+                        ->offIcon('heroicon-s-x-mark')
+                        ->onColor('success')
+                        ->offColor('danger')
                         ->reactive()
                         ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
 

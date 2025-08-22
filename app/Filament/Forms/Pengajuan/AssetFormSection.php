@@ -102,10 +102,18 @@ class AssetFormSection
                             ->label('Keperluan Teknisi')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive(),
                         Toggle::make('lampiran_asset')
                             ->label('Tambahkan Lampiran Asset/Inventaris')
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive()
                             ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
                     ]),

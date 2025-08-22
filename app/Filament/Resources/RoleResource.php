@@ -31,6 +31,9 @@ class RoleResource extends Resource
             TextInput::make('name')
                 ->required()
                 ->unique(ignoreRecord: true),
+            TextInput::make('guard_name')
+                ->default('web') // 👈 default otomatis "web"
+                ->required(),
         ]);
     }
 

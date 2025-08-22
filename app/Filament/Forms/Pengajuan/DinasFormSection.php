@@ -51,18 +51,30 @@ class DinasFormSection
                             ->label('Request Mobil')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive()
                             ->helperText('Digunakan untuk request penggunaan Mobil.'),
                         Toggle::make('use_pengiriman')
                             ->label('Pengiriman Barang/Gudang')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive()
                             ->helperText('Bisa juga di gunakan untuk request penggunaan Mobil dan Sopir.'),
                         Toggle::make('menggunakan_teknisi')
                             ->label('Menggunakan Teknisi/Survey')
                             ->inline(false)
                             ->default(false)
+                            ->onIcon('heroicon-s-check')
+                            ->offIcon('heroicon-s-x-mark')
+                            ->onColor('success')
+                            ->offColor('danger')
                             ->reactive(),
                     ]),
                     Repeater::make('pengajuan_dinas')
@@ -159,13 +171,17 @@ class DinasFormSection
                         ->defaultItems(1)
                         ->itemLabel('Detail Perjalanan Dinas'),
 
-                    // === SIMPAN KE pengajuans.closing ===
                     Toggle::make('closing')
-                        ->label('Sudah closing ?')
+                        ->label('Sudah closing?')
                         ->inline(false)
+                        ->onIcon('heroicon-s-check')
+                        ->offIcon('heroicon-s-x-mark')
+                        ->onColor('success')
+                        ->offColor('danger')
                         ->default(false)
-                        ->live()        // supaya perubahan langsung mempengaruhi rules di repeater
-                        ->dehydrated(), // ⬅️ ini yg bikin tersimpan ke kolom `pengajuans.closing`
+                        ->live()
+                        ->dehydrated()
+                        ->helperText('Jika sudah closing, wajib menyalakan toggle (Ya).'),
 
                     // === Repeater anak: baca nilai closing parent ===
                     Repeater::make('dinasActivities')
@@ -175,25 +191,29 @@ class DinasFormSection
                             TextInput::make('no_activity')
                                 ->label('No Activity')
                                 ->required()
-                                ->placeholder(
-                                    fn(Get $get) =>
-                                    // dari dalam item repeater, naik 2 level ke root: ../../closing
-                                    $get('../../closing')
-                                        ? 'PKT-123456789/SAP/SSM'
-                                        : '2502-000001'
-                                )
-                                ->helperText(
-                                    fn(Get $get) =>
-                                    $get('../../closing')
-                                        ? 'Masukan kode paket yang akan dikirim (contoh: PKT-123456789/SAP/SSM).'
-                                        : 'Wajib format ####-###### dan harus ada di monitor4.premmiere.co.id (Chatbot).'
-                                )
+                                // Placeholder dinamis
+                                ->placeholder(function (Get $get) {
+                                    $isStrict = auth()->user()?->hasAnyRole(['sales', 'koordinator', 'spv']);
+                                    return ($get('../../closing') || ! $isStrict)
+                                        ? 'PKT-123456789/SAP/SSM'   // bebas
+                                        : '2502-000001';            // format ####-######
+                                })
+                                // Help text dinamis
+                                ->helperText(function (Get $get) {
+                                    $isStrict = auth()->user()?->hasAnyRole(['sales', 'koordinator', 'spv']);
+                                    return ($get('../../closing') || ! $isStrict)
+                                        ? 'Masukan Nomor Paket/PO/SO/etc (contoh: PKT-123456789/SAP/SSM).'
+                                        : 'Wajib format ####-###### dan harus ada di monitor4.premmiere.co.id (Chatbot).';
+                                })
+                                // Rules dinamis: ketat hanya untuk role sales/koordinator/spv saat BELUM closing
                                 ->rules(function (Get $get) {
-                                    if ($get('../../closing')) {
-                                        // saat sudah closing: bebas (varchar panjang)
-                                        return ['string', 'min:3', 'max:128'];
+                                    $isStrict = auth()->user()?->hasAnyRole(['sales', 'koordinator', 'spv']);
+
+                                    if ($get('../../closing') || ! $isStrict) {
+                                        return ['string', 'min:3', 'max:128']; // bebas
                                     }
-                                    // saat BELUM closing: format ketat + harus ada di PostgreSQL
+
+                                    // STRICT: format & exist di PostgreSQL
                                     return [
                                         'required',
                                         'regex:/^\d{4}-\d{6}$/',
@@ -204,9 +224,10 @@ class DinasFormSection
                                     'regex'  => 'Format harus ####-###### (contoh: 2502-000001).',
                                     'exists' => 'No Activity tidak ditemukan di monitor4.premmiere.co.id (Chatbot).',
                                 ])
-                                // Auto-format saat belum closing
+                                // Auto-format hanya ketika STRICT (sales/koordinator/spv & belum closing)
                                 ->afterStateUpdated(function (Set $set, Get $get, $state) {
-                                    if ($get('../../closing')) {
+                                    $isStrict = auth()->user()?->hasAnyRole(['sales', 'koordinator', 'spv']);
+                                    if ($get('../../closing') || ! $isStrict) {
                                         return;
                                     }
                                     $digits = preg_replace('/\D+/', '', (string) $state);
@@ -329,6 +350,10 @@ class DinasFormSection
                     Toggle::make('lampiran_dinas')
                         ->label('Tambahkan Lampiran Perjalanan Dinas')
                         ->default(false)
+                        ->onIcon('heroicon-s-check')
+                        ->offIcon('heroicon-s-x-mark')
+                        ->onColor('success')
+                        ->offColor('danger')
                         ->reactive()
                         ->dehydrated(), // ⬅️ penting agar nilainya dikirim ke backend
 
