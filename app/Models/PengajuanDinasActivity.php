@@ -20,6 +20,9 @@ class PengajuanDinasActivity extends Model
         'no_activity',
         'nama_dinas',
         'keterangan',
+        'pekerjaan',  
+        'nilai',      
+        'target',     
     ];
 
     public function pengajuan(): BelongsTo

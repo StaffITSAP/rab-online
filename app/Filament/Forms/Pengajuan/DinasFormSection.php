@@ -180,13 +180,13 @@ class DinasFormSection
                                     // dari dalam item repeater, naik 2 level ke root: ../../closing
                                     $get('../../closing')
                                         ? 'PKT-123456789/SAP/SSM'
-                                        : '2508-055904'
+                                        : '2502-000001'
                                 )
                                 ->helperText(
                                     fn(Get $get) =>
                                     $get('../../closing')
                                         ? 'Masukan kode paket yang akan dikirim (contoh: PKT-123456789/SAP/SSM).'
-                                        : 'Wajib format ####-###### dan harus ada di monitor4.'
+                                        : 'Wajib format ####-###### dan harus ada di monitor4.premmiere.co.id (Chatbot).'
                                 )
                                 ->rules(function (Get $get) {
                                     if ($get('../../closing')) {
@@ -201,7 +201,7 @@ class DinasFormSection
                                     ];
                                 })
                                 ->validationMessages([
-                                    'regex'  => 'Format harus ####-###### (contoh: 2508-055904).',
+                                    'regex'  => 'Format harus ####-###### (contoh: 2502-000001).',
                                     'exists' => 'No Activity tidak ditemukan di monitor4.premmiere.co.id (Chatbot).',
                                 ])
                                 // Auto-format saat belum closing
@@ -228,6 +228,47 @@ class DinasFormSection
                                 ->label('Keterangan')
                                 ->placeholder('Visit/Follow Up/Dll')
                                 ->required(),
+
+                            // ========== FIELD KHUSUS SPV ==========
+                            Textarea::make('pekerjaan')
+                                ->label('Pekerjaan')
+                                ->maxLength(65535)
+                                ->visible(fn() => auth()->user()?->hasRole('spv'))
+                                ->required(fn() => auth()->user()?->hasRole('spv')),
+
+                            TextInput::make('nilai')
+                                ->label('Nilai')
+                                ->placeholder('Contoh: 500000')
+                                ->prefix('Rp ')
+                                ->extraAttributes(['class' => 'currency-input'])
+                                ->dehydrated() // kirim ke server
+                                // tampilkan 1.000.000 saat form dibuka
+                                ->afterStateHydrated(function (TextInput $component, $state) {
+                                    $component->state(($state !== null && $state !== '')
+                                        ? number_format((int) $state, 0, ',', '.')
+                                        : null);
+                                })
+                                // sebelum simpan/validasi: "1.234.567" -> 1234567
+                                ->dehydrateStateUsing(function ($state) {
+                                    $digits = preg_replace('/\D+/', '', (string) $state);
+                                    return $digits === '' ? null : (int) $digits;
+                                })
+                                // muncul & wajib hanya untuk SPV
+                                ->visible(fn() => auth()->user()?->hasRole('spv'))
+                                ->required(fn() => auth()->user()?->hasRole('spv'))
+                                // rules dinamis (tanpa closure-validator)
+                                ->rules(
+                                    fn() => auth()->user()?->hasRole('spv')
+                                        ? ['required', 'integer', 'min:0']
+                                        : ['nullable', 'integer', 'min:0']
+                                ),
+
+                            TextInput::make('target')
+                                ->label('Target')
+                                ->maxLength(255)
+                                ->visible(fn() => auth()->user()?->hasRole('spv'))
+                                ->required(fn() => auth()->user()?->hasRole('spv')),
+                            // =======================================
                         ])
                         ->columns(3)
                         ->addActionLabel('Tambah Activity')
