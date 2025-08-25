@@ -368,52 +368,58 @@
 
     {{-- ====== TABEL AKTIVITAS ====== --}}
     @php
-    $isSpv = auth()->user()?->hasRole('spv');
+    $activities = $pengajuan->dinasActivities ?? collect();
+    $canSeeDetail = ! auth()->user()?->hasRole('sales'); // semua role kecuali sales
+
+    // Tampilkan kolom hanya jika ada minimal satu nilai
+    $showPekerjaan = $canSeeDetail && $activities->contains(fn($a) => filled($a->pekerjaan));
+    $showNilai = $canSeeDetail && $activities->contains(fn($a) => !is_null($a->nilai));
+    $showTarget = $activities->contains(fn($a) => filled($a->target));
     @endphp
 
-    @if($pengajuan->dinasActivities && $pengajuan->dinasActivities->count() > 0)
-    {{-- Tabel utama tanpa kolom TARGET --}}
+    @if($activities->count() > 0)
     <table class="section-table aktivitas">
         <colgroup>
-            @if($isSpv)
+            <col style="width:6%"><!-- NO -->
             <col class="w-activity">
             <col class="w-nama">
             <col class="w-ket">
-            <col class="w-pekerjaan">
-            <col class="w-nilai">
-            @else
-            <col style="width:18%">
-            <col style="width:32%">
-            <col style="width:50%">
-            @endif
+            @if($showPekerjaan)
+            <col class="w-pekerjaan"> @endif
+            @if($showNilai)
+            <col class="w-nilai"> @endif
         </colgroup>
+
         <thead>
             <tr>
                 <th>NO</th>
                 <th>NO ACTIVITY</th>
                 <th>NAMA DINAS</th>
                 <th>KETERANGAN</th>
-                @if($isSpv)
-                <th>PEKERJAAN</th>
-                <th>NILAI</th>
-                @endif
+                @if($showPekerjaan) <th>PEKERJAAN</th> @endif
+                @if($showNilai) <th>NILAI</th> @endif
             </tr>
         </thead>
+
         <tbody>
-            @foreach ($pengajuan->dinasActivities as $i => $activity)
+            @foreach ($activities as $i => $activity)
             <tr>
                 <td class="text-center">{{ $i+1 }}</td>
-                <td class="text-center">{{ $activity->no_activity ?? '-' }}</td>
-                <td class="text-left">{{ $activity->nama_dinas ?? '-' }}</td>
-                <td class="text-left wrap">{{ $activity->keterangan ?? '-' }}</td>
+                <td class="text-center">{{ $activity->no_activity ?? '' }}</td>
+                <td class="text-left">{{ $activity->nama_dinas ?? '' }}</td>
+                <td class="text-left wrap">{{ $activity->keterangan ?? '' }}</td>
 
-                @if($isSpv)
-                <td class="text-left wrap">{{ $activity->pekerjaan ?? '-' }}</td>
+                @if($showPekerjaan)
+                <td class="text-left wrap">
+                    {{ filled($activity->pekerjaan) ? $activity->pekerjaan : '' }}
+                </td>
+                @endif
+
+                @if($showNilai)
                 <td class="currency" style="text-align:right;">
                     @if(!is_null($activity->nilai))
-                    <span style="float:left;">Rp</span> {{ number_format((int) $activity->nilai, 0, ',', '.') }}
-                    @else
-                    -
+                    <span style="float:left;">Rp</span>
+                    {{ number_format((int) $activity->nilai, 0, ',', '.') }}
                     @endif
                 </td>
                 @endif
@@ -421,8 +427,10 @@
             @endforeach
         </tbody>
     </table>
+    @endif
 
-    {{-- Tabel Target terpisah --}}
+    {{-- ====== TABEL TARGET (hanya jika ada isinya) ====== --}}
+    @if($showTarget)
     <br>
     <table class="section-table aktivitas">
         <thead>
@@ -432,15 +440,17 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($pengajuan->dinasActivities as $i => $activity)
+            @foreach ($activities as $i => $activity)
+            @continue(blank($activity->target)) {{-- skip baris kosong --}}
             <tr>
                 <td class="text-center">{{ $i+1 }}</td>
-                <td class="text-left wrap">{{ $activity->target ?? '-' }}</td>
+                <td class="text-left wrap">{{ $activity->target }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
     @endif
+
 
 
     {{-- ====== KETERANGAN ====== --}}
