@@ -427,6 +427,35 @@
         Nb: harga sudah include pajak tapi belum include pajak proteksi, ready info Kadipiro, indent 3–5 hari dari PO dan transaksi
     </p>
 
+    {{-- ====== CATATAN / ALASAN SEMUA STATUS ====== --}}
+    @php
+    $statusLogs = $pengajuan->statuses()
+    ->whereNotNull('is_approved')
+    ->with('user')
+    ->orderBy('approved_at')
+    ->get();
+    @endphp
+
+    @if ($statusLogs->isNotEmpty())
+    <div style="margin-top:15px; font-size:10px; border:1px solid #ccc; padding:6px 8px; background:#f9f9f9;">
+        <strong>Catatan :</strong>
+        <ul style="margin:6px 0 0 15px; padding:0; font-size:9px; line-height:1.5;">
+            @foreach ($statusLogs as $log)
+            @php
+            $jenis = $log->is_approved ? 'Disetujui' : 'Ditolak';
+            $nama = $log->user?->name ?? '-';
+            $isi = $log->is_approved ? $log->catatan_approve : $log->alasan_ditolak;
+            @endphp
+            @if ($isi)
+            <li>
+                {{ $isi }}
+                <span style="color:#555;"> ({{ $jenis }}, {{ $nama }})</span>
+            </li>
+            @endif
+            @endforeach
+        </ul>
+    </div>
+    @endif
     <!-- ===== LAMPIRAN (halaman baru) ===== -->
     @if ($lampiranAssets->count())
     <div class="page-break">
