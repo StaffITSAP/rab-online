@@ -556,7 +556,10 @@
     ->whereNotNull('is_approved')
     ->with('user')
     ->orderBy('approved_at')
-    ->get();
+    ->get()
+    ->filter(function ($log) {
+    return $log->is_approved ? $log->catatan_approve : $log->alasan_ditolak;
+    });
     @endphp
 
     @if ($statusLogs->isNotEmpty())
@@ -569,12 +572,10 @@
         $nama = $log->user?->name ?? '-';
         $isi = $log->is_approved ? $log->catatan_approve : $log->alasan_ditolak;
         @endphp
-        @if ($isi)
         <li>
           {{ $isi }}
           <span style="color:#555;"> ({{ $jenis }}, {{ $nama }})</span>
         </li>
-        @endif
         @endforeach
       </ul>
     </div>
