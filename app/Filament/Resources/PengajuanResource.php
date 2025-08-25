@@ -130,6 +130,10 @@ class PengajuanResource extends Resource
 
                         return null;
                     })
+                    ->extraAttributes([
+                        'class' => 'whitespace-normal text-left max-w-xs mx-auto',
+                        'style' => 'min-width: 200px; max-width: 300px;'
+                    ]) // ⬅️ wrap + center + kasih max-width biar gak kepanjangan
                     ->searchable(),
 
                 TextColumn::make('pending_approvers')
