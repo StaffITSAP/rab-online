@@ -372,6 +372,7 @@
     @endphp
 
     @if($pengajuan->dinasActivities && $pengajuan->dinasActivities->count() > 0)
+    {{-- Tabel utama tanpa kolom TARGET --}}
     <table class="section-table aktivitas">
         <colgroup>
             @if($isSpv)
@@ -380,9 +381,7 @@
             <col class="w-ket">
             <col class="w-pekerjaan">
             <col class="w-nilai">
-            <col class="w-target">
             @else
-            {{-- Tanpa kolom SPV: proporsi lebih lebar --}}
             <col style="width:18%">
             <col style="width:32%">
             <col style="width:50%">
@@ -390,19 +389,20 @@
         </colgroup>
         <thead>
             <tr>
+                <th>NO</th>
                 <th>NO ACTIVITY</th>
                 <th>NAMA DINAS</th>
                 <th>KETERANGAN</th>
                 @if($isSpv)
                 <th>PEKERJAAN</th>
                 <th>NILAI</th>
-                <th>TARGET</th>
                 @endif
             </tr>
         </thead>
         <tbody>
-            @foreach ($pengajuan->dinasActivities as $activity)
+            @foreach ($pengajuan->dinasActivities as $i => $activity)
             <tr>
+                <td class="text-center">{{ $i+1 }}</td>
                 <td class="text-center">{{ $activity->no_activity ?? '-' }}</td>
                 <td class="text-left">{{ $activity->nama_dinas ?? '-' }}</td>
                 <td class="text-left wrap">{{ $activity->keterangan ?? '-' }}</td>
@@ -416,8 +416,26 @@
                     -
                     @endif
                 </td>
-                <td class="text-center">{{ $activity->target ?? '-' }}</td>
                 @endif
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    {{-- Tabel Target terpisah --}}
+    <br>
+    <table class="section-table aktivitas">
+        <thead>
+            <tr>
+                <th>NO</th>
+                <th>TARGET</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($pengajuan->dinasActivities as $i => $activity)
+            <tr>
+                <td class="text-center">{{ $i+1 }}</td>
+                <td class="text-left wrap">{{ $activity->target ?? '-' }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -479,7 +497,10 @@
     ->whereNotNull('is_approved')
     ->with('user')
     ->orderBy('approved_at')
-    ->get();
+    ->get()
+    ->filter(function ($log) {
+    return $log->is_approved ? $log->catatan_approve : $log->alasan_ditolak;
+    });
     @endphp
 
     @if ($statusLogs->isNotEmpty())
@@ -492,16 +513,15 @@
             $nama = $log->user?->name ?? '-';
             $isi = $log->is_approved ? $log->catatan_approve : $log->alasan_ditolak;
             @endphp
-            @if ($isi)
             <li>
                 {{ $isi }}
                 <span style="color:#555;"> ({{ $jenis }}, {{ $nama }})</span>
             </li>
-            @endif
             @endforeach
         </ul>
     </div>
     @endif
+
 
     {{-- ====== LAMPIRAN DI HALAMAN BARU ====== --}}
     @if ($lampiranDinas->count())
