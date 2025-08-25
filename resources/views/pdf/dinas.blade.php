@@ -163,11 +163,53 @@
             white-space: nowrap;
         }
 
+        /* ===== Watermark untuk status menunggu (kuning) ===== */
+        .wm-menunggu {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 120px;
+            font-weight: 800;
+            color: rgba(255, 193, 7, 0.20);
+            /* kuning transparan (#ffc107) */
+            letter-spacing: 8px;
+            z-index: 9999;
+            pointer-events: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        /* ===== Watermark untuk status ditolak (merah tegas) ===== */
+        .wm-ditolak {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            font-size: 120px;
+            font-weight: 800;
+            color: rgba(200, 0, 0, 0.25);
+            /* merah lebih tegas */
+            letter-spacing: 8px;
+            z-index: 9999;
+            pointer-events: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
         /* Saat print, buat lebih pekat supaya tetap terbaca */
         @media print {
             .wm-expired {
                 color: rgba(220, 0, 0, 0.28);
                 /* merah sedikit lebih pekat */
+            }
+
+            .wm-menunggu {
+                color: rgba(255, 193, 7, 0.35);
+            }
+
+            .wm-ditolak {
+                color: rgba(200, 0, 0, 0.35);
             }
         }
     </style>
@@ -203,9 +245,15 @@
     }
     @endphp
 
-    {{-- ===== Watermark muncul bila status expired ===== --}}
-    @if (strtolower($pengajuan->status ?? '') === 'expired')
+    {{-- ===== Watermark sesuai status ===== --}}
+    @php $status = strtolower($pengajuan->status ?? ''); @endphp
+
+    @if ($status === 'expired')
     <div class="wm-expired">EXPIRED</div>
+    @elseif ($status === 'menunggu')
+    <div class="wm-menunggu">MENUNGGU</div>
+    @elseif ($status === 'ditolak')
+    <div class="wm-ditolak">DITOLAK</div>
     @endif
 
     <h2 align="center" style="margin: 5px 0;">FORM RAB DINAS LUAR KOTA</h2>
