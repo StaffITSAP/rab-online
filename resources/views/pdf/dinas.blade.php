@@ -369,21 +369,20 @@
     {{-- ====== TABEL AKTIVITAS ====== --}}
     @php
     $activities = $pengajuan->dinasActivities ?? collect();
-    $canSeeDetail = ! auth()->user()?->hasRole('sales'); // semua role kecuali sales
 
-    // Tampilkan kolom hanya jika ada minimal satu nilai
-    $showPekerjaan = $canSeeDetail && $activities->contains(fn($a) => filled($a->pekerjaan));
-    $showNilai = $canSeeDetail && $activities->contains(fn($a) => !is_null($a->nilai));
-    $showTarget = $activities->contains(fn($a) => filled($a->target));
+    // Tampilkan kolom hanya jika ada minimal satu isi
+    $showPekerjaan = $activities->contains(fn ($a) => filled($a->pekerjaan));
+    $showNilai = $activities->contains(fn ($a) => !is_null($a->nilai));
+    $showTarget = $activities->contains(fn ($a) => filled($a->target));
     @endphp
 
     @if($activities->count() > 0)
     <table class="section-table aktivitas">
         <colgroup>
             <col style="width:6%"><!-- NO -->
-            <col class="w-activity">
-            <col class="w-nama">
-            <col class="w-ket">
+            <col class="w-activity"><!-- NO ACTIVITY -->
+            <col class="w-nama"><!-- NAMA DINAS -->
+            <col class="w-ket"><!-- KETERANGAN -->
             @if($showPekerjaan)
             <col class="w-pekerjaan"> @endif
             @if($showNilai)
@@ -404,15 +403,13 @@
         <tbody>
             @foreach ($activities as $i => $activity)
             <tr>
-                <td class="text-center">{{ $i+1 }}</td>
+                <td class="text-center">{{ $i + 1 }}</td>
                 <td class="text-center">{{ $activity->no_activity ?? '' }}</td>
                 <td class="text-left">{{ $activity->nama_dinas ?? '' }}</td>
                 <td class="text-left wrap">{{ $activity->keterangan ?? '' }}</td>
 
                 @if($showPekerjaan)
-                <td class="text-left wrap">
-                    {{ filled($activity->pekerjaan) ? $activity->pekerjaan : '' }}
-                </td>
+                <td class="text-left wrap">{{ filled($activity->pekerjaan) ? $activity->pekerjaan : '' }}</td>
                 @endif
 
                 @if($showNilai)
@@ -429,7 +426,7 @@
     </table>
     @endif
 
-    {{-- ====== TABEL TARGET (hanya jika ada isinya) ====== --}}
+    {{-- ====== TABEL TARGET (muncul hanya jika ada isinya) ====== --}}
     @if($showTarget)
     <br>
     <table class="section-table aktivitas">
@@ -441,17 +438,15 @@
         </thead>
         <tbody>
             @foreach ($activities as $i => $activity)
-            @continue(blank($activity->target)) {{-- skip baris kosong --}}
+            @continue(blank($activity->target)) {{-- skip baris tanpa target --}}
             <tr>
-                <td class="text-center">{{ $i+1 }}</td>
+                <td class="text-center">{{ $i + 1 }}</td>
                 <td class="text-left wrap">{{ $activity->target }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
     @endif
-
-
 
     {{-- ====== KETERANGAN ====== --}}
     @if(isset($pengajuan->keterangan) && trim($pengajuan->keterangan) !== '')
