@@ -292,7 +292,7 @@
     </table>
 
     <!-- ===== TABEL BARANG ===== -->
-    <table class="keterangan-table item-table" style="font-size:9px;">
+    <table class="keterangan-table item-table" style="font-size:9px; border-collapse:collapse; width:100%; table-layout:fixed;">
         <thead>
             <tr>
                 <th style="width:5%;">NO</th>
@@ -301,26 +301,44 @@
                 <th style="width:8%;">QTY</th>
                 <th style="width:10%;">SATUAN</th>
                 <th style="width:15%;">HARGA SATUAN</th>
-                <th style="width:10%;">TOTAL</th>
+                <th style="width:12%;">TOTAL</th>
             </tr>
         </thead>
         <tbody>
             @forelse (($pengajuan->barangs ?? []) as $item)
             <tr>
                 <td align="center">{{ $loop->iteration }}</td>
-                <td style="text-align:justify;">{{ $item->nama_barang ?? '-' }}</td>
-                <td style="text-align:justify;">{{ $item->keperluan ?? '-' }}</td>
-                <td align="center">{{ $item->jumlah ?? 0 }}</td>
-                <td align="center">{{ $item->tipe_barang ?? '-' }}</td>
 
-                <!-- Harga Satuan: Rp kiri, angka kanan (inline style, top aligned) -->
-                <td style="padding:4px 6px; text-align:right; vertical-align:top; white-space:nowrap;">
-                    <span style="float:left;">Rp</span>{{ number_format((int)($item->harga_unit ?? 0), 0, ',', '.') }}
+                <!-- Nama barang: wrap text -->
+                <td style="text-align:justify; white-space:normal; word-wrap:break-word;">
+                    {{ $item->nama_barang ?? '-' }}
                 </td>
 
-                <!-- Total per baris -->
+                <!-- Keperluan: wrap text -->
+                <td style="text-align:justify; white-space:normal; word-wrap:break-word;">
+                    {{ $item->keperluan ?? '-' }}
+                </td>
+
+                <!-- QTY -->
+                <td align="center" style="white-space:nowrap;">
+                    {{ $item->jumlah ?? 0 }}
+                </td>
+
+                <!-- Satuan -->
+                <td align="center" style="white-space:normal; word-wrap:break-word;">
+                    {{ $item->tipe_barang ?? '-' }}
+                </td>
+
+                <!-- Harga Satuan -->
                 <td style="padding:4px 6px; text-align:right; vertical-align:top; white-space:nowrap;">
-                    <span style="float:left;">Rp</span>{{ number_format((int)($item->subtotal ?? 0), 0, ',', '.') }}
+                    <span style="float:left;">Rp</span>
+                    {{ number_format((int)($item->harga_unit ?? 0), 0, ',', '.') }}
+                </td>
+
+                <!-- Total -->
+                <td style="padding:4px 6px; text-align:right; vertical-align:top; white-space:nowrap;">
+                    <span style="float:left;">Rp</span>
+                    {{ number_format((int)($item->subtotal ?? 0), 0, ',', '.') }}
                 </td>
             </tr>
             @empty
