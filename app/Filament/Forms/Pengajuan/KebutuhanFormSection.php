@@ -47,14 +47,20 @@ class KebutuhanFormSection
                                 ->nullable(),
 
                             TextInput::make('harga_satuan')
-                                ->label('Harga Satuan')
+                                ->label('Harga')
                                 ->placeholder('Contoh: 500000')
                                 ->required()
+                                ->default(0)
                                 ->dehydrated()
                                 ->prefix('Rp ')
                                 ->extraAttributes(['class' => 'currency-input'])
                                 ->afterStateHydrated(function (TextInput $component, $state) {
+                                    // tampilkan dalam format ribuan
                                     $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                                })
+                                ->dehydrateStateUsing(function ($state) {
+                                    // sebelum simpan ke DB, hapus titik
+                                    return $state ? (int) str_replace('.', '', $state) : 0;
                                 })
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                     $qty = (int) $get('qty');
