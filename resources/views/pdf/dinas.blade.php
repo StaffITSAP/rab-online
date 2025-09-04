@@ -218,7 +218,7 @@
 <body>
     @php $showSignature = $showSignature ?? true; @endphp
     @php
-    $companyKey = strtolower($pengajuan->user->company ?? '');
+    $companyKey = strtolower($pengajuan->company ?? '');
     $companyName = match ($companyKey) {
     'sap' => 'CV Solusi Arya Prima',
     'dinatek' => 'CV Dinatek Jaya Lestari',

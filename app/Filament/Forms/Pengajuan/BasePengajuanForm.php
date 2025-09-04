@@ -5,6 +5,7 @@ namespace App\Filament\Forms\Pengajuan;
 use Filament\Forms;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TipeRab;
+use Filament\Forms\Components\Select;
 
 class BasePengajuanForm
 {
@@ -29,7 +30,13 @@ class BasePengajuanForm
             Forms\Components\TextInput::make('no_rab')
                 ->label('No RAB')
                 ->readOnly()
-                ->required(),
+                ->required()->columnSpan(1),
+
+            Select::make('company')->options([
+                'sap' => 'CV Solusi Arya Prima',
+                'dinatek' => 'CV Dinatek Jaya Lestari',
+                'ssm' => 'PT Sinergi Subur Makmur',
+            ])->label('Perusahaan')->default('sap')->columnSpanFull(),
         ];
     }
 }

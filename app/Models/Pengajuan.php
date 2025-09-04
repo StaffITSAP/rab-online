@@ -30,6 +30,7 @@ class Pengajuan extends Model
         'expired_unlocked',
         'expired_unlocked_by',
         'expired_unlocked_at',
+        'company',
     ];
 
     protected $casts = [
