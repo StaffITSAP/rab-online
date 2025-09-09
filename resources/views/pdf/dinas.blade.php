@@ -496,7 +496,7 @@
         </tr>
     </table>
 
-    {{-- ====== CATATAN / ALASAN SEMUA STATUS ====== --}}
+    <!-- {{-- ====== CATATAN / ALASAN SEMUA STATUS ====== --}}
     @php
     $statusLogs = $pengajuan->statuses()
     ->whereNotNull('is_approved')
@@ -525,7 +525,7 @@
             @endforeach
         </ul>
     </div>
-    @endif
+    @endif -->
 
 
     {{-- ====== LAMPIRAN DI HALAMAN BARU ====== --}}
