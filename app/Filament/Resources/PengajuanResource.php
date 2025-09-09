@@ -653,4 +653,13 @@ class PengajuanResource extends Resource
                 ->openUrlInNewTab(false),
         ];
     }
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'menunggu')->count();
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning'; // misalnya pakai warna kuning biar sesuai status menunggu
+    }
 }

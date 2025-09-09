@@ -54,13 +54,16 @@ class KebutuhanFormSection
                                 ->dehydrated()
                                 ->prefix('Rp ')
                                 ->extraAttributes(['class' => 'currency-input'])
+                                // tampilkan 1.000.000 saat form dibuka
                                 ->afterStateHydrated(function (TextInput $component, $state) {
-                                    // tampilkan dalam format ribuan
-                                    $component->state($state ? number_format((int) $state, 0, ',', '.') : null);
+                                    $component->state(($state !== null && $state !== '')
+                                        ? number_format((int) $state, 0, ',', '.')
+                                        : null);
                                 })
+                                // sebelum simpan/validasi: "1.234.567" -> 1234567
                                 ->dehydrateStateUsing(function ($state) {
-                                    // sebelum simpan ke DB, hapus titik
-                                    return $state ? (int) str_replace('.', '', $state) : 0;
+                                    $digits = preg_replace('/\D+/', '', (string) $state);
+                                    return $digits === '' ? null : (int) $digits;
                                 })
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                     $qty = (int) $get('qty');

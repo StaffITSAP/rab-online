@@ -122,4 +122,13 @@ class PengajuanAllResource extends Resource
             ->whereDate('tgl_realisasi', '<=', $today->copy()->subDays(1))
             ->update(['status' => 'expired']);
     }
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'menunggu')->count();
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning'; // misalnya pakai warna kuning biar sesuai status menunggu
+    }
 }
