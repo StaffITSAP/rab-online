@@ -8,10 +8,13 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StagingLogsRelationManager extends RelationManager
 {
     protected static string $relationship = 'stagingLogs';
+
+    protected static ?string $title = 'Log Perubahan Staging';
 
     public function form(Form $form): Form
     {
@@ -25,9 +28,11 @@ class StagingLogsRelationManager extends RelationManager
                     ->disabled(),
                 Forms\Components\TextInput::make('old_staging')
                     ->label('Staging Lama')
+                    ->formatStateUsing(fn($state) => $state ? \App\Enums\StagingEnum::from($state)->label() : '-')
                     ->disabled(),
                 Forms\Components\TextInput::make('new_staging')
                     ->label('Staging Baru')
+                    ->formatStateUsing(fn($state) => \App\Enums\StagingEnum::from($state)->label())
                     ->disabled(),
                 Forms\Components\Textarea::make('keterangan')
                     ->label('Keterangan')
@@ -83,16 +88,42 @@ class StagingLogsRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Status Log')
+                    ->placeholder('Log aktif')
+                    ->options([
+                        'withoutTrashed' => 'Log aktif',
+                        'onlyTrashed' => 'Log dihapus',
+                        'all' => 'Semua log',
+                    ])
             ])
             ->headerActions([
                 //
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+
+                // Restore action untuk log yang dihapus
+                Tables\Actions\RestoreAction::make()
+                    ->visible(fn($record) => $record->trashed() && auth()->user()->hasRole('superadmin')),
+
+                // Force delete action
+                Tables\Actions\ForceDeleteAction::make()
+                    ->visible(fn($record) => $record->trashed() && auth()->user()->hasRole('superadmin')),
             ])
             ->bulkActions([
-                //
-            ]);
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
+
+    protected function getTableQuery(): Builder
+    {
+        return parent::getTableQuery()
+            ->withoutGlobalScope(SoftDeletingScope::class);
     }
 }

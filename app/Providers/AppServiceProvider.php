@@ -4,7 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Models\Pengajuan;
+use App\Models\Service;
 use App\Observers\PengajuanObserver;
+use App\Observers\ServiceObserver;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // Daftarkan observer untuk auto-check expired pengajuan
         Pengajuan::observe(PengajuanObserver::class);
+        Service::observe(ServiceObserver::class);
     }
 }

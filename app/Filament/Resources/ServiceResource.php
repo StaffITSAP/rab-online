@@ -198,9 +198,36 @@ class ServiceResource extends Resource
                         'Y' => 'Masih Garansi',
                         'T' => 'Tidak Garansi',
                     ]),
+                // Filter untuk menampilkan data yang dihapus
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Status Data')
+                    ->placeholder('Data aktif')
+                    ->options([
+                        'withoutTrashed' => 'Data aktif',
+                        'onlyTrashed' => 'Data dihapus',
+                        'all' => 'Semua data',
+                    ])
+                    ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
+                    // Restore action untuk data yang dihapus
+                    Tables\Actions\RestoreAction::make()
+                        ->label('Pulihkan')
+                        ->visible(
+                            fn(Service $record): bool =>
+                            $record->trashed() && Auth::user()->hasRole('superadmin')
+                        )
+                        ->tooltip('Pulihkan data yang dihapus'),
+
+                    // Force delete action
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label('Hapus Permanen')
+                        ->visible(
+                            fn(Service $record): bool =>
+                            $record->trashed() && Auth::user()->hasRole('superadmin')
+                        )
+                        ->tooltip('Hapus data secara permanen'),
                     // Action custom untuk ubah staging
                     Tables\Actions\Action::make('updateStaging')
                         ->label('Ubah Staging')
