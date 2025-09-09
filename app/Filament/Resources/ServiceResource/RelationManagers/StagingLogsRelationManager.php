@@ -88,6 +88,7 @@ class StagingLogsRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->filters([
+                // Filter untuk menampilkan log yang dihapus - HANYA untuk superadmin
                 Tables\Filters\TrashedFilter::make()
                     ->label('Status Log')
                     ->placeholder('Log aktif')
@@ -96,6 +97,7 @@ class StagingLogsRelationManager extends RelationManager
                         'onlyTrashed' => 'Log dihapus',
                         'all' => 'Semua log',
                     ])
+                    ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
             ])
             ->headerActions([
                 //
@@ -103,19 +105,28 @@ class StagingLogsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
-                // Restore action untuk log yang dihapus
+                // Restore action untuk log yang dihapus - HANYA untuk superadmin
                 Tables\Actions\RestoreAction::make()
-                    ->visible(fn($record) => $record->trashed() && auth()->user()->hasRole('superadmin')),
+                    ->visible(
+                        fn($record): bool =>
+                        $record->trashed() && auth()->user()->hasRole('superadmin')
+                    ),
 
-                // Force delete action
+                // Force delete action - HANYA untuk superadmin
                 Tables\Actions\ForceDeleteAction::make()
-                    ->visible(fn($record) => $record->trashed() && auth()->user()->hasRole('superadmin')),
+                    ->visible(
+                        fn($record): bool =>
+                        $record->trashed() && auth()->user()->hasRole('superadmin')
+                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Bulk actions hanya untuk superadmin
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -123,7 +134,14 @@ class StagingLogsRelationManager extends RelationManager
 
     protected function getTableQuery(): Builder
     {
-        return parent::getTableQuery()
-            ->withoutGlobalScope(SoftDeletingScope::class);
+        $query = parent::getTableQuery();
+
+        // Pastikan query tidak null sebelum memanggil withoutGlobalScope
+        if ($query) {
+            return $query->withoutGlobalScope(SoftDeletingScope::class);
+        }
+
+        // Fallback: buat query manual jika parent::getTableQuery() mengembalikan null
+        return $this->getRelationship()->getQuery()->withoutGlobalScope(SoftDeletingScope::class);
     }
 }
