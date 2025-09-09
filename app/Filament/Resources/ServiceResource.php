@@ -202,36 +202,70 @@ class ServiceResource extends Resource
                     // Action custom untuk ubah staging
                     Tables\Actions\Action::make('updateStaging')
                         ->label('Ubah Staging')
-                        ->color('warning')
                         ->icon('heroicon-o-arrow-path')
+                        ->modalHeading('Ubah Status Staging')
+                        ->modalDescription('Pilih status staging baru untuk service ini')
                         ->form([
                             \Filament\Forms\Components\Select::make('staging')
-                                ->label('Status Staging')
+                                ->label('Status Staging Baru')
                                 ->options(fn() => self::allowedStagingOptionsForCurrentUser())
                                 ->required()
                                 ->native(false),
-                            \Filament\Forms\Components\Textarea::make('keterangan_staging')
-                                ->label('Keterangan')
-                                ->placeholder('Tambahkan keterangan perubahan status...')
+                            \Filament\Forms\Components\Textarea::make('keterangan')
+                                ->label('Keterangan Perubahan')
+                                ->placeholder('Tambahkan alasan atau keterangan perubahan status...')
+                                ->required()
                         ])
                         ->action(function (Service $record, array $data): void {
-                            $record->staging = $data['staging'];
-                            $record->keterangan_staging = $data['keterangan_staging'] ?? $record->keterangan_staging;
+                            $oldStaging = $record->staging->value;
+                            $newStaging = $data['staging'];
+                            $keterangan = $data['keterangan'];
+
+                            // Simpan perubahan ke service
+                            $record->staging = $newStaging;
+                            $record->keterangan_staging = $keterangan;
+                            $record->save();
+
+                            // Simpan log perubahan
+                            \App\Services\StagingLogService::logStagingChange($record, $oldStaging, $newStaging, $keterangan);
 
                             // Hook untuk status ada_biaya
-                            if ($data['staging'] === StagingEnum::ADA_BIAYA->value) {
-                                // TODO: kirim notifikasi ke pihak terkait
+                            if ($newStaging === StagingEnum::ADA_BIAYA->value) {
+                                // Kirim notifikasi ke sales
+                                // Notification::send($salesUsers, new ServiceCostNotification($record));
                             }
-
-                            $record->save();
 
                             \Filament\Notifications\Notification::make()
                                 ->title('Status Staging Diperbarui')
-                                ->body('Status staging berhasil diubah menjadi: ' . StagingEnum::from($data['staging'])->label())
+                                ->body('Status staging berhasil diubah dari ' .
+                                    \App\Enums\StagingEnum::from($oldStaging)->label() .
+                                    ' menjadi ' .
+                                    \App\Enums\StagingEnum::from($newStaging)->label())
                                 ->success()
                                 ->send();
                         })
-                        ->visible(fn(Service $record): bool => self::canUpdateStaging()),
+                        ->visible(fn(Service $record): bool => self::canUpdateStaging())
+                        ->color('warning')
+                        ->tooltip('Ubah Status Staging'),
+
+                    // Action untuk melihat log perubahan
+                    Tables\Actions\Action::make('viewStagingLogs')
+                        ->label('Lihat Log')
+                        ->icon('heroicon-o-document-text')
+                        ->modalHeading('Log Perubahan Staging')
+                        ->modalDescription('History perubahan status staging untuk service ini')
+                        ->modalContent(function (Service $record) {
+                            $logs = $record->stagingLogs()->orderBy('created_at', 'desc')->get();
+
+                            return view('filament.resources.service-resource.staging-logs', [
+                                'logs' => $logs
+                            ]);
+                        })
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup')
+                        ->color('gray')
+                        ->color('info')
+                        ->tooltip('Lihat History Perubahan'),
 
                     // Edit hanya untuk servis & superadmin (manager tidak bisa)
                     Tables\Actions\EditAction::make()
@@ -268,7 +302,9 @@ class ServiceResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\ServiceResource\RelationManagers\StagingLogsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

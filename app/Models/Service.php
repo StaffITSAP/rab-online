@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\StagingEnum;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class Service extends Model
 {
@@ -28,6 +30,11 @@ class Service extends Model
     protected $casts = [
         'staging' => StagingEnum::class,
     ];
+    // Relationship dengan logs
+    public function stagingLogs(): HasMany
+    {
+        return $this->hasMany(ServiceStagingLog::class);
+    }
 
     // Accessor untuk mendapatkan nilai string dari enum
     public function getStagingValueAttribute(): string
