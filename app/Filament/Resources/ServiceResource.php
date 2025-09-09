@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\StagingEnum;
 use App\Filament\Resources\ServiceResource\Pages;
 use App\Models\Service;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ServiceResource extends Resource
@@ -436,5 +438,10 @@ class ServiceResource extends Resource
         }
 
         return false;
+    }
+    // Method untuk header actions (download)
+    protected function getHeaderActions(): array
+    {
+        return [];
     }
 }

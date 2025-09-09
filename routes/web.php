@@ -78,3 +78,11 @@ Route::get('/exports/penggunaan-teknisi/all', [ExportPenggunaanTeknisiController
 
 Route::get('/exports/penggunaan-teknisi/filtered', [ExportPenggunaanTeknisiController::class, 'filtered'])
     ->name('exports.penggunaan_teknisi.filtered');
+// Routes untuk export services
+Route::get('/exports/services/all', [App\Http\Controllers\ExportServiceController::class, 'exportAll'])
+    ->name('exports.services.all')
+    ->middleware('auth');
+
+Route::match(['get', 'post'], '/exports/services/filtered', [App\Http\Controllers\ExportServiceController::class, 'exportFiltered'])
+    ->name('exports.services.filtered')
+    ->middleware('auth');
