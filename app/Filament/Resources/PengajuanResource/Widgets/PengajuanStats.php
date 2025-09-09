@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PengajuanResource\Widgets;
 
 use App\Models\Pengajuan;
 use App\Models\PengajuanStatus;
+use App\Models\Service; // Tambahkan import Service
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat as StatsOverviewWidgetStat;
@@ -20,6 +21,7 @@ class PengajuanStats extends BaseWidget
         $role = $user->getRoleNames()->first();
         $targetUrl = url('/web/pengajuans');
         $semuaUrl = url('/web/semua-pengajuan');
+        $serviceUrl = url('/web/services'); // URL untuk service
 
         // Dapatkan semua id pengajuan yang dibuat OLEH user
         $createdIds = Pengajuan::where('user_id', $user->id)->pluck('id')->toArray();
@@ -111,8 +113,38 @@ class PengajuanStats extends BaseWidget
                 ->sum('total_biaya');
         }
 
+        // ============ STATS UNTUK SERVICE ============
+        $stats = [];
 
-        return [
+        // Tambahkan stats service hanya untuk role servis, manager, superadmin
+        if (in_array($role, ['servis', 'manager', 'superadmin'])) {
+            // Total semua service
+            if ($role === 'superadmin') {
+                $totalService = Service::count();
+                $serviceRequest = Service::where('staging', 'request')->count();
+            } else {
+                $totalService = Service::where('user_id', $user->id)->count();
+                $serviceRequest = Service::where('user_id', $user->id)
+                    ->where('staging', 'request')
+                    ->count();
+            }
+
+            // Tambahkan stats service
+            $stats[] = StatsOverviewWidgetStat::make('Total Service', $totalService)
+                ->description('Semua Service yang diajukan')
+                ->color('primary')
+                ->url($serviceUrl)
+                ->icon('heroicon-o-wrench-screwdriver');
+
+            $stats[] = StatsOverviewWidgetStat::make('Service Request', $serviceRequest)
+                ->description('Service dengan status Request')
+                ->color('warning')
+                ->url($serviceUrl . '?tableFilters[staging][value]=request')
+                ->icon('heroicon-o-clock');
+        }
+
+        // Gabungkan dengan stats pengajuan yang sudah ada
+        return array_merge([
             StatsOverviewWidgetStat::make('Total Pengajuan', $totalPengajuan)
                 ->description('Semua Pengajuan yang Anda buat & yang Anda setujui/minta persetujuan')
                 ->color('info')
@@ -136,6 +168,6 @@ class PengajuanStats extends BaseWidget
                 ->color('success')
                 ->url($semuaUrl)
                 ->icon('heroicon-o-currency-dollar'),
-        ];
+        ], $stats);
     }
 }
