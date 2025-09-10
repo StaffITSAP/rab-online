@@ -30,6 +30,8 @@ class Service extends Model
 
     protected $casts = [
         'staging' => StagingEnum::class,
+        // HAPUS casting boolean untuk masih_garansi
+        // 'masih_garansi' => 'boolean',
     ];
 
     // Relationship dengan user
@@ -38,22 +40,18 @@ class Service extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Relationship dengan logs (termasuk yang soft deleted)
+    // Relationship dengan semua logs service
+    public function serviceLogs(): HasMany
+    {
+        return $this->hasMany(ServiceLog::class)->orderBy('created_at', 'desc');
+    }
+
+    // Relationship dengan logs staging saja
     public function stagingLogs(): HasMany
     {
-        return $this->hasMany(ServiceStagingLog::class);
-    }
-
-    // Relationship dengan logs (hanya yang tidak soft deleted)
-    public function activeStagingLogs(): HasMany
-    {
-        return $this->hasMany(ServiceStagingLog::class)->whereNull('deleted_at');
-    }
-
-    // Relationship dengan logs termasuk yang soft deleted
-    public function stagingLogsWithTrashed(): HasMany
-    {
-        return $this->hasMany(ServiceStagingLog::class)->withTrashed();
+        return $this->hasMany(ServiceLog::class)
+            ->where('field_changed', 'staging')
+            ->orderBy('created_at', 'desc');
     }
 
     // Accessor untuk mendapatkan nilai string dari enum
@@ -66,5 +64,39 @@ class Service extends Model
     public function getStagingLabelAttribute(): string
     {
         return $this->staging->label();
+    }
+
+    // Accessor untuk mendapatkan label garansi
+    public function getMasihGaransiLabelAttribute(): string
+    {
+        return $this->masih_garansi === 'Y' ? 'Ya' : 'Tidak';
+    }
+
+    // Scope untuk filtering berdasarkan staging
+    public function scopeWhereStaging($query, $staging)
+    {
+        if ($staging instanceof StagingEnum) {
+            return $query->where('staging', $staging->value);
+        }
+
+        if (is_string($staging) && StagingEnum::tryFrom($staging)) {
+            return $query->where('staging', $staging);
+        }
+
+        return $query;
+    }
+
+    // Scope untuk filtering berdasarkan garansi
+    public function scopeWhereMasihGaransi($query, $value)
+    {
+        if ($value === true || $value === 'Y') {
+            return $query->where('masih_garansi', 'Y');
+        }
+
+        if ($value === false || $value === 'T') {
+            return $query->where('masih_garansi', 'T');
+        }
+
+        return $query;
     }
 }

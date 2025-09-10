@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\StagingEnum;
 use App\Filament\Resources\ServiceResource\Pages;
+use App\Filament\Resources\ServiceResource\RelationManagers\AllLogsRelationManager;
 use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -69,12 +70,13 @@ class ServiceResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Select::make('masih_garansi')
-                            ->label('Status Garansi')
+                            ->label('Masih Garansi')
                             ->options([
-                                'Y' => 'Masih Garansi',
-                                'T' => 'Tidak Garansi',
+                                'Y' => 'Ya',
+                                'T' => 'Tidak',
                             ])
-                            ->required(),
+                            ->required()
+                            ->native(false),
                     ])
                     ->columns(2),
 
@@ -246,20 +248,33 @@ class ServiceResource extends Resource
                                 ->required()
                         ])
                         ->action(function (Service $record, array $data): void {
+                            // Simpan nilai lama sebelum diubah
                             $oldStaging = $record->staging->value;
-                            $newStaging = $data['staging'];
+                            $newStagingValue = $data['staging'];
                             $keterangan = $data['keterangan'];
 
+                            // Dapatkan enum instance dari nilai string
+                            $newStagingEnum = StagingEnum::tryFrom($newStagingValue);
+
+                            if (!$newStagingEnum) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Error')
+                                    ->body('Status staging tidak valid')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
                             // Simpan perubahan ke service
-                            $record->staging = $newStaging;
+                            $record->staging = $newStagingEnum;
                             $record->keterangan_staging = $keterangan;
                             $record->save();
 
-                            // Simpan log perubahan
-                            \App\Services\StagingLogService::logStagingChange($record, $oldStaging, $newStaging, $keterangan);
+                            // Simpan log perubahan menggunakan ServiceLogService baru
+                            \App\Services\ServiceLogService::logStagingChange($record, $oldStaging, $newStagingValue, $keterangan);
 
                             // Hook untuk status ada_biaya
-                            if ($newStaging === StagingEnum::ADA_BIAYA->value) {
+                            if ($newStagingValue === StagingEnum::ADA_BIAYA->value) {
                                 // Kirim notifikasi ke sales
                                 // Notification::send($salesUsers, new ServiceCostNotification($record));
                             }
@@ -267,32 +282,38 @@ class ServiceResource extends Resource
                             \Filament\Notifications\Notification::make()
                                 ->title('Status Staging Diperbarui')
                                 ->body('Status staging berhasil diubah dari ' .
-                                    \App\Enums\StagingEnum::from($oldStaging)->label() .
+                                    StagingEnum::tryFrom($oldStaging)?->label() ?? $oldStaging .
                                     ' menjadi ' .
-                                    \App\Enums\StagingEnum::from($newStaging)->label())
+                                    $newStagingEnum->label())
                                 ->success()
                                 ->send();
                         })
-                        ->visible(fn(Service $record): bool => self::canUpdateStaging())
+                        ->visible(
+                            fn(Service $record): bool =>
+                            auth()->check() && !empty(self::allowedStagingOptionsForCurrentUser())
+                        )
                         ->color('warning')
                         ->tooltip('Ubah Status Staging'),
 
                     // Action untuk melihat log perubahan
-                    Tables\Actions\Action::make('viewStagingLogs')
+                    Tables\Actions\Action::make('viewServiceLogs')
                         ->label('Lihat Log')
                         ->icon('heroicon-o-document-text')
-                        ->modalHeading('Log Perubahan Staging')
-                        ->modalDescription('History perubahan status staging untuk service ini')
+                        ->modalHeading('Log Perubahan Service')
+                        ->modalDescription('History semua perubahan untuk service ini')
                         ->modalContent(function (Service $record) {
-                            $logs = $record->stagingLogs()->orderBy('created_at', 'desc')->get();
+                            $logs = $record->serviceLogs()
+                                ->orderBy('created_at', 'desc')
+                                ->paginate(10); // Gunakan pagination
 
-                            return view('filament.resources.service-resource.staging-logs', [
+                            return view('filament.resources.service-resource.service-logs', [
                                 'logs' => $logs
                             ]);
                         })
+                        ->slideOver()
+                        ->modalWidth('screen') 
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
-                        ->color('gray')
                         ->color('info')
                         ->tooltip('Lihat History Perubahan'),
 
@@ -332,7 +353,7 @@ class ServiceResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\ServiceResource\RelationManagers\StagingLogsRelationManager::class,
+            AllLogsRelationManager::class,
         ];
     }
 
@@ -383,31 +404,39 @@ class ServiceResource extends Resource
     {
         $user = Auth::user();
 
-        $all = StagingEnum::options();
-
-        if ($user?->hasRole('superadmin')) {
-            return $all; // semua opsi
+        if (!$user) {
+            return [];
         }
 
-        if ($user?->hasRole('manager')) {
+        $allOptions = StagingEnum::options();
+
+        if ($user->hasRole('superadmin')) {
+            return $allOptions; // semua opsi
+        }
+
+        if ($user->hasRole('manager')) {
             // manager boleh termasuk approve
-            return array_filter($all, fn($label, $value) => in_array($value, [
-                StagingEnum::REQUEST->value,
-                StagingEnum::CEK_KERUSAKAN->value,
-                StagingEnum::ADA_BIAYA->value,
-                StagingEnum::CLOSE->value,
-                StagingEnum::APPROVE->value,
-            ], true), ARRAY_FILTER_USE_BOTH);
+            return array_filter($allOptions, function ($label, $value) {
+                return in_array($value, [
+                    StagingEnum::REQUEST->value,
+                    StagingEnum::CEK_KERUSAKAN->value,
+                    StagingEnum::ADA_BIAYA->value,
+                    StagingEnum::CLOSE->value,
+                    StagingEnum::APPROVE->value,
+                ], true);
+            }, ARRAY_FILTER_USE_BOTH);
         }
 
-        if ($user?->hasRole('servis')) {
+        if ($user->hasRole('servis')) {
             // servis TIDAK boleh approve
-            return array_filter($all, fn($label, $value) => in_array($value, [
-                StagingEnum::REQUEST->value,
-                StagingEnum::CEK_KERUSAKAN->value,
-                StagingEnum::ADA_BIAYA->value,
-                StagingEnum::CLOSE->value,
-            ], true), ARRAY_FILTER_USE_BOTH);
+            return array_filter($allOptions, function ($label, $value) {
+                return in_array($value, [
+                    StagingEnum::REQUEST->value,
+                    StagingEnum::CEK_KERUSAKAN->value,
+                    StagingEnum::ADA_BIAYA->value,
+                    StagingEnum::CLOSE->value,
+                ], true);
+            }, ARRAY_FILTER_USE_BOTH);
         }
 
         // user biasa: tidak ada opsi (kolom juga disembunyikan)
@@ -417,10 +446,18 @@ class ServiceResource extends Resource
     /**
      * Siapa yang boleh mengubah staging di tabel.
      */
-    private static function canUpdateStaging(): bool
+    protected static function canUpdateStaging(): bool
     {
-        $user = Auth::user();
-        return $user?->hasAnyRole(['servis', 'manager', 'superadmin']) === true;
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        return $user->hasAnyRole([
+            'superadmin',
+            'manager',
+            'servis'
+        ]) && !empty(self::allowedStagingOptionsForCurrentUser());
     }
 
     /**
