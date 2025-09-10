@@ -160,55 +160,7 @@
                 </span>
             </div>
             <div class="flex items-center gap-x-2">
-                <!-- Custom Pagination Links -->
-                <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center gap-1">
-                    <!-- Previous Page Link -->
-                    @if ($logs->onFirstPage())
-                    <span class="fi-pagination-item fi-disabled fi-pagination-previous relative flex items-center justify-center rounded-lg font-semibold fi-color-gray bg-white text-gray-400 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-500 dark:ring-gray-700 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        <span class="sr-only">Previous</span>
-                        <svg class="fi-pagination-item-icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
-                    </span>
-                    @else
-                    <a href="{{ $logs->previousPageUrl() }}" rel="prev" class="fi-pagination-item fi-pagination-previous relative flex items-center justify-center rounded-lg font-semibold fi-color-gray bg-white text-gray-700 ring-1 ring-gray-200 transition duration-75 hover:bg-gray-50 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-white/5 dark:focus-visible:ring-primary-600 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        <span class="sr-only">Previous</span>
-                        <svg class="fi-pagination-item-icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
-                    </a>
-                    @endif
-
-                    <!-- Pagination Elements -->
-                    @foreach ($logs->getUrlRange(1, $logs->lastPage()) as $page => $url)
-                    @if ($page == $logs->currentPage())
-                    <span aria-current="page" class="fi-pagination-item fi-active relative z-10 flex items-center justify-center rounded-lg font-semibold bg-primary-600 text-white focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:bg-primary-600 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        {{ $page }}
-                    </span>
-                    @else
-                    <a href="{{ $url }}" class="fi-pagination-item relative flex items-center justify-center rounded-lg font-semibold fi-color-gray bg-white text-gray-700 ring-1 ring-gray-200 transition duration-75 hover:bg-gray-50 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-white/5 dark:focus-visible:ring-primary-600 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        {{ $page }}
-                    </a>
-                    @endif
-                    @endforeach
-
-                    <!-- Next Page Link -->
-                    @if ($logs->hasMorePages())
-                    <a href="{{ $logs->nextPageUrl() }}" rel="next" class="fi-pagination-item fi-pagination-next relative flex items-center justify-center rounded-lg font-semibold fi-color-gray bg-white text-gray-700 ring-1 ring-gray-200 transition duration-75 hover:bg-gray-50 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700 dark:hover:bg-white/5 dark:focus-visible:ring-primary-600 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        <span class="sr-only">Next</span>
-                        <svg class="fi-pagination-item-icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
-                    </a>
-                    @else
-                    <span class="fi-pagination-item fi-disabled fi-pagination-next relative flex items-center justify-center rounded-lg font-semibold fi-color-gray bg-white text-gray-400 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-500 dark:ring-gray-700 fi-size-md fi-pagination-item-size-md h-9 w-9 text-sm">
-                        <span class="sr-only">Next</span>
-                        <svg class="fi-pagination-item-icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
-                    </span>
-                    @endif
-                </nav>
+                {{ $logs->links() }}
             </div>
         </div>
         @else
