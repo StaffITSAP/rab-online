@@ -13,28 +13,7 @@ class ServiceObserver
         ServiceLogService::logCreation($service);
     }
 
-    public function updated(Service $service): void
-    {
-        $changes = $service->getChanges();
-        $original = $service->getOriginal();
-
-        foreach ($changes as $field => $newValue) {
-            if (in_array($field, ['updated_at', 'created_at'])) continue;
-
-            $oldValue = $original[$field] ?? null;
-
-            if ($field === 'staging') {
-                ServiceLogService::logStagingChange($service, $oldValue, $newValue);
-            } else {
-                ServiceLogService::logChange(
-                    $service,
-                    $field,
-                    $oldValue,
-                    $newValue
-                );
-            }
-        }
-    }
+    
 
     public function deleted(Service $service): void
     {

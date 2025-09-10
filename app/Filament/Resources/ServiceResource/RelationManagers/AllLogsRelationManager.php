@@ -10,46 +10,32 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class AllLogsRelationManager extends RelationManager
 {
     protected static string $relationship = 'serviceLogs';
-
     protected static ?string $title = 'Log Perubahan Service';
 
     public function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('user_name')
-                    ->label('User')
-                    ->disabled(),
-                Forms\Components\TextInput::make('user_role')
-                    ->label('Role')
-                    ->disabled(),
-                Forms\Components\TextInput::make('field_changed')
-                    ->label('Field yang Diubah')
-                    ->formatStateUsing(fn($state) => $this->getFieldLabel($state))
-                    ->disabled(),
-                Forms\Components\TextInput::make('change_type')
-                    ->label('Tipe Perubahan')
-                    ->formatStateUsing(fn($state) => ucfirst(str_replace('_', ' ', $state)))
-                    ->disabled(),
-                Forms\Components\Textarea::make('old_value_formatted')
-                    ->label('Nilai Lama')
-                    ->disabled(),
-                Forms\Components\Textarea::make('new_value_formatted')
-                    ->label('Nilai Baru')
-                    ->disabled(),
-                Forms\Components\Textarea::make('keterangan')
-                    ->label('Keterangan')
-                    ->disabled(),
-                Forms\Components\TextInput::make('created_at')
-                    ->label('Waktu')
-                    ->disabled(),
-            ]);
+        return $form->schema([
+            Forms\Components\TextInput::make('user_name')->label('User')->disabled(),
+            Forms\Components\TextInput::make('user_role')->label('Role')->disabled(),
+            Forms\Components\TextInput::make('field_changed')
+                ->label('Field yang Diubah')
+                ->formatStateUsing(fn($state) => $this->getFieldLabel($state))
+                ->disabled(),
+            Forms\Components\TextInput::make('change_type')
+                ->label('Tipe Perubahan')
+                ->formatStateUsing(fn($state) => ucfirst(str_replace('_', ' ', $state)))
+                ->disabled(),
+            Forms\Components\Textarea::make('old_value_formatted')->label('Nilai Lama')->disabled(),
+            Forms\Components\Textarea::make('new_value_formatted')->label('Nilai Baru')->disabled(),
+            Forms\Components\Textarea::make('keterangan')->label('Keterangan')->disabled(),
+            Forms\Components\TextInput::make('created_at')->label('Waktu')->disabled(),
+        ]);
     }
 
     public function table(Table $table): Table
@@ -81,38 +67,63 @@ class AllLogsRelationManager extends RelationManager
                         default => 'gray',
                     }),
 
-                // ===== Nilai Lama =====
+                // ===== Nilai Lama (preview ≤500 kata, tooltip plain & copyable) =====
                 Tables\Columns\TextColumn::make('old_value_formatted')
                     ->label('Nilai Lama')
                     ->formatStateUsing(function ($state, $record) {
-                        $text = $this->formatValue($record->field_changed, $record->old_value, $record);
-                        return new HtmlString(nl2br(e($text))); // render newline
+                        $full    = $this->formatValue($record->field_changed, $record->old_value, $record);
+                        $preview = $this->previewText($full, 500);
+                        return new HtmlString(nl2br(e($preview)));
                     })
-                    ->wrap()
                     ->html()
-                    ->extraAttributes(['class' => 'whitespace-pre-wrap text-left'])
-                    ->tooltip(function ($record) {
-                        return $this->formatValue($record->field_changed, $record->old_value, $record);
-                    }),
+                    ->extraAttributes([
+                        'style' => 'max-width:40rem; white-space:pre-line; overflow-wrap:anywhere; word-break:break-word;',
+                        'class' => 'align-top',
+                    ])
+                    ->tooltip(fn($record) => $this->tooltipPlain(
+                        $this->formatValue($record->field_changed, $record->old_value, $record)
+                    ))
+                    ->copyable()
+                    ->copyableState(fn($record) => $this->formatValue($record->field_changed, $record->old_value, $record))
+                    ->copyMessage('Disalin'),
 
-                // ===== Nilai Baru =====
+                // ===== Nilai Baru (preview ≤500 kata, tooltip plain & copyable) =====
                 Tables\Columns\TextColumn::make('new_value_formatted')
                     ->label('Nilai Baru')
                     ->formatStateUsing(function ($state, $record) {
-                        $text = $this->formatValue($record->field_changed, $record->new_value, $record);
-                        return new HtmlString(nl2br(e($text))); // render newline
+                        $full    = $this->formatValue($record->field_changed, $record->new_value, $record);
+                        $preview = $this->previewText($full, 500);
+                        return new HtmlString(nl2br(e($preview)));
                     })
-                    ->wrap()
                     ->html()
-                    ->extraAttributes(['class' => 'whitespace-pre-wrap text-left'])
-                    ->tooltip(function ($record) {
-                        return $this->formatValue($record->field_changed, $record->new_value, $record);
-                    }),
+                    ->extraAttributes([
+                        'style' => 'max-width:40rem; white-space:pre-line; overflow-wrap:anywhere; word-break:break-word;',
+                        'class' => 'align-top',
+                    ])
+                    ->tooltip(fn($record) => $this->tooltipPlain(
+                        $this->formatValue($record->field_changed, $record->new_value, $record)
+                    ))
+                    ->copyable()
+                    ->copyableState(fn($record) => $this->formatValue($record->field_changed, $record->new_value, $record))
+                    ->copyMessage('Disalin'),
 
+                // ===== Keterangan (preview ≤500 kata, tooltip plain & copyable) =====
                 Tables\Columns\TextColumn::make('keterangan')
                     ->label('Keterangan')
-                    ->limit(30)
-                    ->tooltip(fn($record) => $record->keterangan),
+                    ->formatStateUsing(function ($state) {
+                        $full    = $state ?: '-';
+                        $preview = $this->previewText($full, 500);
+                        return new HtmlString(nl2br(e($preview)));
+                    })
+                    ->html()
+                    ->extraAttributes([
+                        'style' => 'max-width:28rem; white-space:pre-line; overflow-wrap:anywhere; word-break:break-word;',
+                        'class' => 'align-top',
+                    ])
+                    ->tooltip(fn($record) => $this->tooltipPlain($record->keterangan ?: '-'))
+                    ->copyable()
+                    ->copyableState(fn($record) => $record->keterangan ?: '-')
+                    ->copyMessage('Disalin'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Waktu')
@@ -147,17 +158,6 @@ class AllLogsRelationManager extends RelationManager
                         'force_delete' => 'Hapus Permanen',
                     ]),
 
-                Tables\Filters\SelectFilter::make('user_role')
-                    ->label('Role User')
-                    ->options([
-                        'superadmin' => 'Super Admin',
-                        'servis' => 'Servis',
-                        'sales' => 'Sales',
-                        'admin_service' => 'Admin Service',
-                        'manager' => 'Manager',
-                    ])
-                    ->searchable(),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label('Status Log')
                     ->placeholder('Log aktif')
@@ -168,34 +168,19 @@ class AllLogsRelationManager extends RelationManager
                     ])
                     ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
             ])
-            ->headerActions([
-                //
-            ])
+            ->headerActions([])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-
+                // ViewAction dihapus
                 Tables\Actions\RestoreAction::make()
-                    ->visible(
-                        fn($record): bool =>
-                        $record->trashed() && auth()->user()->hasRole('superadmin')
-                    ),
-
+                    ->visible(fn($record): bool => $record->trashed() && auth()->user()->hasRole('superadmin')),
                 Tables\Actions\ForceDeleteAction::make()
-                    ->visible(
-                        fn($record): bool =>
-                        $record->trashed() && auth()->user()->hasRole('superadmin')
-                    ),
+                    ->visible(fn($record): bool => $record->trashed() && auth()->user()->hasRole('superadmin')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
-
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
-
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
+                    Tables\Actions\RestoreBulkAction::make()->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
+                    Tables\Actions\ForceDeleteBulkAction::make()->visible(fn(): bool => auth()->user()->hasRole('superadmin')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -204,11 +189,9 @@ class AllLogsRelationManager extends RelationManager
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
-
         if ($query) {
             return $query->withoutGlobalScope(SoftDeletingScope::class);
         }
-
         return $this->getRelationship()->getQuery()->withoutGlobalScope(SoftDeletingScope::class);
     }
 
@@ -232,18 +215,13 @@ class AllLogsRelationManager extends RelationManager
         return $fieldLabels[$field] ?? $field;
     }
 
-    /**
-     * Format nilai untuk ditampilkan pada kolom.
-     * - Jika field = 'all' atau change_type = 'create' dan value berisi JSON/array,
-     *   tampilkan setiap field pada baris baru (wrap).
-     */
     private function formatValue(string $field, $value, $record = null): string
     {
         if (is_null($value) || $value === '') {
             return '-';
         }
 
-        // Jika string JSON → decode
+        // Decode JSON jika perlu
         $decoded = null;
         if (is_string($value)) {
             $tmp = json_decode($value, true);
@@ -254,20 +232,16 @@ class AllLogsRelationManager extends RelationManager
             $decoded = $value;
         }
 
-        // Kasus CREATE / ALL → render tiap field per baris
         $isCreateLike = ($field === 'all') || ($record && ($record->change_type === 'create'));
-
         if ($isCreateLike && is_array($decoded)) {
             return $this->prettyLinesFromArray($decoded);
         }
 
-        // Single field khusus
         if ($field === 'staging') {
             return StagingEnum::tryFrom((string) $value)?->label() ?? (string) $value;
         }
 
         if ($field === 'masih_garansi') {
-            // support true/false, 1/0, Y/N
             if (is_bool($value)) {
                 return $value ? 'Ya' : 'Tidak';
             }
@@ -275,7 +249,6 @@ class AllLogsRelationManager extends RelationManager
             return in_array($val, ['Y', '1', 'TRUE'], true) ? 'Ya' : 'Tidak';
         }
 
-        // Array biasa (bukan create/all) → pretty JSON
         if (is_array($value)) {
             return json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
@@ -283,12 +256,20 @@ class AllLogsRelationManager extends RelationManager
         return (string) $value;
     }
 
-    /**
-     * Ubah array payload menjadi teks multi-baris "Label : Nilai" dengan urutan rapi.
-     */
+    /** Preview teks dengan batas kata (default 500) + fallback karakter. */
+    private function previewText(string $full, int $maxWords = 500, int $maxCharsFallback = 5000): string
+    {
+        $normalized = preg_replace("/[ \t]+/u", ' ', $full ?? '-');
+        $byWords    = Str::words($normalized, $maxWords, '…');
+
+        return mb_strlen($byWords) > $maxCharsFallback
+            ? (mb_substr($byWords, 0, $maxCharsFallback) . '…')
+            : $byWords;
+    }
+
+    /** Array → multi-baris "Label : Nilai" dengan urutan rapi. */
     private function prettyLinesFromArray(array $data): string
     {
-        // Urutan field yang ingin ditonjolkan
         $orderedKeys = [
             'id_paket',
             'nama_dinas',
@@ -303,19 +284,15 @@ class AllLogsRelationManager extends RelationManager
             'keterangan_staging',
         ];
 
-        // Beberapa key yang tidak perlu ditampilkan
         $ignored = ['id', 'user_id', 'created_at', 'updated_at'];
-
         $lines = [];
 
-        // 1) Tampilkan field sesuai urutan di atas
         foreach ($orderedKeys as $k) {
             if (array_key_exists($k, $data)) {
                 $lines[] = $this->lineFor($k, $data[$k]);
             }
         }
 
-        // 2) Tampilkan sisa field yang tidak terdaftar & tidak di-ignore
         foreach ($data as $k => $v) {
             if (in_array($k, $orderedKeys, true) || in_array($k, $ignored, true)) {
                 continue;
@@ -326,15 +303,10 @@ class AllLogsRelationManager extends RelationManager
         return implode("\n", array_filter($lines, fn($l) => $l !== null && $l !== ''));
     }
 
-    /**
-     * Format satu baris "Label : Nilai" dengan normalisasi nilai khusus.
-     */
     private function lineFor(string $key, $rawValue): string
     {
         $label = $this->getFieldLabel($key);
 
-        // Normalisasi nilai
-        $value = '-';
         if (is_null($rawValue) || $rawValue === '') {
             $value = '-';
         } elseif ($key === 'staging') {
@@ -353,5 +325,31 @@ class AllLogsRelationManager extends RelationManager
         }
 
         return "{$label} : {$value}";
+    }
+
+    /**
+     * Tooltip plain-text yang rapi:
+     * - Pertahankan newline
+     * - Sisipkan Zero-Width Space tiap 40 karakter non-spasi agar tetap wrap
+     */
+    private function tooltipPlain(string $text, int $chunk = 40): string
+    {
+        $text = $text === '' ? '-' : $text;
+
+        // normalisasi line break
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+
+        $zwsp = "\u{200B}"; // Zero-Width Space
+
+        return preg_replace_callback('/\S{' . $chunk . ',}/u', function ($m) use ($chunk, $zwsp) {
+            // pecah token panjang menjadi potongan 40 char dengan ZWSP
+            $parts = [];
+            $str = $m[0];
+            $len = mb_strlen($str);
+            for ($i = 0; $i < $len; $i += $chunk) {
+                $parts[] = mb_substr($str, $i, $chunk);
+            }
+            return implode($zwsp, $parts);
+        }, $text);
     }
 }

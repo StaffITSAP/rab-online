@@ -87,9 +87,11 @@ class ServiceResource extends Resource
                             ->maxLength(255),
                         Forms\Components\Select::make('staging')
                             ->label('Status Staging')
-                            ->options(StagingEnum::options())
+                            ->options(fn() => self::allowedStagingOptionsForCurrentUser())
                             ->required()
-                            ->native(false),
+                            ->default(StagingEnum::REQUEST->value)
+                            ->native(false)
+                            ->disabled(fn() => empty(self::allowedStagingOptionsForCurrentUser()) || count(self::allowedStagingOptionsForCurrentUser()) <= 1),
                         Forms\Components\Textarea::make('keterangan_staging')
                             ->label('Keterangan Staging')
                             ->columnSpanFull(),
@@ -311,7 +313,7 @@ class ServiceResource extends Resource
                             ]);
                         })
                         ->slideOver()
-                        ->modalWidth('screen') 
+                        ->modalWidth('screen')
                         ->modalSubmitAction(false)
                         ->modalCancelActionLabel('Tutup')
                         ->color('info')
