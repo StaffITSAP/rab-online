@@ -4,7 +4,7 @@ namespace App\Filament\Resources\PengajuanResource\Widgets;
 
 use App\Models\Pengajuan;
 use App\Models\PengajuanStatus;
-use App\Models\Service; // Tambahkan import Service
+use App\Models\Service;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat as StatsOverviewWidgetStat;
@@ -17,46 +17,25 @@ class PengajuanStats extends BaseWidget
 
     protected function getStats(): array
     {
-        $user = Auth::user();
-        $role = $user->getRoleNames()->first();
+        $user      = Auth::user();
+        $role      = $user->getRoleNames()->first();
         $targetUrl = url('/web/pengajuans');
-        $semuaUrl = url('/web/semua-pengajuan');
-        $serviceUrl = url('/web/services'); // URL untuk service
+        $semuaUrl  = url('/web/semua-pengajuan');
+        $serviceUrl = url('/web/services');
 
-        // Dapatkan semua id pengajuan yang dibuat OLEH user
-        $createdIds = Pengajuan::where('user_id', $user->id)->pluck('id')->toArray();
+        // ---- id pengajuan yang relevan untuk user ini
+        $createdIds   = Pengajuan::where('user_id', $user->id)->pluck('id')->toArray();
+        $toApproveIds = PengajuanStatus::where('user_id', $user->id)->pluck('pengajuan_id')->toArray();
+        $allIds       = array_unique(array_merge($createdIds, $toApproveIds));
 
-        // Dapatkan semua id pengajuan yang HARUS DIA approve (muncul di pengajuan_statuses)
-        $toApproveIds = PengajuanStatus::where('user_id', $user->id)
-            ->pluck('pengajuan_id')
-            ->toArray();
-
-        // Gabungkan dan unique
-        $allIds = array_unique(array_merge($createdIds, $toApproveIds));
-
-        // ============ JUMLAH PENGAJUAN ============
+        // ---- total pengajuan
         if ($role === 'superadmin') {
-            // Hitung semua pengajuan aktif (tidak termasuk soft-deleted)
             $totalPengajuan = Pengajuan::count();
         } else {
-            // Pengajuan yang dibuat user
-            $buatSendiriIds = Pengajuan::where('user_id', $user->id)
-                ->pluck('id')
-                ->toArray();
-
-            // Pengajuan yang dia approve (tidak duplikat)
-            $approveIds = PengajuanStatus::where('user_id', $user->id)
-                ->pluck('pengajuan_id')
-                ->toArray();
-
-            // Gabungkan & hilangkan duplikat
-            $allIds = array_unique(array_merge($buatSendiriIds, $approveIds));
-
-            // Pastikan hanya ambil yang BELUM di-soft-delete
             $totalPengajuan = Pengajuan::whereIn('id', $allIds)->count();
         }
 
-        // ============ JUMLAH PENGAJUAN HARI INI ============
+        // ---- pengajuan hari ini
         if ($role === 'superadmin') {
             $pengajuanHariIni = Pengajuan::whereDate('created_at', Carbon::today())->count();
         } else {
@@ -65,7 +44,7 @@ class PengajuanStats extends BaseWidget
                 ->count();
         }
 
-        // ============ TIPE RAB TERBANYAK ============
+        // ---- tipe RAB terbanyak
         $subQuery = Pengajuan::select(
             'id',
             'user_id',
@@ -76,75 +55,55 @@ class PengajuanStats extends BaseWidget
         if ($role !== 'superadmin') {
             $subQuery->whereIn('id', $allIds);
         }
-        $subQuerySql = $subQuery->toSql();
+        $subSql = $subQuery->toSql();
 
-        $topTipeRab = DB::table(DB::raw("({$subQuerySql}) as pengajuans"))
+        $topTipeRab = DB::table(DB::raw("({$subSql}) as pengajuans"))
             ->mergeBindings($subQuery->getQuery())
             ->join('tipe_rabs', 'pengajuans.kode', '=', 'tipe_rabs.kode')
-            ->select(
-                'pengajuans.kode',
-                'tipe_rabs.nama as tipe_rab',
-                DB::raw('COUNT(*) as total')
-            )
+            ->select('pengajuans.kode', 'tipe_rabs.nama as tipe_rab', DB::raw('COUNT(*) as total'))
             ->groupBy('pengajuans.kode', 'tipe_rabs.nama')
             ->orderByDesc('total')
             ->limit(1)
             ->first();
 
-        // ============ TOTAL PENGAJUAN (Rp) DENGAN STATUS "SELESAI" ATAU "EXPIRED" (UNLOCKED) ============
+        // ---- total biaya selesai / expired unlocked
         if ($role === 'superadmin') {
             $totalBiaya = Pengajuan::where(function ($q) {
                 $q->where('status', 'selesai')
                     ->orWhere(function ($q2) {
-                        $q2->where('status', 'expired')
-                            ->where('expired_unlocked', true);
+                        $q2->where('status', 'expired')->where('expired_unlocked', true);
                     });
-            })
-                ->sum('total_biaya');
+            })->sum('total_biaya');
         } else {
             $totalBiaya = Pengajuan::whereIn('id', $allIds)
                 ->where(function ($q) {
                     $q->where('status', 'selesai')
                         ->orWhere(function ($q2) {
-                            $q2->where('status', 'expired')
-                                ->where('expired_unlocked', true);
+                            $q2->where('status', 'expired')->where('expired_unlocked', true);
                         });
                 })
                 ->sum('total_biaya');
         }
 
-        // ============ STATS UNTUK SERVICE ============
-        $stats = [];
+        // ================== STATS SERVICE (fix) ==================
+        $privilegedRoles = ['superadmin', 'manager', 'servis'];
+        $canSeeAllServices = in_array($role, $privilegedRoles, true);
 
-        // Tambahkan stats service hanya untuk role servis, manager, superadmin
-        if (in_array($role, ['servis', 'manager', 'superadmin'])) {
-            // Total semua service
-            if ($role === 'superadmin') {
-                $totalService = Service::count();
-                $serviceRequest = Service::where('staging', 'request')->count();
-            } else {
-                $totalService = Service::where('user_id', $user->id)->count();
-                $serviceRequest = Service::where('user_id', $user->id)
-                    ->where('staging', 'request')
-                    ->count();
-            }
-
-            // Tambahkan stats service
-            $stats[] = StatsOverviewWidgetStat::make('Total Service', $totalService)
-                ->description('Semua Service yang diajukan')
-                ->color('primary')
-                ->url($serviceUrl)
-                ->icon('heroicon-o-wrench-screwdriver');
-
-            $stats[] = StatsOverviewWidgetStat::make('Service Request', $serviceRequest)
-                ->description('Service dengan status Request')
-                ->color('warning')
-                ->url($serviceUrl . '?tableFilters[staging][value]=request')
-                ->icon('heroicon-o-clock');
+        $serviceBase = Service::query();
+        if (! $canSeeAllServices) {
+            // user biasa → hanya service yang dia buat sendiri
+            $serviceBase->where('user_id', $user->id);
         }
 
-        // Gabungkan dengan stats pengajuan yang sudah ada
-        return array_merge([
+        $totalService   = (clone $serviceBase)->count();
+        $serviceRequest = (clone $serviceBase)->where('staging', 'request')->count();
+
+        $descTotal   = $canSeeAllServices ? 'Semua service di sistem' : 'Service yang Anda ajukan';
+        $descRequest = $canSeeAllServices ? 'Semua service berstatus Request' : 'Service Anda berstatus Request';
+
+        // =========================================================
+
+        $stats = [
             StatsOverviewWidgetStat::make('Total Pengajuan', $totalPengajuan)
                 ->description('Semua Pengajuan yang Anda buat & yang Anda setujui/minta persetujuan')
                 ->color('info')
@@ -168,6 +127,21 @@ class PengajuanStats extends BaseWidget
                 ->color('success')
                 ->url($semuaUrl)
                 ->icon('heroicon-o-currency-dollar'),
-        ], $stats);
+        ];
+
+        // Tambah 2 kartu service untuk SEMUA role (dengan query yang sudah disesuaikan di atas)
+        $stats[] = StatsOverviewWidgetStat::make('Total Service', $totalService)
+            ->description($descTotal)
+            ->color('primary')
+            ->url($serviceUrl)
+            ->icon('heroicon-o-wrench-screwdriver');
+
+        $stats[] = StatsOverviewWidgetStat::make('Service Request', $serviceRequest)
+            ->description($descRequest)
+            ->color('warning')
+            ->url($serviceUrl . '?tableFilters[staging][value]=request')
+            ->icon('heroicon-o-clock');
+
+        return $stats;
     }
 }
