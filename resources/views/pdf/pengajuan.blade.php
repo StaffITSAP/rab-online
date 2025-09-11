@@ -441,11 +441,11 @@
         </tr>
     </table>
 
-    <p class="footer-note">
+    <!-- <p class="footer-note">
         Nb: harga sudah include pajak tapi belum include pajak proteksi, ready info Kadipiro, indent 3–5 hari dari PO dan transaksi
-    </p>
+    </p> -->
 
-    <!-- {{-- ====== CATATAN / ALASAN SEMUA STATUS ====== --}}
+    {{-- ====== CATATAN / ALASAN SEMUA STATUS ====== --}}
     @php
     $statusLogs = $pengajuan->statuses()
     ->whereNotNull('is_approved')
@@ -474,7 +474,7 @@
             @endforeach
         </ul>
     </div>
-    @endif -->
+    @endif
     <!-- ===== LAMPIRAN (halaman baru) ===== -->
     @if ($lampiranAssets->count())
     <div class="page-break">

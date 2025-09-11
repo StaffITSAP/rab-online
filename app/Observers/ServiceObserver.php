@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Models\Service;
 use App\Services\ServiceLogService;
-use App\Enums\StagingEnum;
 
 class ServiceObserver
 {
@@ -13,34 +12,33 @@ class ServiceObserver
         ServiceLogService::logCreation($service);
     }
 
-    
-
-    public function deleted(Service $service): void
+    public function deleting(Service $service): void
     {
-        ServiceLogService::logDeletion($service);
+        if ($service->isForceDeleting()) {
+            // Hapus semua log permanen
+            $service->serviceLogs()->forceDelete();
+            // Catat log sebelum service hilang
+            ServiceLogService::logDeletion($service, true);
+        } else {
+            // Soft delete: tandai log ikut soft delete
+            $service->serviceLogs()->delete();
+            // Catat log soft delete
+            ServiceLogService::logDeletion($service, false);
+        }
     }
 
-    public function restored(Service $service): void
+    public function restoring(Service $service): void
     {
+        // Log ikut dipulihkan
+        $service->serviceLogs()->withTrashed()->restore();
+
         ServiceLogService::logChange(
             $service,
             'deleted_at',
-            $service->deleted_at,
+            now(),
             null,
             'restore',
             'Service dipulihkan'
-        );
-    }
-
-    public function forceDeleted(Service $service): void
-    {
-        ServiceLogService::logChange(
-            $service,
-            'all',
-            $service->toArray(),
-            null,
-            'force_delete',
-            'Service dihapus permanen'
         );
     }
 }

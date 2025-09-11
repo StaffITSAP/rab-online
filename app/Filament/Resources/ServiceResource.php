@@ -8,6 +8,7 @@ use App\Filament\Resources\ServiceResource\RelationManagers\AllLogsRelationManag
 use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -29,31 +30,102 @@ class ServiceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Paket')
+                Section::make('Informasi Service')
                     ->schema([
-                        Forms\Components\TextInput::make('id_paket')
-                            ->label('ID Paket')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(ignoreRecord: true),
-                        Forms\Components\TextInput::make('nama_dinas')
-                            ->label('Nama Dinas')
-                            ->required()
-                            ->maxLength(255),
-                    ])
-                    ->columns(2),
+                        Forms\Components\Section::make('Informasi Paket')
+                            ->schema([
+                                Forms\Components\TextInput::make('id_paket')
+                                    ->label('ID Paket')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->unique(ignoreRecord: true),
+                                Forms\Components\TextInput::make('nama_dinas')
+                                    ->label('Nama Dinas')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Section::make('Kontak Informasi')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('kontak')
+                                            ->label('Nama Kontak')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('no_telepon')
+                                            ->label('No. Telepon')
+                                            ->tel()
+                                            ->required()
+                                            ->maxLength(255),
+                                    ])
+                                    ->columns(2),
+                            ])
+                            ->columns(2),
 
-                Forms\Components\Section::make('Kontak Informasi')
-                    ->schema([
-                        Forms\Components\TextInput::make('kontak')
-                            ->label('Nama Kontak')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('no_telepon')
-                            ->label('No. Telepon')
-                            ->tel()
-                            ->required()
-                            ->maxLength(255),
+
+                        Forms\Components\Section::make('Informasi SO & Staging')
+                            ->schema([
+                                Forms\Components\TextInput::make('nomer_so')
+                                    ->label('No. Service Order')
+                                    ->maxLength(255),
+                                Select::make('staging')
+                                    ->label('Status Staging')
+                                    // Opsi yang ditampilkan = opsi yang diizinkan + (selipkan current value agar label tetap rapi)
+                                    ->options(function (callable $get) {
+                                        $opts = self::allowedStagingOptionsForCurrentUser(); // [value => label]
+
+                                        // Ambil state saat ini dari record
+                                        $state = $get('staging');
+                                        $current = $state instanceof StagingEnum ? $state->value : (string) $state;
+
+                                        // Jika current value tidak ada di opsi (misal user biasa), selipkan agar label bisa dirender
+                                        if ($current !== '' && ! array_key_exists($current, $opts)) {
+                                            if ($enum = StagingEnum::tryFrom($current)) {
+                                                // taruh di paling depan supaya langsung kelihatan
+                                                $opts = [$current => $enum->label()] + $opts;
+                                            } else {
+                                                // fallback kalau ada value aneh
+                                                $opts = [$current => Str::headline($current)] + $opts;
+                                            }
+                                        }
+
+                                        return $opts;
+                                    })
+                                    // Placeholder pakai label yang rapi kalau belum ada pilihan
+                                    ->placeholder(function (callable $get) {
+                                        $state = $get('staging');
+                                        $enum  = $state instanceof StagingEnum ? $state : StagingEnum::tryFrom((string) $state);
+
+                                        if ($enum) {
+                                            return $enum->label();
+                                        }
+
+                                        $opts = self::allowedStagingOptionsForCurrentUser();
+                                        return empty($opts)
+                                            ? 'Tidak ada opsi'
+                                            : (count($opts) === 1 ? reset($opts) : 'Pilih Status Staging');
+                                    })
+                                    // Pastikan state yang dipakai select adalah string value, bukan object enum
+                                    ->afterStateHydrated(
+                                        fn(Select $component, $state) =>
+                                        $component->state($state instanceof StagingEnum ? $state->value : (string) $state)
+                                    )
+                                    // Saat menyimpan tetap kirim value string
+                                    ->dehydrateStateUsing(
+                                        fn($state) =>
+                                        $state instanceof StagingEnum ? $state->value : (string) $state
+                                    )
+                                    ->required()
+                                    ->default(StagingEnum::REQUEST->value)
+                                    ->native(false)
+                                    // Disable kalau tidak ada/tinggal satu opsi
+                                    ->disabled(
+                                        fn() =>
+                                        empty(self::allowedStagingOptionsForCurrentUser())
+                                            || count(self::allowedStagingOptionsForCurrentUser()) <= 1
+                                    ),
+                                Forms\Components\Textarea::make('keterangan_staging')
+                                    ->label('Keterangan Staging')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2),
                     ])
                     ->columns(2),
 
@@ -77,77 +149,13 @@ class ServiceResource extends Resource
                                 'Y' => 'Ya',
                                 'T' => 'Tidak',
                             ])
+                            ->default('T')
                             ->required()
                             ->native(false),
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Informasi Servis')
-                    ->schema([
-                        Forms\Components\TextInput::make('nomer_so')
-                            ->label('No. Service Order')
-                            ->maxLength(255),
-                        Select::make('staging')
-                            ->label('Status Staging')
-                            // Opsi yang ditampilkan = opsi yang diizinkan + (selipkan current value agar label tetap rapi)
-                            ->options(function (callable $get) {
-                                $opts = self::allowedStagingOptionsForCurrentUser(); // [value => label]
 
-                                // Ambil state saat ini dari record
-                                $state = $get('staging');
-                                $current = $state instanceof StagingEnum ? $state->value : (string) $state;
-
-                                // Jika current value tidak ada di opsi (misal user biasa), selipkan agar label bisa dirender
-                                if ($current !== '' && ! array_key_exists($current, $opts)) {
-                                    if ($enum = StagingEnum::tryFrom($current)) {
-                                        // taruh di paling depan supaya langsung kelihatan
-                                        $opts = [$current => $enum->label()] + $opts;
-                                    } else {
-                                        // fallback kalau ada value aneh
-                                        $opts = [$current => Str::headline($current)] + $opts;
-                                    }
-                                }
-
-                                return $opts;
-                            })
-                            // Placeholder pakai label yang rapi kalau belum ada pilihan
-                            ->placeholder(function (callable $get) {
-                                $state = $get('staging');
-                                $enum  = $state instanceof StagingEnum ? $state : StagingEnum::tryFrom((string) $state);
-
-                                if ($enum) {
-                                    return $enum->label();
-                                }
-
-                                $opts = self::allowedStagingOptionsForCurrentUser();
-                                return empty($opts)
-                                    ? 'Tidak ada opsi'
-                                    : (count($opts) === 1 ? reset($opts) : 'Pilih Status Staging');
-                            })
-                            // Pastikan state yang dipakai select adalah string value, bukan object enum
-                            ->afterStateHydrated(
-                                fn(Select $component, $state) =>
-                                $component->state($state instanceof StagingEnum ? $state->value : (string) $state)
-                            )
-                            // Saat menyimpan tetap kirim value string
-                            ->dehydrateStateUsing(
-                                fn($state) =>
-                                $state instanceof StagingEnum ? $state->value : (string) $state
-                            )
-                            ->required()
-                            ->default(StagingEnum::REQUEST->value)
-                            ->native(false)
-                            // Disable kalau tidak ada/tinggal satu opsi
-                            ->disabled(
-                                fn() =>
-                                empty(self::allowedStagingOptionsForCurrentUser())
-                                    || count(self::allowedStagingOptionsForCurrentUser()) <= 1
-                            ),
-                        Forms\Components\Textarea::make('keterangan_staging')
-                            ->label('Keterangan Staging')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
             ]);
     }
 
