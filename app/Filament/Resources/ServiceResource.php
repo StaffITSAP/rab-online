@@ -180,6 +180,12 @@ class ServiceResource extends Resource
             ->modifyQueryUsing(fn($query) => $query->with('items')) // <--- penting
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Pemohon')->searchable(),
+                Tables\Columns\TextColumn::make('nomer_so')
+                    ->label('No Servis')
+                    ->searchable()
+                    ->limit(30)
+                    ->toggleable(true),
+
                 Tables\Columns\TextColumn::make('id_paket')
                     ->label('ID Paket')
                     ->searchable()
