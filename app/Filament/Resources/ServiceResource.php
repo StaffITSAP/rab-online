@@ -65,7 +65,11 @@ class ServiceResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('nomer_so')
                                     ->label('No. Service Order')
-                                    ->maxLength(255),
+                                    ->default(fn() => \App\Models\Service::generateNomorSO())
+                                    ->disabled() // biar user ga bisa ubah manual
+                                    ->dehydrated() // tetap disimpan ke DB
+                                    ->required(),
+
                                 Select::make('staging')
                                     ->label('Status Staging')
                                     // Opsi yang ditampilkan = opsi yang diizinkan + (selipkan current value agar label tetap rapi)
@@ -124,6 +128,7 @@ class ServiceResource extends Resource
                                     ),
                                 Forms\Components\Textarea::make('keterangan_staging')
                                     ->label('Keterangan Staging')
+                                    ->default('-')
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
@@ -198,30 +203,33 @@ class ServiceResource extends Resource
                     ->toggleable(true),
 
                 // Nama barang
-            Tables\Columns\TextColumn::make('items.nama_barang')
-                ->label('Nama Barang')
-                ->formatStateUsing(fn($state, $record) =>
-                    $record->items->pluck('nama_barang')->filter()->join('<br>')
-                )
-                ->html(),
+                Tables\Columns\TextColumn::make('items.nama_barang')
+                    ->label('Nama Barang')
+                    ->formatStateUsing(
+                        fn($state, $record) =>
+                        $record->items->pluck('nama_barang')->filter()->join('<br>')
+                    )
+                    ->html(),
 
-            // No serial
-            Tables\Columns\TextColumn::make('items.noserial')
-                ->label('No. Serial')
-                ->formatStateUsing(fn($state, $record) =>
-                    $record->items->pluck('noserial')->filter()->join('<br>')
-                )
-                ->html(),
+                // No serial
+                Tables\Columns\TextColumn::make('items.noserial')
+                    ->label('No. Serial')
+                    ->formatStateUsing(
+                        fn($state, $record) =>
+                        $record->items->pluck('noserial')->filter()->join('<br>')
+                    )
+                    ->html(),
 
-            // Garansi
-            Tables\Columns\TextColumn::make('items.masih_garansi')
-                ->label('Garansi')
-                ->formatStateUsing(fn($state, $record) =>
-                    $record->items
-                        ->map(fn($i) => $i->masih_garansi === 'Y' ? 'Ya' : 'Tidak')
-                        ->join('<br>')
-                )
-                ->html(),
+                // Garansi
+                Tables\Columns\TextColumn::make('items.masih_garansi')
+                    ->label('Garansi')
+                    ->formatStateUsing(
+                        fn($state, $record) =>
+                        $record->items
+                            ->map(fn($i) => $i->masih_garansi === 'Y' ? 'Ya' : 'Tidak')
+                            ->join('<br>')
+                    )
+                    ->html(),
 
                 // Tampilkan staging dengan badge warna
                 Tables\Columns\TextColumn::make('staging_value')

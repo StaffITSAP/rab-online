@@ -34,6 +34,29 @@ class Service extends Model
         // 'masih_garansi' => 'boolean',
     ];
 
+    public static function generateNomorSO(): string
+    {
+        $prefix = 'SRV/' . now()->format('ymd');
+
+        // Ambil record terakhir (termasuk soft deleted) yang punya nomor_so
+        $lastRecord = self::withTrashed()
+            ->where('nomer_so', 'like', $prefix . '/%')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastRecord) {
+            $lastNumber = (int) substr($lastRecord->nomer_so, -5); // ambil 5 digit terakhir
+            $nextNumber = $lastNumber + 1;
+
+            if ($nextNumber > 99999) {
+                $nextNumber = 1; // reset ke 00001
+            }
+        } else {
+            $nextNumber = 1;
+        }
+
+        return $prefix . '/' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    }
     // Relationship dengan user
     public function user(): BelongsTo
     {
