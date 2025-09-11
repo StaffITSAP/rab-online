@@ -8,6 +8,7 @@ use App\Filament\Resources\ServiceResource\RelationManagers\AllLogsRelationManag
 use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -129,31 +130,40 @@ class ServiceResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Detail Barang')
+                Repeater::make('items')
+                    ->label(false)
+                    ->relationship()
                     ->schema([
-                        Forms\Components\Textarea::make('kerusakan')
-                            ->label('Deskripsi Kerusakan')
-                            ->required()
-                            ->columnSpanFull(),
-                        Forms\Components\TextInput::make('nama_barang')
-                            ->label('Nama Barang')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('noserial')
-                            ->label('No. Serial')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('masih_garansi')
-                            ->label('Masih Garansi')
-                            ->options([
-                                'Y' => 'Ya',
-                                'T' => 'Tidak',
+                        Forms\Components\Section::make('Detail Barang')
+                            ->schema([
+                                Forms\Components\Textarea::make('kerusakan')
+                                    ->label('Deskripsi Kerusakan')
+                                    ->required()
+                                    ->columnSpanFull(),
+                                Forms\Components\TextInput::make('nama_barang')
+                                    ->label('Nama Barang')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('noserial')
+                                    ->label('No. Serial')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Select::make('masih_garansi')
+                                    ->label('Masih Garansi')
+                                    ->options([
+                                        'Y' => 'Ya',
+                                        'T' => 'Tidak',
+                                    ])
+                                    ->default('T')
+                                    ->required()
+                                    ->native(false),
                             ])
-                            ->default('T')
-                            ->required()
-                            ->native(false),
+                            ->columns(2),
                     ])
-                    ->columns(2),
+                    ->columnSpanFull()
+                    ->defaultItems(1)
+                    ->minItems(1)
+                    ->itemLabel('Barang yang di Service'),
 
 
             ]);
@@ -162,6 +172,7 @@ class ServiceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query) => $query->with('items')) // <--- penting
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('Pemohon')->searchable(),
                 Tables\Columns\TextColumn::make('id_paket')
@@ -186,28 +197,31 @@ class ServiceResource extends Resource
                     ->searchable()
                     ->toggleable(true),
 
-                Tables\Columns\TextColumn::make('nama_barang')
-                    ->label('Nama Barang')
-                    ->searchable()
-                    ->limit(20)
-                    ->toggleable(true),
+                // Nama barang
+            Tables\Columns\TextColumn::make('items.nama_barang')
+                ->label('Nama Barang')
+                ->formatStateUsing(fn($state, $record) =>
+                    $record->items->pluck('nama_barang')->filter()->join('<br>')
+                )
+                ->html(),
 
-                Tables\Columns\TextColumn::make('noserial')
-                    ->label('No. Serial')
-                    ->searchable()
-                    ->toggleable(true),
+            // No serial
+            Tables\Columns\TextColumn::make('items.noserial')
+                ->label('No. Serial')
+                ->formatStateUsing(fn($state, $record) =>
+                    $record->items->pluck('noserial')->filter()->join('<br>')
+                )
+                ->html(),
 
-                Tables\Columns\TextColumn::make('masih_garansi')
-                    ->label('Garansi')
-                    ->formatStateUsing(fn(string $state): string => $state === 'Y' ? 'Ya' : 'Tidak')
-                    ->badge()
-                    ->color(fn(string $state): string => $state === 'Y' ? 'success' : 'danger')
-                    ->toggleable(true),
-
-                Tables\Columns\TextColumn::make('nomer_so')
-                    ->label('No. SO')
-                    ->searchable()
-                    ->toggleable(true),
+            // Garansi
+            Tables\Columns\TextColumn::make('items.masih_garansi')
+                ->label('Garansi')
+                ->formatStateUsing(fn($state, $record) =>
+                    $record->items
+                        ->map(fn($i) => $i->masih_garansi === 'Y' ? 'Ya' : 'Tidak')
+                        ->join('<br>')
+                )
+                ->html(),
 
                 // Tampilkan staging dengan badge warna
                 Tables\Columns\TextColumn::make('staging_value')

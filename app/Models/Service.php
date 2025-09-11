@@ -99,4 +99,9 @@ class Service extends Model
 
         return $query;
     }
+
+    public function items()
+    {
+        return $this->hasMany(ServiceItem::class, 'service_id');
+    }
 }
