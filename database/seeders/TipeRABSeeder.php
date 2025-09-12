@@ -15,6 +15,7 @@ class TipeRABSeeder extends Seeder
             ['kode' => 'MP', 'nama' => 'RAB Marcomm Event/Kegiatan'],
             ['kode' => 'MK', 'nama' => 'RAB Marcomm Promosi'],
             ['kode' => 'ME', 'nama' => 'RAB Marcomm Kebutuhan Pusat/Sales'],
+            ['kode' => 'BS', 'nama' => 'RAB Biaya Service'],
         ];
 
         foreach ($data as $tipe) {

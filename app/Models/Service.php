@@ -127,4 +127,8 @@ class Service extends Model
     {
         return $this->hasMany(ServiceItem::class, 'service_id');
     }
+    public function pengajuanBiaya()
+    {
+        return $this->hasMany(PengajuanBiayaService::class, 'service_id');
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pengajuan extends Model
 {
@@ -84,6 +85,9 @@ class Pengajuan extends Model
         'lampiranKegiatan',
         'marcommKegiatanPusats',
         'marcommKegiatanCabangs',
+
+        // Biaya Service
+        'pengajuan_biaya_services',
     ];
 
     protected static function booted()
@@ -185,10 +189,15 @@ class Pengajuan extends Model
         });
     }
 
-    public static function generateNoRAB(int $tipeRABId): string
+    public static function generateNoRAB(?int $tipeRABId): string
     {
         $today   = now();
         $dateStr = $today->format('ymd'); // contoh: 250802
+
+        if (!$tipeRABId) {
+            // fallback kalau null
+            return "RAB/XX/{$dateStr}/00001";
+        }
 
         $tipeRAB  = \App\Models\TipeRab::find($tipeRABId);
         $kodeTipe = $tipeRAB?->kode ?? 'XX';
@@ -219,6 +228,7 @@ class Pengajuan extends Model
             3 => (int) $this->pengajuan_marcomm_kegiatans()->sum('subtotal'),
             4 => (int) $this->pengajuan_marcomm_promosis()->sum('subtotal'),
             5 => (int) $this->pengajuan_marcomm_kebutuhans()->sum('subtotal'),
+            6 => (int) $this->pengajuan_biaya_services()->sum('total'), // TAMBAHKAN INI
             default => 0,
         };
     }
@@ -362,5 +372,9 @@ class Pengajuan extends Model
     public function userStatus()
     {
         return $this->hasOne(\App\Models\UserStatus::class, 'user_id', 'id');
+    }
+    public function pengajuan_biaya_services(): HasMany
+    {
+        return $this->hasMany(PengajuanBiayaService::class, 'pengajuan_id');
     }
 }

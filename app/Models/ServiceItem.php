@@ -23,4 +23,8 @@ class ServiceItem extends Model
     {
         return $this->belongsTo(Service::class);
     }
+    public function pengajuanBiaya()
+    {
+        return $this->hasMany(PengajuanBiayaService::class, 'service_item_id');
+    }
 }

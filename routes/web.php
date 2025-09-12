@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\CetakPengajuanServiceController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Pengajuan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\ExportPengajuansController;
 use App\Http\Controllers\ExportPenggunaanMobilController;
 use App\Http\Controllers\ExportPenggunaanTeknisiController;
+use App\Models\PengajuanBiayaService;
 
 Route::get('/', function () {
     return redirect('/web');
@@ -85,4 +87,40 @@ Route::get('/exports/services/all', [App\Http\Controllers\ExportServiceControlle
 
 Route::match(['get', 'post'], '/exports/services/filtered', [App\Http\Controllers\ExportServiceController::class, 'exportFiltered'])
     ->name('exports.services.filtered')
+    ->middleware('auth');
+
+// PDF Preview
+Route::get('/pengajuan-biaya-service/{pengajuan}/pdf', function (PengajuanBiayaService $pengajuan) {
+    $view = request()->query('tipe') === 'internal'
+        ? 'pdf.service_internal'
+        : 'pdf.service_pelanggan';
+
+    $pdf = Pdf::loadView($view, compact('pengajuan'))
+        ->setPaper('a4', 'portrait');
+
+    $filename = "SERVICE_" . str_replace(['/', '\\'], '_', $pengajuan->id);
+
+    return $pdf->stream("{$filename}.pdf");
+})->name('pengajuan_biaya_service.pdf.preview')->middleware('auth');
+
+// PDF Download
+Route::get('/pengajuan-biaya-service/{pengajuan}/download-pdf', function (PengajuanBiayaService $pengajuan) {
+    $view = request()->query('tipe') === 'internal'
+        ? 'pdf.service_internal'
+        : 'pdf.service_pelanggan';
+
+    $pdf = Pdf::loadView($view, compact('pengajuan'))
+        ->setPaper('a4', 'portrait');
+
+    $filename = "SERVICE_" . str_replace(['/', '\\'], '_', $pengajuan->id);
+
+    return $pdf->download("{$filename}.pdf");
+})->name('pengajuan_biaya_service.pdf.download')->middleware('auth');
+// Exports untuk Pengajuan Biaya Service
+Route::get('/exports/pengajuan-biaya-service/all', [CetakPengajuanServiceController::class, 'all'])
+    ->name('exports.pengajuan_biaya_service.all')
+    ->middleware('auth');
+
+Route::match(['get', 'post'], '/exports/pengajuan-biaya-service/filtered', [CetakPengajuanServiceController::class, 'filtered'])
+    ->name('exports.pengajuan_biaya_service.filtered')
     ->middleware('auth');

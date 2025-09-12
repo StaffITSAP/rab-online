@@ -12,6 +12,7 @@ use Filament\Tables\Columns\TextColumn;
 use Carbon\Carbon;
 use App\Filament\Forms\Pengajuan\BasePengajuanForm;
 use App\Filament\Forms\Pengajuan\AssetFormSection;
+use App\Filament\Forms\Pengajuan\BiayaFormSection;
 use App\Filament\Forms\Pengajuan\DinasFormSection;
 use App\Filament\Forms\Pengajuan\PromosiFormSection;
 use App\Filament\Forms\Pengajuan\KebutuhanFormSection;
@@ -54,6 +55,7 @@ class PengajuanResource extends Resource
             ...PromosiFormSection::schema(),
             ...KebutuhanFormSection::schema(),
             ...KegiatanFormSection::schema(),
+            ...BiayaFormSection::schema(),
 
             TextInput::make('total_biaya')
                 ->label('Total Biaya')
