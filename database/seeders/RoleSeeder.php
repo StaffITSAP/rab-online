@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
             'koordinator gudang',
             'marcomm',
             'rt',
+            'servis',
             'teknisi',
             'spv',
             'koordinator',
