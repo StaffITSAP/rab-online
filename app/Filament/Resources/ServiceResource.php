@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Enums\StagingEnum;
 use App\Filament\Resources\ServiceResource\Pages;
 use App\Filament\Resources\ServiceResource\RelationManagers\AllLogsRelationManager;
+use App\Models\CustomerMonitor;
+use App\Models\ProjectMonitor;
 use App\Models\Service;
 use Filament\Actions\Action;
 use Filament\Forms;
@@ -35,15 +37,30 @@ class ServiceResource extends Resource
                     ->schema([
                         Forms\Components\Section::make('Informasi Paket')
                             ->schema([
-                                Forms\Components\TextInput::make('id_paket')
+                                Forms\Components\Select::make('id_paket')
                                     ->label('ID Paket')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->unique(ignoreRecord: true),
-                                Forms\Components\TextInput::make('nama_dinas')
+                                    ->searchable()
+                                    ->getSearchResultsUsing(
+                                        fn(string $search) =>
+                                        ProjectMonitor::query()
+                                            ->where('name', 'ILIKE', "%{$search}%")
+                                            ->limit(100)
+                                            ->pluck('code', 'code')
+                                    )
+                                    ->getOptionLabelUsing(fn($value) => $value)
+                                    ->required(),
+                                Forms\Components\Select::make('nama_dinas')
                                     ->label('Nama Dinas')
-                                    ->required()
-                                    ->maxLength(255),
+                                    ->searchable()
+                                    ->getSearchResultsUsing(
+                                        fn(string $search) =>
+                                        CustomerMonitor::query()
+                                            ->where('name', 'ILIKE', "%{$search}%")
+                                            ->limit(100)
+                                            ->pluck('name', 'name')
+                                    )
+                                    ->getOptionLabelUsing(fn($value) => $value)
+                                    ->required(),
                                 Forms\Components\Section::make('Kontak Informasi')
                                     ->schema([
                                         Forms\Components\TextInput::make('kontak')
@@ -196,6 +213,27 @@ class ServiceResource extends Resource
                     ->searchable()
                     ->limit(30)
                     ->toggleable(true),
+                    
+                // Tampilkan staging dengan badge warna
+                Tables\Columns\TextColumn::make('staging_value')
+                    ->label('Staging')
+                    ->badge()
+                    ->formatStateUsing(function ($state): string {
+                        $enum = $state instanceof StagingEnum ? $state : StagingEnum::tryFrom((string) $state);
+                        return $enum?->label() ?? '-';
+                    })
+                    ->color(function ($state): string {
+                        $val = $state instanceof StagingEnum ? $state->value : (string) $state;
+                        return match ($val) {
+                            StagingEnum::REQUEST->value        => 'gray',
+                            StagingEnum::CEK_KERUSAKAN->value  => 'info',
+                            StagingEnum::ADA_BIAYA->value      => 'warning',
+                            StagingEnum::CLOSE->value          => 'danger',
+                            StagingEnum::APPROVE->value        => 'success',
+                            default                            => 'secondary',
+                        };
+                    })
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('kontak')
                     ->label('Kontak')
@@ -236,27 +274,6 @@ class ServiceResource extends Resource
                             ->join('<br>')
                     )
                     ->html(),
-
-                // Tampilkan staging dengan badge warna
-                Tables\Columns\TextColumn::make('staging_value')
-                    ->label('Staging')
-                    ->badge()
-                    ->formatStateUsing(function ($state): string {
-                        $enum = $state instanceof StagingEnum ? $state : StagingEnum::tryFrom((string) $state);
-                        return $enum?->label() ?? '-';
-                    })
-                    ->color(function ($state): string {
-                        $val = $state instanceof StagingEnum ? $state->value : (string) $state;
-                        return match ($val) {
-                            StagingEnum::REQUEST->value        => 'gray',
-                            StagingEnum::CEK_KERUSAKAN->value  => 'info',
-                            StagingEnum::ADA_BIAYA->value      => 'warning',
-                            StagingEnum::CLOSE->value          => 'danger',
-                            StagingEnum::APPROVE->value        => 'success',
-                            default                            => 'secondary',
-                        };
-                    })
-                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('keterangan_staging')
                     ->label('Keterangan')
