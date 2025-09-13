@@ -83,7 +83,12 @@ class BiayaFormSection
                                 ->minValue(1)
                                 ->required()
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                    self::calculateItemTotals($state, $get, $set);
+                                    // Hitung subtotal langsung
+                                    $harga = (int) str_replace('.', '', $get('harga_satuan') ?? 0);
+                                    $subtotal = (int) $state * $harga;
+                                    $set('subtotal', $subtotal);
+                                    
+                                    // Update total biaya
                                     self::updateParentTotalBiaya($get, $set);
                                 }),
 
@@ -103,7 +108,13 @@ class BiayaFormSection
                                 ->afterStateUpdated(function ($state, Get $get, Set $set) {
                                     $harga = (int) str_replace('.', '', $state ?? 0);
                                     $set('harga_satuan', $harga);
-                                    self::calculateItemTotals($get('jumlah'), $get, $set);
+                                    
+                                    // Hitung subtotal langsung
+                                    $jumlah = (int) $get('jumlah') ?? 1;
+                                    $subtotal = $jumlah * $harga;
+                                    $set('subtotal', $subtotal);
+                                    
+                                    // Update total biaya
                                     self::updateParentTotalBiaya($get, $set);
                                 }),
 
@@ -120,61 +131,8 @@ class BiayaFormSection
                                     $c->state($state ? number_format((int) $state, 0, ',', '.') : null)
                                 )
                                 ->dehydrateStateUsing(fn($state) => $state ? (int) str_replace('.', '', $state) : 0),
-
-                            // Pajak %
-                            TextInput::make('pph_persen')
-                                ->label('PPh %')
-                                ->numeric()
-                                ->nullable()
-                                ->suffix('%')
-                                ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                                    self::calculateItemTotals($get('jumlah'), $get, $set);
-                                    self::updateParentTotalBiaya($get, $set);
-                                }),
-
-                            // PPh Nominal
-                            TextInput::make('pph_nominal')
-                                ->label('PPh Nominal')
-                                ->prefix('Rp ')
-                                ->disabled()
-                                ->dehydrated()
-                                ->default(0)
-                                ->extraAttributes(['class' => 'currency-input'])
-                                ->afterStateHydrated(
-                                    fn(TextInput $c, $state) =>
-                                    $c->state($state ? number_format((int) $state, 0, ',', '.') : null)
-                                )
-                                ->dehydrateStateUsing(fn($state) => $state ? (int) str_replace('.', '', $state) : 0),
-
-                            // DPP Jual
-                            TextInput::make('dpp_jual')
-                                ->label('DPP Jual')
-                                ->prefix('Rp ')
-                                ->disabled()
-                                ->dehydrated()
-                                ->default(0)
-                                ->extraAttributes(['class' => 'currency-input'])
-                                ->afterStateHydrated(
-                                    fn(TextInput $c, $state) =>
-                                    $c->state($state ? number_format((int) $state, 0, ',', '.') : null)
-                                )
-                                ->dehydrateStateUsing(fn($state) => $state ? (int) str_replace('.', '', $state) : 0),
-
-                            // Total
-                            TextInput::make('total')
-                                ->label('Total')
-                                ->prefix('Rp ')
-                                ->disabled()
-                                ->dehydrated()
-                                ->default(0)
-                                ->extraAttributes(['class' => 'currency-input'])
-                                ->afterStateHydrated(
-                                    fn(TextInput $c, $state) =>
-                                    $c->state($state ? number_format((int) $state, 0, ',', '.') : null)
-                                )
-                                ->dehydrateStateUsing(fn($state) => $state ? (int) str_replace('.', '', $state) : 0),
                         ])
-                        ->columns(3)
+                        ->columns(2)
                         ->addActionLabel('Tambah Biaya Service')
                         ->itemLabel('Detail Biaya Service')
                         ->defaultItems(1)
@@ -209,24 +167,6 @@ class BiayaFormSection
     }
 
     /**
-     * Menghitung total untuk setiap item
-     */
-    private static function calculateItemTotals($jumlah, Get $get, Set $set): void
-    {
-        $jumlah = (int) $jumlah;
-        $harga = (int) str_replace('.', '', $get('harga_satuan') ?? 0);
-        $subtotal = $jumlah * $harga;
-
-        $pph = (float) ($get('pph_persen') ?? 0);
-        $pphNominal = $pph > 0 ? (int) ($subtotal * ($pph / 100)) : 0;
-
-        $set('subtotal', $subtotal);
-        $set('pph_nominal', $pphNominal);
-        $set('dpp_jual', $subtotal - $pphNominal);
-        $set('total', $subtotal);
-    }
-
-    /**
      * Update total biaya di parent form
      */
     private static function updateParentTotalBiaya(Get $get, Set $set): void
@@ -235,15 +175,15 @@ class BiayaFormSection
 
         $grandTotal = 0;
         foreach ($items as $item) {
-            $total = $item['total'] ?? 0;
+            $subtotal = $item['subtotal'] ?? 0;
             // Pastikan kita menggunakan nilai numerik, bukan yang sudah diformat
-            if (is_string($total) && str_contains($total, '.')) {
-                $total = (int) str_replace('.', '', $total);
+            if (is_string($subtotal) && str_contains($subtotal, '.')) {
+                $subtotal = (int) str_replace('.', '', $subtotal);
             }
-            $grandTotal += (int) $total;
+            $grandTotal += (int) $subtotal;
         }
 
-        // Update field total_biaya di parent form
+        // Update field total_biaya di parent form (jumlah dari semua subtotal)
         $set('total_biaya', $grandTotal);
     }
 

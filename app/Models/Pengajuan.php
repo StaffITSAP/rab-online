@@ -228,7 +228,7 @@ class Pengajuan extends Model
             3 => (int) $this->pengajuan_marcomm_kegiatans()->sum('subtotal'),
             4 => (int) $this->pengajuan_marcomm_promosis()->sum('subtotal'),
             5 => (int) $this->pengajuan_marcomm_kebutuhans()->sum('subtotal'),
-            6 => (int) $this->pengajuan_biaya_services()->sum('total'), // TAMBAHKAN INI
+            6 => (int) $this->pengajuan_biaya_services()->sum('subtotal'), // TAMBAHKAN INI
             default => 0,
         };
     }
