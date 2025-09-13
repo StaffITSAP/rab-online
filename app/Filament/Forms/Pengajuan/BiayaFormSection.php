@@ -53,7 +53,7 @@ class BiayaFormSection
                                 }),
 
                             Select::make('service_item_id')
-                                ->label('Item / Sparepart')
+                                ->label('Nama Barang')
                                 ->options(function (Get $get) {
                                     $serviceId = $get('service_id');
 
