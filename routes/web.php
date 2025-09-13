@@ -19,6 +19,7 @@ Route::get('/pengajuan/{pengajuan}/pdf', function (Pengajuan $pengajuan) {
         3 => 'pdf.kegiatan',       // Marcomm Event/Kegiatan
         4 => 'pdf.promosi',     // Marcomm Promosi
         5 => 'pdf.kebutuhan',     // Marcomm Kebutuhan
+        6 => 'pdf.biaya',   // Biaya Service
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
     };
 
@@ -45,6 +46,7 @@ Route::get('/pengajuan/{pengajuan}/download-pdf', function (Pengajuan $pengajuan
         3 => 'pdf.kegiatan',
         4 => 'pdf.promosi',
         5 => 'pdf.kebutuhan',
+        6 => 'pdf.biaya',  
         default => abort(404, 'Template PDF tidak tersedia untuk tipe ini.'),
     };
 
