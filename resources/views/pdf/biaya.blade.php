@@ -374,7 +374,7 @@
             <tr>
                 <th style="width:5%;" class="table-header">NO</th>
                 <th style="width:20%;" class="table-header">NO. SERVICE ORDER</th>
-                <th style="width:25%;" class="table-header">ITEM/SPAREPART</th>
+                <th style="width:25%;" class="table-header">NAMA BARANG</th>
                 <th style="width:5%;" class="table-header">QTY</th>
                 <th style="width:15%;" class="table-header">HARGA SATUAN</th>
                 <th style="width:15%;" class="table-header">SUBTOTAL</th>
